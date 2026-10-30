@@ -6,6 +6,7 @@ import { auth, db } from './firebase'
 import { authError } from './authActions'
 import { api } from './api'
 import type { Role, UserDoc } from '../../shared/model'
+import * as fx from '@fixtures'
 
 interface AuthState {
   /** True once Firebase has told us whether anyone is signed in. `user` may still be null. */
@@ -38,6 +39,29 @@ interface AuthState {
 const Ctx = createContext<AuthState | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // `--mode fixtures` (design review): a fixed, fake account and no Firebase. A build-time
+  // constant, so a real build never takes this branch and the hooks below keep their order.
+  if (import.meta.env.MODE === 'fixtures') return <FixtureAuth>{children}</FixtureAuth>
+  return <LiveAuthProvider>{children}</LiveAuthProvider>
+}
+
+function FixtureAuth({ children }: { children: ReactNode }) {
+  const as = fx.FX.as
+  const signedIn = as !== 'anon'
+  const value: AuthState = {
+    ready: true,
+    user: signedIn ? ({ uid: 'fx-user', email: 'pimchanok.k@example.com', emailVerified: as !== 'unverified', displayName: 'Pimchanok K.', providerData: [{ providerId: 'password' }] } as unknown as User) : null,
+    emailVerified: as !== 'unverified',
+    role: as === 'visitor' || as === 'organizer' || as === 'admin' ? as : null,
+    boothId: as === 'organizer' ? 'b14' : null,
+    profile: as === 'visitor' ? (fx.fxUser as unknown as (UserDoc & { id: string })) : null,
+    refreshClaims: async () => {}, reloadUser: async () => {}, redirectError: null, clearRedirectError: () => {},
+    signOut: async () => {},
+  }
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
+}
+
+function LiveAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [ready, setReady] = useState(false)
   const [verified, setVerified] = useState(false)

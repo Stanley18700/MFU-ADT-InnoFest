@@ -12,7 +12,7 @@ const env = import.meta.env
 export const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY as string,
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN as string,
-  projectId: (env.VITE_FIREBASE_PROJECT_ID as string) || 'mfu-passport',
+  projectId: (env.VITE_FIREBASE_PROJECT_ID as string) || 'adt-innofest',
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET as string,
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID as string,
   appId: env.VITE_FIREBASE_APP_ID as string,

@@ -8,6 +8,18 @@ import { DEFAULT_PASSPORT_PREFIX, DEFAULT_PRIZE_SESSIONS, EVENT_DAYS, EVENT_ID, 
 
 export type WithId<T> = T & { id: string }
 
+/*
+ * `--mode fixtures` only: sample rows instead of Firestore, for design review with no backend.
+ * The branch is on a build-time constant, so a production bundle drops it and the hooks keep a
+ * fixed call order in either mode.
+ */
+import * as fx from '@fixtures'
+function fixtureCollection<T>(q: Query | null) {
+  if (!q) return { data: [] as WithId<T>[], loading: false, error: null, fromCache: false }
+  const path = 'path' in q ? (q as unknown as { path: string }).path : (q as unknown as { _query: { path: { segments: string[] } } })._query.path.segments.join('/')
+  return { data: fx.fxRows(path) as unknown as WithId<T>[], loading: false, error: null, fromCache: false }
+}
+
 /**
  * Listener failures used to vanish: a denied read or a missing index left the hook returning an
  * empty list, and the page rendered as if nothing had happened. Each live hook now reports its
@@ -33,6 +45,7 @@ export function useDataErrors(): DataError[] {
 }
 
 export function useCollection<T = DocumentData>(q: Query | null, deps: unknown[] = [], what = 'this page'): { data: WithId<T>[]; loading: boolean; error: string | null; fromCache: boolean } {
+  if (import.meta.env.MODE === 'fixtures') return fixtureCollection<T>(q)
   const id = useId()
   const [data, setData] = useState<WithId<T>[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,6 +68,7 @@ export function useCollection<T = DocumentData>(q: Query | null, deps: unknown[]
 }
 
 export function useDoc<T = DocumentData>(ref: DocumentReference | null, deps: unknown[] = [], what?: string): { data: WithId<T> | null; loading: boolean; error: string | null; fromCache: boolean } {
+  if (import.meta.env.MODE === 'fixtures') return { data: (ref ? fx.fxDoc(ref.path) : null) as WithId<T> | null, loading: false, error: null, fromCache: false }
   const id = useId()
   const [data, setData] = useState<WithId<T> | null>(null)
   const [loading, setLoading] = useState(true)

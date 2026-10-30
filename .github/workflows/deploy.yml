@@ -1,9 +1,8 @@
 # Deploys to the live Firebase project on every merge into main.
 #
 # Requires these repository secrets (Settings -> Secrets and variables -> Actions):
-#   FIREBASE_SERVICE_ACCOUNT  — the full JSON key for a service account on mfu-passport
-#   VITE_FIREBASE_*           — the web app config, same values as your local .env.local
-#   VITE_APP_ORIGIN           — must match Hosting exactly; booth QR payloads embed it
+#   FIREBASE_SERVICE_ACCOUNT  — the full JSON key for a service account on adt-innofest
+# The web app config is not a secret: it is committed in .env.production, which `vite build` reads.
 name: Deploy
 
 on:
@@ -41,14 +40,6 @@ jobs:
 
       - name: Build app
         run: npm run build
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_APP_ORIGIN: ${{ secrets.VITE_APP_ORIGIN }}
 
       - name: Build functions
         run: npm --prefix functions run build
@@ -79,6 +70,6 @@ jobs:
         run: >
           firebase deploy
           --only hosting,functions,firestore,storage
-          --project mfu-passport
+          --project adt-innofest
           --non-interactive
           --force

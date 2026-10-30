@@ -24,9 +24,13 @@
     "demo:points": "npm --prefix functions run build && firebase emulators:exec --only firestore --project demo-point-demo \"node scripts/demo-points.cjs\"",
     "test:sessions:emulator": "npm --prefix functions run build && firebase emulators:exec --only firestore --project demo-prize-sessions \"node --test scripts/test-sessions-emulator.cjs\"",
     "test:points:emulator": "npm --prefix functions run build && firebase emulators:exec --only firestore --project demo-point-adjustments \"node --test scripts/test-points-emulator.cjs\"",
-    "migrate:booths": "node scripts/migrate-booths.mjs"
+    "migrate:booths": "node scripts/migrate-booths.mjs",
+    "dev:fixtures": "vite --mode fixtures --port 5180"
   },
   "dependencies": {
+    "@fontsource/chakra-petch": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans-thai": "^5.3.0",
     "firebase": "^11.10.0",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",

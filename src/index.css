@@ -14,105 +14,86 @@
  * pages use: `text-ink`, `bg-chrome`, `bg-action`, `text-foil`.
  */
 @theme {
-  /* Sky scale — grounds and fills. Only 900/950 carry white text. */
-  --color-sky-100: #EDFBFE;
-  --color-sky-200: #D6F4FB;
-  --color-sky-300: #AEEAF7;
-  --color-sky-400: #93E4F4;
-  --color-sky-500: #7EDFF2;
-  --color-sky-600: #4FCBE6;
-  --color-sky-700: #23A9C9;
-  --color-sky-800: #1A8AA6;
-  --color-sky-900: #12708A;
-  --color-sky-950: #0D5A70;
-  /* Green — mountains, chrome, "connected". */
+  /*
+   * ADT InnoFest 2026 — "Agency 2036". Values come from the Agency 2036 design system (Claude
+   * Design). The old festival scale names are kept so every page and the admin console pick up the
+   * new palette without a rename: the "sky" steps are now the electric-blue family, chrome is the
+   * agent-ID navy, foil and reward are the gold accent.
+   */
+  --color-sky-100: #EEF3FF;
+  --color-sky-200: #E2EAFF;
+  --color-sky-300: #C9D8FF;
+  --color-sky-400: #9DB8FF;
+  --color-sky-500: #6E96FF;
+  --color-sky-600: #3F73FF;
+  --color-sky-700: #1D5BFF;
+  --color-sky-800: #1450E6;
+  --color-sky-900: #0A2F8F;
+  --color-sky-950: #0A1A57;
+  /* Green stays for status in the console: "connected", success. */
   --color-green-300: #8FC08C;
-  --color-green-500: #4C764F;
-  --color-green-700: #2F5D3E;
-  --color-green-900: #1E3F2A;
-  /* Orange and gold — energy, reward, foil. */
-  --color-orange-300: #FFD9A3;
-  --color-orange-400: #FABD6D;
-  --color-orange-500: #F0A445;
-  --color-orange-600: #DC8A2A;
-  --color-gold: #F5C63C;
+  --color-green-500: #2F7A45;
+  --color-green-700: #1F5A33;
+  --color-green-900: #133A22;
+  /* Gold — the one accent. Always under ink, never as text on white. */
+  --color-orange-300: #FFE48A;
+  --color-orange-400: #FFC93C;
+  --color-orange-500: #EFA400;
+  --color-orange-600: #C98A00;
+  --color-gold: #FFC93C;
 
-  /* Ink — deep teal, never black. `ink-soft` is the only muted text: 7.7:1 on white, 5:1 on sky. */
-  --color-ink: #17414E;
-  --color-ink-soft: #1F5A6B;
-  --color-ink-line: #5E93A1;        /* rules, chart tracks, disabled fills — never text (3.4:1) */
+  /* Ink — deep navy. `ink-soft` is the muted text: 7:1 on white. */
+  --color-ink: #0A1433;
+  --color-ink-soft: #4A5875;
+  --color-ink-line: #8C97AD;        /* rules, dashed outlines, tracks — never text */
 
   /* Surfaces */
-  --color-page: #7EDFF2;            /* visitor phone ground — full sky */
-  --color-page-quiet: #EDFBFE;      /* console ground */
+  --color-page: #FFFFFF;
+  --color-page-quiet: #F2F5FB;
   --color-panel: #FFFFFF;
-  --color-panel-warm: #F4E4C4;
-  /*
-   * Chrome is the deep teal the design system already calls ink — the colour sampled from the key
-   * visual's own body copy — not the dark green it started as. Green stays where it belongs: the
-   * paper mountains, the "connected" dot, success. Everything that reads on the old green reads on
-   * this within a tenth of a point (white is 11.0:1 here against 11.7:1 there).
-   */
-  --color-chrome: #17414E;          /* sidebar, kiosk, cover, auth */
-  --color-chrome-soft: #1F5A6B;
-  /*
-   * The organizer's ground — sky-950, two steps lighter and bluer than chrome. The booth screens
-   * carry a booth's own accent as their heading, manual code and figures, and on chrome five of
-   * the nine accents had to be mixed halfway to white before they were legible, which left a pale
-   * wash where the booth's colour should be. On this, six of the nine are used as drawn.
-   */
-  --color-stage: #094859;
-  --color-on-chrome-soft: #CFE3EA;  /* secondary text on chrome — solid, 8.3:1. Never white/60. */
+  --color-panel-warm: #EEF3FF;
+  --color-chrome: #0A1340;          /* agent ID navy: kiosk, admin rail, camera */
+  --color-chrome-soft: #13308A;
+  --color-stage: #0A1A57;
+  --color-on-chrome-soft: #BFD3FF;  /* secondary text on chrome — 11:1 */
 
   /* Interactive */
-  --color-action: #12708A;          /* the one sky step that carries white text (5.7:1) */
-  --color-action-hover: #0D5A70;
-  --color-foil: #F5C63C;            /* reward states: tier pips, unlocked visa border, crest */
-  --color-reward: #FABD6D;          /* prize fill — under ink, never under white */
+  --color-action: #1D5BFF;          /* neon blue, carries white (5.2:1) */
+  --color-action-hover: #1450E6;
+  --color-foil: #FFC93C;
+  --color-reward: #FFC93C;
 
-  /* Status — each has a fill (dots, bars), a text value, and a ground. Fills never carry type. */
-  --color-success: #4C764F;
-  --color-success-text: #1F4A25;
-  --color-success-bg: #E4F2E5;
-  --color-warn: #DC8A2A;
-  --color-warn-text: #9A5A0F;
-  --color-warn-bg: #FDEFD9;
-  --color-danger: #C13A38;
-  --color-danger-text: #8F2A1C;
-  --color-danger-bg: #FCE6E5;
-  --color-offline: #D94A48;
+  /* Status */
+  --color-success: #2F7A45;
+  --color-success-text: #1F5A33;
+  --color-success-bg: #E6F4EA;
+  --color-warn: #C98A00;
+  --color-warn-text: #7A5200;
+  --color-warn-bg: #FFF4D6;
+  --color-danger: #C8102E;
+  --color-danger-text: #8A0018;
+  --color-danger-bg: #FFF0F2;
+  --color-offline: #C8102E;
 
-  /*
-   * The same three states, as text on the chrome ground. The `-text` values above are tuned for
-   * white and are unreadable on it — success is 2.2:1 there. `.on-chrome` already restates them
-   * for pages inside that system; these give the same values a name, for the surfaces that frame
-   * a light card and so cannot take `.on-chrome` wholesale.
-   */
   --color-success-on-chrome: #BDE8C4;
-  --color-warn-on-chrome: #FFD9A3;
-  --color-danger-on-chrome: #FFC9BF;
+  --color-warn-on-chrome: #FFE48A;
+  --color-danger-on-chrome: #FFC9CF;
 
-  --font-sans: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif;
-  --font-display: 'Baloo 2', 'Mitr', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans Thai', system-ui, sans-serif;
+  --font-display: 'Chakra Petch', 'IBM Plex Sans Thai', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  /* Small-phone tier. Tailwind ships nothing below sm (640px), but §12.11 asks for 320px. */
   --breakpoint-xs: 380px;
 
-  /* Shadows are teal-tinted, never grey. */
-  --shadow-card: 0 2px 10px rgba(23, 65, 78, .08);
-  --shadow-raised: 0 8px 24px rgba(23, 65, 78, .12);
-  --shadow-float: 0 18px 44px rgba(23, 65, 78, .18);
-  --shadow-paper: 2px 3px 0 rgba(23, 65, 78, .14);
+  /* Shadows are blue-tinted, never grey. */
+  --shadow-card: 0 2px 10px rgba(10, 20, 51, .07);
+  --shadow-raised: 0 8px 24px rgba(29, 91, 255, .14);
+  --shadow-float: 0 18px 44px rgba(29, 91, 255, .2);
+  --shadow-paper: 2px 3px 0 rgba(10, 20, 51, .14);
 
-  --radius-card: 28px;
-  --radius-frame: 36px;
+  --radius-card: 6px;
+  --radius-frame: 8px;
   --radius-scrap: 2px;
 
-  /*
-   * The design system's duration scale (design-system/tokens/motion.css), as tokens rather than
-   * literals, so `prefers-reduced-motion` is one override at the foot of this file instead of a
-   * rule-by-rule opt-out.
-   */
   --dur-instant: 120ms;
   --dur-fast: 180ms;
   --dur-base: 260ms;
@@ -123,16 +104,11 @@
   --ease-standard: cubic-bezier(.2, .8, .3, 1);
   --ease-settle: cubic-bezier(.2, .9, .3, 1.2);
   --ease-out: cubic-bezier(0, 0, .28, 1);
-  /*
-   * For movement that ANSWERS A CLICK — the pill chasing a tapped tab. It is 30% of the way in the
-   * first 60ms; `--ease-standard` is 5% by then, and on something the eye is already tracking to
-   * its destination that reads as lag rather than as smoothing.
-   */
   --ease-enter: cubic-bezier(.16, 1, .3, 1);
 }
 
 :root {
-  --rule: rgba(23, 65, 78, 0.14);
+  --rule: rgba(10, 20, 51, 0.14);
   color-scheme: light;
 }
 
@@ -260,7 +236,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; line-he
   position: absolute;
   inset: -12px -28px;
   z-index: -1;
-  background: rgb(126 223 242 / 0.72);
+  background: rgb(255 255 255 / 0.78);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   /* The sheet dissolves toward its edge: what sits half under it turns to haze rather than being cut. */
@@ -372,8 +348,8 @@ input, select, textarea, button { font: inherit; }
 /* 14px corner, hairline at 28% ink, focus = solid sky-800 border plus a 3px sky ring at 20%. */
 /* Width lives in `@layer components` above, so `field w-auto` / `field w-56` can narrow it. */
 .field {
-  @apply rounded-[14px] border border-ink/28 bg-white px-3.5 py-2.5 text-ink outline-none transition
-    placeholder:text-ink-soft/70 focus:border-sky-800 focus:ring-[3px] focus:ring-sky-700/20;
+  @apply rounded-[3px] border border-[#7F90B6] bg-[#F2F5FB] px-3.5 py-2.5 text-ink outline-none transition
+    placeholder:text-ink-soft/80 focus:border-sky-700 focus:bg-sky-100 focus:ring-[3px] focus:ring-[#00B4EE]/35;
 }
 /*
  * Every clickable control shares one recipe — a pill, hover darkens (never lightens), press
@@ -381,18 +357,20 @@ input, select, textarea, button { font: inherit; }
  * sits. Variants only add colour; `btn-sm` shrinks any of them.
  */
 .btn, .btn-primary, .btn-ghost, .btn-gold, .btn-danger, .btn-quiet, .btn-danger-soft, .btn-amber-soft, .btn-dark {
-  @apply inline-flex cursor-pointer select-none items-center justify-center gap-2 rounded-full px-[18px] py-2.5 font-semibold transition
+  @apply inline-flex cursor-pointer select-none items-center justify-center gap-2 rounded-[3px] px-[18px] py-2.5 font-semibold transition
     active:scale-[0.98]
-    focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-sky-700/45 focus-visible:ring-offset-2 focus-visible:ring-offset-page-quiet
+    focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#00B4EE]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white
     disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100;
 }
-.btn-primary { @apply bg-action text-white hover:bg-action-hover; }
+.btn-primary { @apply text-white; background: linear-gradient(100deg, #2E3CFF 0%, #1D5BFF 50%, #0A86DA 100%); }
+.btn-primary:hover { background: linear-gradient(100deg, #2532E0 0%, #1A4FE6 50%, #0A78C4 100%); }
 .btn-ghost { @apply bg-ink/6 text-ink hover:bg-ink/12; }
 /* Reward moments: orange under ink, never white. */
-.btn-gold { @apply bg-reward text-ink hover:bg-orange-500; }
-.btn-danger { @apply bg-danger text-white hover:bg-[#A32E2C]; }
+.btn-gold { color: #2B1B00; background: linear-gradient(135deg, #FFE48A 0%, #FFC93C 34%, #EFA400 58%, #FFD866 82%, #FFC93C 100%); }
+.btn-gold:hover { filter: brightness(.95); }
+.btn-danger { @apply bg-danger text-white hover:bg-[#A00D25]; }
 /* Low-emphasis actions that used to be underlined words: Resend, Edit details, CSV, Copy, Hide. */
-.btn-quiet { @apply bg-white font-medium text-ink-soft shadow-[0_1px_2px_rgba(23,65,78,.08)] hover:bg-sky-100 hover:text-ink; }
+.btn-quiet { @apply bg-white font-medium text-ink-soft hover:bg-sky-100 hover:text-ink; box-shadow: inset 0 0 0 1px #C3CEE3; }
 /* Destructive but secondary: Revoke, Delete draft, Remove, Void. */
 .btn-danger-soft { @apply bg-danger-bg font-medium text-danger-text hover:bg-danger/20; }
 .btn-amber-soft { @apply bg-warn-bg font-medium text-warn-text hover:bg-warn/25; }
@@ -730,7 +708,7 @@ details[open] > .pop-up { animation-name: pop-in-up; }
 .nav-drawer[open] { translate: 0 0; }
 @starting-style { .nav-drawer[open] { translate: -100% 0; } }
 .nav-drawer::backdrop {
-  background: rgb(23 65 78 / .45);
+  background: rgb(10 19 64 / .5);
   opacity: 1;
   transition:
     opacity var(--dur-base),
@@ -752,8 +730,7 @@ details[open] > .pop-up { animation-name: pop-in-up; }
 :lang(th) { line-break: loose; overflow-wrap: anywhere; }
 /* A figure is a figure in either language — never break one mid-number. */
 :lang(th) .fig { overflow-wrap: normal; }
-/* Thai display headings fall through to Mitr; Baloo 2 has no Thai glyphs. */
-:lang(th) h1, :lang(th) h2, :lang(th) h3, :lang(th) .fig { font-family: 'Mitr', var(--font-sans); }
+
 
 /* A link inside a sentence stays a link, but gets a hover and a focus ring like everything else. */
 .link {
@@ -767,7 +744,7 @@ details[open] > .pop-up { animation-name: pop-in-up; }
  * anything should not answer the pointer.
  */
 .card {
-  @apply rounded-[28px] bg-white p-5 shadow-card;
+  @apply rounded-[6px] border border-[#D2DCEE] bg-white p-5 shadow-card;
   transition: box-shadow var(--dur-fast) var(--ease-enter), transform var(--dur-fast) var(--ease-enter);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -802,12 +779,12 @@ a.card:active, button.card:active, .card-interactive:active {
  * cut, which is the whole reason it can be this translucent and still carry ink type.
  */
 .glass {
-  @apply rounded-[20px] border border-white/70 bg-white/60 backdrop-blur-xl;
-  box-shadow: 0 10px 30px -18px rgb(23 65 78 / 0.35);
+  @apply rounded-[6px] border border-white/70 bg-white/70 backdrop-blur-xl;
+  box-shadow: 0 10px 30px -18px rgb(10 20 51 / 0.35);
 }
 
 /* The four Notice tones on light grounds. Class-driven so `.on-chrome` below can restate them. */
-.notice { @apply rounded-[20px] px-4 py-3 text-sm; }
+.notice { @apply rounded-[4px] px-4 py-3 text-sm; }
 .notice-info { @apply bg-sky-200 text-ink; }
 .notice-amber { @apply bg-warn-bg text-warn-text; }
 .notice-red { @apply bg-danger-bg text-danger-text; }
@@ -833,11 +810,11 @@ a.card:active, button.card:active, .card-interactive:active {
  * The organizer's own surfaces. Their ground is the sky wave field, so a panel is frosted glass
  * rather than an opaque white card — the waves keep running underneath it.
  */
-.on-stage .card { @apply border border-white/70 bg-white/60 shadow-[0_10px_30px_-18px_rgb(23_65_78/0.35)] backdrop-blur-xl; }
+.on-stage .card { @apply border border-[#D2DCEE] bg-white/85 shadow-[0_10px_30px_-18px_rgb(10_20_51/0.35)] backdrop-blur-xl; }
 .on-stage .field { @apply border-ink/15 bg-white/75; }
 .on-chrome .field { @apply border-white/25 bg-white/10 text-white placeholder:text-on-chrome-soft/70 focus:border-foil focus:ring-foil/25; }
 .on-chrome .btn-ghost, .on-chrome .btn-quiet { @apply bg-white/14 font-medium text-white shadow-none hover:bg-white/22 hover:text-white focus-visible:ring-foil/60 focus-visible:ring-offset-chrome; }
-.on-chrome .btn-primary { @apply bg-reward text-ink hover:bg-orange-500 focus-visible:ring-foil/60 focus-visible:ring-offset-chrome; }
+.on-chrome .btn-primary { @apply focus-visible:ring-foil/60 focus-visible:ring-offset-chrome; }
 .on-chrome .btn-danger-soft { @apply bg-[rgba(217,74,72,.26)] text-[#FFC9BF] hover:bg-[rgba(217,74,72,.36)]; }
 .on-chrome .btn-amber-soft { @apply bg-[rgba(250,189,109,.24)] text-orange-300 hover:bg-[rgba(250,189,109,.34)]; }
 .on-chrome .tab { @apply bg-white/[0.07] text-on-chrome-soft hover:bg-white/14 hover:text-white focus-visible:ring-foil/60; }
@@ -888,4 +865,211 @@ a.card:active, button.card:active, .card-interactive:active {
   body { background: #fff !important; color: #000; }
   .card { box-shadow: none; break-inside: avoid; }
   .print-page { break-after: page; }
+}
+
+/* =====================================================================================
+ * Agency 2036 — the visitor kit (design system "Agency 2036", Claude Design).
+ *
+ * Rules the system sets, so they hold here too:
+ *  - Corners are CUT (top-left, bottom-right), never rounded. Round is only the Scan button.
+ *  - The cut is painted by pseudo-elements, never `clip-path` on the element itself: a clipped
+ *    element also clips its focus ring and anything that hangs outside it (a select's list, a
+ *    tooltip). Content stays unclipped; only the paint is cut.
+ *  - Foil means earned. Gold means "now". Brackets mean "tap". Glitch only ever moves.
+ * ===================================================================================== */
+:root {
+  --a-neon: linear-gradient(100deg, #2E3CFF 0%, #1D5BFF 50%, #0A86DA 100%);
+  --a-neon-bar: linear-gradient(90deg, #2E3CFF 0%, #1D5BFF 55%, #00D2FF 100%);
+  --a-neon-edge: linear-gradient(120deg, #2E3CFF 0%, #00C8FF 55%, #7A5CFF 100%);
+  --a-soft-edge: linear-gradient(120deg, #8C98FF 0%, #6FE0FF 55%, #B7A4FF 100%);
+  --a-tint: linear-gradient(90deg, #E8EDFF 0%, #E2F8FF 100%);
+  --a-gold: linear-gradient(135deg, #FFE48A 0%, #FFC93C 34%, #EFA400 58%, #FFD866 82%, #FFC93C 100%);
+  --a-foil:
+    repeating-linear-gradient(135deg, rgb(255 255 255 / .3) 0 2px, rgb(255 255 255 / 0) 2px 7px),
+    linear-gradient(118deg, #CFF3FF 0%, #C9D6FF 20%, #E7CCFF 38%, #C6FBEA 56%, #CCDDFF 74%, #F3D3FF 100%);
+  --a-id: linear-gradient(140deg, #0A1340 0%, #13308A 52%, #0A1A57 100%);
+  --a-line: #D2DCEE;
+  --a-dash: #8C97AD;
+  --a-gold-ink: #2B1B00;
+  --a-blue: #1450E6;
+  --a-blue-deep: #0A2F8F;
+  --a-muted: #4A5875;
+  --a-muted-locked: #5E6A82;
+}
+
+/* The visitor ground: white, with a faint blue grid that fades out down the page. */
+.a-ground { position: relative; background: #fff; }
+.a-grid {
+  pointer-events: none; position: absolute; inset: 0 0 auto 0; height: 420px;
+  background-image: linear-gradient(#E2ECFF 1px, transparent 1px), linear-gradient(90deg, #E2F6FF 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent);
+}
+
+/* ---- Type ---- */
+.a-hd { font-family: var(--font-display); }
+.a-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.a-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--a-blue); }
+:lang(th) .a-label { letter-spacing: .02em; }
+.a-neon-text { background: var(--a-neon); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ---- The cut ---- */
+.a-cut { --cut: 12px; --edge: transparent; --fill: #fff; --edge-w: 1.5px; position: relative; isolation: isolate; }
+.a-cut-s { --cut: 7px; }
+.a-cut-xl { --cut: 24px; }
+.a-cut::before, .a-cut::after {
+  content: ''; position: absolute; pointer-events: none;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+.a-cut::before { inset: 0; z-index: -2; background: var(--edge); }
+.a-cut::after {
+  inset: var(--edge-w); z-index: -1; background: var(--fill);
+  clip-path: polygon(calc(var(--cut) - .6px) 0, 100% 0, 100% calc(100% - var(--cut) + .6px), calc(100% - var(--cut) + .6px) 100%, 0 100%, 0 calc(var(--cut) - .6px));
+}
+/* Edges and fills */
+.a-edge-neon { --edge: var(--a-neon-edge); }
+.a-edge-soft { --edge: var(--a-soft-edge); }
+.a-edge-line { --edge: var(--a-line); }
+.a-edge-strong { --edge: #C3CEE3; }
+.a-edge-red { --edge: #C8102E; }
+.a-fill-tint { --fill: var(--a-tint); }
+.a-fill-foil { --fill: var(--a-foil); }
+.a-fill-id { --fill: var(--a-id); color: #fff; }
+.a-fill-neon { --fill: var(--a-neon); color: #fff; }
+.a-fill-gold { --fill: var(--a-gold); color: var(--a-gold-ink); }
+.a-fill-muted { --fill: #F3F5F9; color: var(--a-muted-locked); }
+.a-fill-err { --fill: #FFF0F2; color: #8A0018; }
+.a-fill-ok { --fill: #E8EEFF; }
+.a-solid { --edge-w: 0px; }
+/* The locked look: a dashed outline. The straight runs are a real dashed border; the two cut
+ * corners get a dashed diagonal of their own, so the outline reads as one continuous line. */
+.a-dashed { --cut: 12px; position: relative; border: 1.5px dashed var(--a-dash); background: #F3F5F9; color: var(--a-muted-locked);
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+.a-dashed::before, .a-dashed::after {
+  content: ''; position: absolute; width: calc(var(--cut) * 1.4142); border-top: 1.5px dashed var(--a-dash); pointer-events: none;
+}
+.a-dashed::before { left: -1.5px; top: calc(var(--cut) - 1.5px); transform-origin: 0 0; transform: rotate(-45deg); }
+.a-dashed::after { right: -1.5px; bottom: calc(var(--cut) - 1.5px); transform-origin: 100% 0; transform: rotate(-45deg); }
+.a-dashed.a-cut-s { --cut: 7px; }
+
+/* Neon glow — on hero elements only. Never on a list of a hundred cards: drop-shadow filters
+ * are repainted on scroll and a budget Android phone feels every one of them. */
+.a-glow { filter: drop-shadow(0 6px 14px rgb(29 91 255 / .34)) drop-shadow(0 0 6px rgb(0 200 255 / .4)); }
+.a-glow-soft { filter: drop-shadow(0 3px 8px rgb(29 91 255 / .22)); }
+
+/* ---- Brackets: only on things you can tap ---- */
+.a-brk { position: relative; }
+.a-brk::after {
+  --b: #1D5BFF;
+  content: ''; position: absolute; inset: -6px; pointer-events: none;
+  background:
+    linear-gradient(var(--b), var(--b)) left top / 11px 2px no-repeat,
+    linear-gradient(var(--b), var(--b)) left top / 2px 11px no-repeat,
+    linear-gradient(var(--b), var(--b)) right top / 11px 2px no-repeat,
+    linear-gradient(var(--b), var(--b)) right top / 2px 11px no-repeat,
+    linear-gradient(var(--b), var(--b)) left bottom / 11px 2px no-repeat,
+    linear-gradient(var(--b), var(--b)) left bottom / 2px 11px no-repeat,
+    linear-gradient(var(--b), var(--b)) right bottom / 11px 2px no-repeat,
+    linear-gradient(var(--b), var(--b)) right bottom / 2px 11px no-repeat;
+  filter: drop-shadow(0 0 3px rgb(0 200 255 / .75));
+}
+.a-brk-wide::after { inset: -8px; }
+
+/* ---- Buttons ---- */
+.a-btn {
+  display: flex; width: 100%; align-items: center; justify-content: center; gap: 10px; border: 0; cursor: pointer;
+  font-family: var(--font-display); text-decoration: none; user-select: none;
+  transition: filter var(--dur-fast) var(--ease-enter), transform var(--dur-instant) var(--ease-enter);
+}
+.a-btn:active { transform: scale(.985); }
+.a-btn:focus-visible { outline: 3px solid #00B4EE; outline-offset: 4px; }
+.a-btn[disabled], .a-btn[aria-disabled='true'] { cursor: not-allowed; opacity: .45; transform: none; }
+.a-btn-primary { --edge-w: 0px; --fill: var(--a-neon); height: 56px; font-size: 18px; font-weight: 700; color: #fff; }
+.a-btn-primary:hover:not([disabled]) { filter: brightness(.94); }
+.a-btn-ghost { --edge: var(--a-neon-edge); height: 49px; font-size: 16px; font-weight: 600; color: var(--a-blue); }
+.a-btn-ghost:hover:not([disabled]) { --fill: #EEF4FF; color: var(--a-blue-deep); }
+.a-btn-plain { --edge: #C3CEE3; height: 49px; font-family: var(--font-sans); font-size: 16px; font-weight: 600; color: var(--color-ink); }
+.a-btn-plain:hover:not([disabled]) { --fill: #F2F5FB; }
+.a-btn-gold { --edge-w: 0px; --fill: var(--a-gold); height: 52px; font-size: 17px; font-weight: 700; color: var(--a-gold-ink); }
+.a-btn-sm { height: 40px; font-size: 14px; }
+.a-link { font-family: var(--font-display); font-weight: 600; color: var(--a-blue); text-decoration: none; }
+.a-link:hover { color: var(--a-blue-deep); text-decoration: underline; }
+.a-link:focus-visible { outline: 3px solid #00B4EE; outline-offset: 2px; }
+
+/* ---- Tags ---- */
+.a-tag { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .06em; white-space: nowrap; }
+.a-tag-gold { --cut: 6px; --edge-w: 0px; --fill: var(--a-gold); color: var(--a-gold-ink); }
+.a-tag-ink { background: var(--color-ink); color: #fff; }
+.a-tag-locked { border: 1px dashed var(--a-dash); color: var(--a-muted-locked); }
+.a-tag-blue { --cut: 6px; --edge-w: 0px; --fill: var(--a-neon); color: #fff; }
+.a-pop { animation: a-pop 420ms var(--ease-settle) backwards; }
+@keyframes a-pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); } }
+
+/* ---- Progress ---- */
+.a-bar { position: relative; height: 10px; background: #E3EAF7; }
+.a-bar > .fill { position: absolute; inset: 0 auto 0 0; background: var(--a-neon-bar); box-shadow: 0 0 10px rgb(0 190 255 / .55); transition: width var(--dur-slow) var(--ease-out); }
+.a-marker { position: absolute; top: -2px; width: 14px; height: 14px; margin-left: -7px; transform: rotate(45deg); border: 1.5px solid var(--a-gold-ink); background: var(--a-gold); }
+.a-marker.off { background: #fff; border-color: var(--a-dash); }
+.a-segs { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; }
+.a-segs > span { height: 12px; background: #DCE5F5; }
+/* Lit segments: two classes, so this beats the unlit rule above. (In the design system's own
+ * preview the unlit rule won on specificity and the uplink never lit up.) */
+.a-segs > span.on { background: linear-gradient(90deg, #2E3CFF, #00C6FF); background-size: 2000% 100%; box-shadow: 0 0 6px rgb(0 180 255 / .55); }
+
+/* ---- Feedback ---- */
+.a-pulse { animation: a-pulse 1.8s ease-in-out infinite; }
+@keyframes a-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(0 180 238 / .55); } 50% { box-shadow: 0 0 0 6px rgb(0 180 238 / 0); } }
+.a-dot { width: 8px; height: 8px; flex: none; border-radius: 9999px; background: #00B4EE; }
+
+/* ---- Fields (visitor) ---- */
+.a-lbl { display: block; margin-bottom: 6px; font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--color-ink); }
+.a-field {
+  display: block; width: 100%; height: 48px; border: 0; padding: 0 14px; background: #F2F5FB; color: var(--color-ink);
+  font: inherit; font-size: 16px; box-shadow: inset 0 -2px 0 #7F90B6; border-radius: 0;
+  clip-path: polygon(7px 0, 100% 0, 100% 100%, 0 100%, 0 7px);
+}
+.a-field::placeholder { color: #6B7690; }
+.a-field:focus { outline: none; background: #E8EDFF; box-shadow: inset 0 -3px 0 #1D5BFF; }
+.a-field[aria-invalid='true'] { background: #FFF1F3; box-shadow: inset 0 -3px 0 #C8102E; }
+textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
+.a-hint { margin-top: 6px; font-size: 12px; color: var(--a-muted); }
+
+/* ---- Glitch: animation only, once, then still ---- */
+.a-glitch { position: relative; }
+.a-glitch > .gl-a, .a-glitch > .gl-b { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; mix-blend-mode: multiply; pointer-events: none; }
+.a-glitch > .gl-a { filter: hue-rotate(-28deg) saturate(2.4) brightness(1.25); animation: gl-a .9s steps(1, end) .25s 1 both; }
+.a-glitch > .gl-b { filter: hue-rotate(140deg) saturate(2); animation: gl-b .9s steps(1, end) .25s 1 both; }
+.a-glitch > .gl-base { animation: gl-base .9s steps(1, end) .25s 1 both; }
+@keyframes gl-base { 0% { transform: none; clip-path: inset(0); } 12% { transform: translateX(-5px); clip-path: inset(18% 0 52% 0); } 24% { transform: translateX(4px); clip-path: inset(58% 0 12% 0); } 36% { transform: translateX(-2px); clip-path: inset(34% 0 38% 0); } 48% { transform: translateX(3px); clip-path: inset(0 0 70% 0); } 60%, 100% { transform: none; clip-path: inset(0); } }
+@keyframes gl-a { 0% { opacity: 0; } 12% { opacity: .85; transform: translateX(6px); clip-path: inset(20% 0 50% 0); } 24% { opacity: .85; transform: translateX(-6px); clip-path: inset(62% 0 8% 0); } 36% { opacity: .7; transform: translateX(4px); clip-path: inset(10% 0 74% 0); } 48%, 100% { opacity: 0; } }
+@keyframes gl-b { 0% { opacity: 0; } 18% { opacity: .8; transform: translateX(-7px); clip-path: inset(44% 0 30% 0); } 30% { opacity: .8; transform: translateX(5px); clip-path: inset(4% 0 80% 0); } 42% { opacity: .6; transform: translateX(-3px); clip-path: inset(70% 0 4% 0); } 54%, 100% { opacity: 0; } }
+
+/* A cyan line sweeping down a box, on a loop: the loader and the camera. */
+.a-scanline { position: absolute; left: 0; right: 0; height: 2px; top: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgb(0 210 255 / 0), #00D2FF 30%, #fff 50%, #00D2FF 70%, rgb(0 210 255 / 0));
+  box-shadow: 0 0 12px 2px rgb(0 210 255 / .75); animation: a-sweep 2.2s ease-in-out infinite; }
+@keyframes a-sweep { 0% { top: 4%; } 50% { top: 94%; } 100% { top: 4%; } }
+
+/* Decrypt: scrambled text flickers and resolves; the foil sheen crosses once. */
+.a-sheen { position: relative; overflow: hidden; }
+.a-sheen::marker { content: none; }
+.a-sheen > .sheen { position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background: linear-gradient(105deg, rgb(255 255 255 / 0) 30%, rgb(255 255 255 / .75) 46%, rgb(255 255 255 / 0) 60%);
+  transform: translateX(-110%); animation: a-sheen 1.1s var(--ease-out) .9s 1 both; }
+@keyframes a-sheen { to { transform: translateX(110%); } }
+@keyframes a-flicker { 0%, 100% { opacity: 1; } 10% { opacity: .3; } 20% { opacity: .9; } 35% { opacity: .2; } 50% { opacity: 1; } 62% { opacity: .5; } 75% { opacity: 1; } }
+.a-flicker { animation: a-flicker .9s steps(1, end) 1; }
+
+/* Tabs inside a page (All / Recovered / Encrypted). */
+.a-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 4px; background: #F2F5FB; }
+.a-tabs > button { min-height: 40px; border: 0; background: transparent; font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--a-muted); cursor: pointer;
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); }
+.a-tabs > button[aria-selected='true'] { background: var(--a-neon); color: #fff; }
+.a-tabs > button:focus-visible { outline: 3px solid #00B4EE; outline-offset: -3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .a-glitch > .gl-a, .a-glitch > .gl-b, .a-glitch > .gl-base, .a-pulse, .a-scanline, .a-flicker, .a-pop { animation: none !important; }
+  .a-glitch > .gl-a, .a-glitch > .gl-b { opacity: 0; }
+  .a-sheen > .sheen { display: none; }
+  .a-scanline { top: 45%; }
 }
