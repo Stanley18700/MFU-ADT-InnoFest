@@ -1,0 +1,234 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function role() { return request.auth.token.get('role', ''); }
+    function isAdmin() { return signedIn() && role() == 'admin'; }
+    function isOrganizer() { return signedIn() && role() == 'organizer'; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // Spec §7.4 — every consequential write goes through Cloud Functions.
+
+    // Public: the landing page reads the live event's name and dates before anonymous
+    // sign-in has resolved. Holds nothing sensitive — name, dates, days, QR period, prefix.
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if false;
+    }
+
+    // §10 — self-service erasure requests, written only by the requestErasure callable. The
+    // visitor reads their own to see it was filed; admins read them all for the inbox.
+    match /erasureRequests/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if false;
+    }
+
+    match /booths/{boothId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /boothSecrets/{boothId} {
+      allow read, write: if false;
+    }
+
+    match /invites/{inviteId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // A booth's survey. Any signed-in visitor may read it — they need the questions to answer
+    // them — and only saveSurvey writes.
+    match /surveys/{boothId} {
+      allow read: if signedIn();
+      allow write: if false;
+
+      /*
+       * The question sets this survey used to have, retired by an edit. Answers are stored by
+       * question id, so these are what make an old response readable as the question it was
+       * actually asked. Scoped like the answers themselves — the booth's own organizer and an
+       * admin — rather than to every signed-in visitor, who only ever needs the current form.
+       */
+      match /versions/{version} {
+        allow read: if isAdmin()
+                    || (isOrganizer() && boothId == request.auth.token.get('boothId', ''));
+        allow write: if false;
+      }
+    }
+
+    /**
+     * Answers. Readable by an admin and by the organizer of that booth, which is exactly why no
+     * document here carries a visitor id (§10 — sensitive answers are never shown per person).
+     * A list query must filter on boothId, or the rule cannot prove the caller owns the rows.
+     */
+    match /surveyResponses/{id} {
+      allow read: if isAdmin()
+                  || (isOrganizer() && resource.data.boothId == request.auth.token.get('boothId', ''));
+      allow write: if false;
+    }
+
+    // The "already answered" marker, kept apart from the answers so that reading one tells you
+    // nothing about the other. Only the visitor it belongs to, and admins.
+    match /surveyTaken/{id} {
+      allow read: if isAdmin() || (signedIn() && id.split('_')[0] == request.auth.uid);
+      allow write: if false;
+    }
+
+    /*
+     * Booth ratings (§4.3). The same two-collection shape the surveys use, for the same reason:
+     * `boothRatings` holds the score and the comment with no visitor id anywhere — not in a
+     * field, not in the document id — and `boothRated` holds the "already rated" marker with no
+     * score. Reading either one tells you nothing about the other, and that is what lets an
+     * admin read every comment without reading every visitor.
+     *
+     * Admin-only, unlike survey answers: a booth's own score next to its neighbours' is a
+     * comparison the console is for, not something to put on 76 organizer tablets.
+     */
+    match /boothRatings/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /boothRated/{id} {
+      allow read: if isAdmin() || (signedIn() && id.split('_')[0] == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /refData/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /scans/{scanId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.visitorId == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /prizeTiers/{tierId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /stockAdjustments/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    /*
+     * A visitor's own unlock rows, and the admin's. `isOrganizer()` used to be here too, which
+     * let any booth organizer list every visitor's unlocks — visitor id included — when nothing
+     * in the app asks them to: the prize desk reads what it needs through the
+     * `lookupRedemption` callable, which runs as the server and never consults these rules.
+     */
+    match /tierUnlocks/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.visitorId == request.auth.uid);
+      allow write: if false;
+    }
+
+    /*
+     * A request to run a booth, from someone nobody has an email address for. Readable by the
+     * person who filed it — the screen watches its own row so an approval lands without a reload —
+     * and by an admin, who is the only one who can act on it. Written by the callables only, like
+     * everything else: the request must never be the thing that grants the role.
+     */
+    /*
+     * Matched on the document id, not on `resource.data.uid`, and the difference is load-bearing:
+     * the request screen subscribes before the document exists, and on a missing document
+     * `resource` is null, so dereferencing it throws and the listener dies for good — the row then
+     * appears and the screen never notices. The id is the uid, so this says the same thing and
+     * survives the document not being there yet.
+     */
+    match /staffRequests/{id} {
+      allow read: if isAdmin() || (signedIn() && id == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Requests from future event organizers (/apply/exhibitor, /apply/admin). Anyone may file
+    // one, signed in or not — it grants nothing — but only in this exact shape. Admins read them.
+    match /applications/{id} {
+      function str(v, lo, hi) { return v is string && v.size() >= lo && v.size() <= hi; }
+      allow read: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['kind', 'name', 'email', 'org', 'event', 'booth', 'message', 'createdAt'])
+        && request.resource.data.kind in ['exhibitor', 'admin']
+        && str(request.resource.data.name, 1, 120)
+        && str(request.resource.data.email, 5, 200) && request.resource.data.email.matches('.+@.+[.].+')
+        && str(request.resource.data.org, 1, 200)
+        && str(request.resource.data.event, 1, 200)
+        && (!('booth' in request.resource.data) || str(request.resource.data.booth, 1, 120))
+        && str(request.resource.data.message, 0, 1000)
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /auditLog/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Stage draw results (§6.7) and the frozen summary written before an event is purged.
+    match /draws/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /archives/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /rateLimits/{id} {
+      allow read, write: if false;
+    }
+
+    // Live counters. Organizers may read booth counters and the event shards
+    // (booth screen shows own count + event total); admins read everything.
+    match /stats/event {
+      allow read: if isAdmin() || isOrganizer();
+      allow write: if false;
+      match /shards/{shard} {
+        allow read: if isAdmin() || isOrganizer();
+        allow write: if false;
+      }
+    }
+    match /stats/booths/items/{boothId} {
+      allow read: if isAdmin() || isOrganizer();
+      allow write: if false;
+    }
+    match /stats/buckets/items/{bucketId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Per-booth rating counters — count, total, distribution. Admin only, like the ratings.
+    match /stats/ratings/items/{boothId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    /*
+     * §4.1/§10 — who the visitors are: country, institution, school, ethnic group, and the
+     * cross-school matrix. Admin only, and kept out of the event shards above for that
+     * reason: an organizer's booth screen subscribes to those shards for the event total, so
+     * anything living there is on every organizer's device whether their screen draws it or
+     * not. The dashboard's under-5 suppression is a render filter, not access control.
+     */
+    match /stats/demographics {
+      allow read: if isAdmin();
+      allow write: if false;
+      match /shards/{shard} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

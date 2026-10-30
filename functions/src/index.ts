@@ -1,0 +1,23 @@
+import { setGlobalOptions } from 'firebase-functions/v2'
+import { REGION } from './lib'
+
+// §9 — everything pinned to Singapore; caps so a runaway loop cannot run up the bill.
+setGlobalOptions({ region: REGION, maxInstances: 20, concurrency: 40, cpu: 1, memory: '512MiB', timeoutSeconds: 30 })
+
+export { join, scan, redemptionCode, syncAccount, requestErasure } from './visitor'
+export { previewPointAdjustments, applyPointAdjustments, resetPointAdjustments } from './points'
+export { boothSession, lookupRedemption, confirmRedemption, voidRedemption } from './organizer'
+export {
+  setUserRole, createUser, updateUser, deleteUser, dismissErasureRequest,
+  createBooth, updateBooth, deleteBooth, rotateBoothSecret,
+  savePrizePolicy, adjustStock, setSessionAllowance, runDraw, saveRefData,
+  inviteOrganizer, resendInvite, revokeInvite, inviteInfo, acceptInvite,
+  refreshRanks, bootstrapAdmin, setupStatus,
+} from './admin'
+export { createEvent, updateEvent, deleteEvent, goLive, archiveEvent, purgeEventData, listEvents } from './event'
+export {
+  saveSurvey, setSurveyActive, deleteSurvey, surveyForBooth, submitSurveyResponse,
+} from './survey'
+export { rateBooth } from './rating'
+export { requestBoothAccess, decideStaffRequest } from './staffRequest'
+export { onScanCreate, onUserWrite, rankBooths, sweepActive, purgePersonalData } from './triggers'

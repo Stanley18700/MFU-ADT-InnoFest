@@ -1,0 +1,326 @@
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Scanner } from '../../components/Scanner'
+import { api, friendlyError, type LookupResult, type RedemptionCred } from '../../lib/api'
+import { useBooth, useBooths, useEvent, useTiersState } from '../../lib/data'
+import { OrganizerPage } from '../../components/OrganizerPage'
+import { DataErrors, fmt, LiveDot, type Msg, Notice, Spinner } from '../../components/ui'
+import { prizeStock, usePrizeSession } from '../../lib/prizeSession'
+import { minuteToHHMM } from '../../../shared/model'
+import { useAuth } from '../../lib/auth'
+import { clock } from '../../lib/eventText'
+
+type Okay = Extract<LookupResult, { status: 'ok' }>
+type Done = { tier: string; reward: string; name: string; passportNo?: string; at: number }
+
+const PAYLOAD_RE = /(?:^|\/r\/)[A-Za-z0-9]+\.\d+\.[A-Z2-7]{8}/i
+const ARM_MS = 6000
+
+/** §4.4 — prize desk: scan the visitor's rotating code (or type passport number + code), confirm twice, hand over. */
+export default function Redeem() {
+  const { role, boothId: claimBooth } = useAuth()
+  const event = useEvent()
+  const tiersState = useTiersState()
+  // Same hook and the same three states as the visitor's Prize page, so the desk and the
+  // passport can never disagree about whether the window is open.
+  const { active: activeSession, next: nextSession } = usePrizeSession()
+  const tiers = tiersState.data.filter((t) => t.active)
+  const desks = useBooths().filter((b) => b.isPrizeDesk)
+  // An organizer's own booth decides whether this screen is theirs at all; the server checks too.
+  const mine = useBooth(role === 'organizer' ? claimBooth : null)
+
+  const [cred, setCred] = useState<RedemptionCred | null>(null)
+  const [lookup, setLookup] = useState<Okay | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<Msg | null>(null)
+  const [passport, setPassport] = useState('')
+  const [code, setCode] = useState('')
+  const [armed, setArmed] = useState<string | null>(null)
+  const [done, setDone] = useState<Done | null>(null)
+  const [recent, setRecent] = useState<Done[]>([])
+  // After "code expired" mid-confirmation the card stays and only a fresh code is asked for.
+  const [stale, setStale] = useState(false)
+  const [freshCode, setFreshCode] = useState('')
+  const [offline, setOffline] = useState(!navigator.onLine)
+
+  useEffect(() => {
+    const on = () => setOffline(false), off = () => setOffline(true)
+    window.addEventListener('online', on); window.addEventListener('offline', off)
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
+  }, [])
+
+  // A "Hand over" press arms the button; it disarms itself if the second press does not follow.
+  useEffect(() => {
+    if (!armed) return
+    const id = setTimeout(() => setArmed(null), ARM_MS)
+    return () => clearTimeout(id)
+  }, [armed])
+
+  // §4.4 — arriving from /r/<payload> (native camera scan): look it up straight away.
+  const [params, setParams] = useSearchParams()
+  const deepLink = params.get('code')
+  const fired = useRef(false)
+
+  async function onCred(c: RedemptionCred) {
+    if (busy || lookup || done) return
+    setBusy(true); setMsg(null)
+    try {
+      const r = await api.lookupRedemption(c)
+      if (r.status === 'invalid') setMsg({ tone: 'amber', text: 'Code expired or not recognised — ask the visitor to show a fresh code, and check the passport number.' })
+      else { setLookup(r); setCred(c); setStale(false); setFreshCode('') }
+    } catch (e) { setMsg({ tone: 'red', text: friendlyError(e) }) } finally { setBusy(false) }
+  }
+
+  function submitManual(e: FormEvent) {
+    e.preventDefault()
+    const c = code.trim()
+    // A whole /r/ link pasted into the code field still works.
+    if (PAYLOAD_RE.test(c)) { void onCred({ payload: c }); return }
+    if (!passport.trim() || c.replace(/\s+/g, '').length !== 8) return
+    void onCred({ passportNo: passport.trim(), code: c })
+  }
+
+  /** When the desk next opens, for a refusal the server could not date itself. */
+  function nextOpening(): { at: string } | null {
+    return nextSession ? { at: minuteToHHMM(nextSession.session.startMinute) } : null
+  }
+
+  async function confirm(tierId: string) {
+    if (!cred || !lookup) return
+    if (armed !== tierId) { setArmed(tierId); return }
+    setArmed(null); setBusy(true); setMsg(null)
+    const tier = lookup.tiers.find((t) => t.id === tierId)
+    try {
+      const r = await api.confirmRedemption({ ...cred, tierId })
+      if (r.status === 'redeemed') {
+        const d: Done = { tier: tier?.name ?? tierId, reward: tier?.reward ?? '', name: lookup.visitor.displayName, passportNo: lookup.visitor.passportNo, at: Date.now() }
+        setDone(d); setRecent((l) => [d, ...l].slice(0, 10))
+        navigator.vibrate?.(30)
+        const l = await api.lookupRedemption(cred).catch(() => null)
+        if (l && l.status === 'ok') setLookup(l)
+      } else if (r.status === 'already') {
+        setMsg({ tone: 'amber', text: `Already handed over at ${clock(r.redeemedAt)}${r.redeemedByName ? ` by ${r.redeemedByName}` : ''}.` })
+      } else if (r.status === 'desk_closed') {
+        // A shut window is not an empty one, and staff must not tell a visitor they missed out
+        // when they only have to come back. This used to fall through the branch below and
+        // render "Out of stock. undefined" in red.
+        const opens = r.nextOpensAt ?? nextOpening()
+        setMsg({
+          tone: 'amber',
+          text: opens
+            ? `The desk is closed until ${opens.at}. Their points are safe — ask them to come back then.`
+            : 'The desk is closed for today. Their points are safe.',
+        })
+      } else {
+        // Open, but this session's gifts are gone. The server cannot say when to come back here
+        // — it only works out a next opening when nothing is open — so the desk works it out.
+        const opens = r.nextOpensAt ?? nextOpening()
+        const note = r.note.trim()
+        setMsg({
+          tone: 'red',
+          text: [
+            'Out of stock for this session.',
+            note,
+            opens ? `Their points stay — they can collect from ${opens.at}.` : 'Their points stay.',
+          ].filter(Boolean).join(' '),
+        })
+      }
+    } catch (e) {
+      const text = friendlyError(e)
+      if (/expired/i.test(text)) { setStale(true); setMsg({ tone: 'amber', text: 'That code has expired. Ask the visitor for the new 8-character code and enter it below.' }) }
+      else setMsg({ tone: 'red', text })
+    } finally { setBusy(false) }
+  }
+
+  function useFreshCode(e: FormEvent) {
+    e.preventDefault()
+    const c = freshCode.replace(/\s+/g, '')
+    if (c.length !== 8 || !lookup) return
+    if (PAYLOAD_RE.test(freshCode)) { setCred({ payload: freshCode.trim() }) }
+    else if (lookup.visitor.passportNo) setCred({ passportNo: lookup.visitor.passportNo, code: c })
+    else return
+    setStale(false); setFreshCode(''); setMsg({ tone: 'green', text: 'New code noted — press Hand over again.' })
+  }
+
+  useEffect(() => {
+    if (!deepLink || fired.current) return
+    fired.current = true
+    void onCred({ payload: deepLink })
+    setParams({}, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLink])
+
+  function reset() { setLookup(null); setCred(null); setMsg(null); setDone(null); setArmed(null); setStale(false); setPassport(''); setCode('') }
+
+  const shell = (children: React.ReactNode) => (
+    <OrganizerPage boothId={role === 'admin' ? null : claimBooth} booth={mine.data} compact>
+      <header className="py-2"><div className="stamp-text text-ink-soft">Prize desk</div></header>
+      {children}
+    </OrganizerPage>
+  )
+
+  // Gate: only a prize-desk booth (or an admin) may run this screen. Before, anyone with the role
+  // saw the camera and learned otherwise from the server after scanning a visitor.
+  if (role === 'organizer') {
+    if (mine.loading) return shell(<Spinner label="Checking your booth…" />)
+    if (!mine.data?.isPrizeDesk) {
+      return shell(
+        <div className="flex flex-col gap-4 pt-4">
+          {/* `Notice`, not `DarkNotice`: this screen sits on the stage now, and the dark variant's
+              amber is #FFD9A3 — written for chrome, and all but invisible on light glass. */}
+          <Notice tone="amber">
+            <b>{mine.data?.nameEn ?? 'Your booth'}</b> is not a prize desk, so this screen is not yours to run.
+            {desks.length > 0 && <> The prize desk is <b>{desks.map((d) => d.nameEn).join(', ')}</b>.</>}
+          </Notice>
+          <Link to="/booth" className="btn-gold">Open my booth screen</Link>
+        </div>,
+      )
+    }
+  }
+
+  const stockStale = offline || tiersState.fromCache
+  const prefix = event.passportPrefix
+
+  return shell(
+    <>
+      {/* §4.4 — live stock strip, with a stale flag when the figures come from the cache */}
+      <div className="flex items-center justify-between text-xs text-ink-soft">
+        <span>Stock</span>
+        <LiveDot state={offline ? 'offline' : stockStale ? 'stale' : 'live'} size="sm">
+          {offline ? 'Offline — figures may be old' : tiersState.fromCache ? 'Reconnecting' : 'Live'}
+        </LiveDot>
+      </div>
+      {/* Chips that wrap, not a three-column grid: on a phone three tiers at 110px each clipped
+          the figures, and the desk only ever glances at this while a visitor waits.
+
+          The figure is the SESSION's, not the event pool's — the pool is the audit total and
+          spending it is not what the desk does. Showing "300 / 300" while the server counted
+          down from 50 would have had staff promising gifts that were already gone. */}
+      <div className="mt-1 flex flex-wrap gap-2">
+        {tiers.map((t) => {
+          const stock = prizeStock(t, activeSession)
+          // The `-text` values, not the on-chrome ones: this strip sits on the sky now, where the
+          // pale on-chrome green measured 1.6:1. Those three were written for a dark ground.
+          const tone = stock.state === 'closed' ? 'text-ink-soft'
+            : stock.state === 'gone' ? 'text-danger-text'
+            : stock.low ? 'text-warn-text' : 'text-success-text'
+          return (
+            <div key={t.id} className="glass flex min-w-0 items-baseline gap-2 px-3 py-2">
+              <span className="stamp-text truncate text-ink-soft">{t.name}</span>
+              {stock.state === 'closed' ? (
+                /* Closed is not zero. A shut window says nothing about how many gifts are left,
+                   and staff who read "0" will turn people away for the rest of the day. */
+                <span className={`text-sm ${tone}`}>{nextSession ? `Opens ${minuteToHHMM(nextSession.session.startMinute)}` : 'Desk closed'}</span>
+              ) : (
+                <span className={`fig text-lg ${tone}`}>
+                  {fmt(stock.state === 'gone' ? 0 : stock.remaining)}
+                  <span className="text-xs text-ink-soft"> / {fmt(stock.capacity)}{activeSession ? ` this ${activeSession.session.label.toLowerCase()}` : ''}</span>
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <DataErrors className="mt-3 text-sm" />
+
+      {done ? (
+        <section className="mt-4 rounded-3xl bg-success p-6 text-center text-white page-in" role="status" aria-live="polite">
+          <div className="stamp-text text-white/70">Handed over</div>
+          <div className="fig mt-2 text-4xl">{done.tier}</div>
+          {done.reward && <div className="mt-1 text-white/85">{done.reward}</div>}
+          <div className="mt-4 text-lg font-semibold">{done.name}</div>
+          <div className="text-sm text-white/75">{[done.passportNo, clock(done.at)].filter(Boolean).join(' · ')}</div>
+          <button className="btn-gold btn-lg mt-6 w-full" onClick={reset} autoFocus>Next visitor</button>
+          <button className="btn-quiet btn-sm mt-3" onClick={() => setDone(null)}>Another tier for {done.name.split(' ')[0]}</button>
+        </section>
+      ) : lookup ? (
+        <section className="mt-4 rounded-3xl bg-white p-5 text-ink page-in">
+          <div className="stamp-text text-ink-soft">Visitor</div>
+          <div className="text-2xl font-bold">{lookup.visitor.displayName}</div>
+          <div className="text-sm text-ink-soft">{[lookup.visitor.passportNo, `${lookup.visitor.points} points`, `${lookup.visitor.stampCount} stamps`].filter(Boolean).join(' · ')}</div>
+          <ul className="mt-4 flex flex-col gap-2">
+            {lookup.tiers.map((t) => (
+              <li key={t.id} className={`flex items-center gap-3 rounded-2xl p-3 ${t.unlocked ? 'bg-white' : 'bg-ink/5 opacity-70'}`}>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">{t.name} <span className="text-xs font-normal text-ink-soft">{t.thresholdPoints} pts</span></div>
+                  <div className="text-xs text-ink-soft">{t.reward}</div>
+                  {t.redeemedAt && <div className="text-xs text-success-text">Handed over {clock(t.redeemedAt)}{t.redeemedByName ? ` by ${t.redeemedByName}` : ''}</div>}
+                </div>
+                {t.redeemedAt ? <span className="shrink-0 rounded-full bg-success/15 px-3 py-1 text-xs font-semibold text-success-text">Done</span>
+                  : t.unlocked ? (
+                    <button
+                      // Capped: an armed "Confirm Gold — festival tote" otherwise pushed the tier's
+                      // own description off a phone.
+                      className={`${armed === t.id ? 'btn-gold' : 'btn-primary'} max-w-[48%] shrink-0`}
+                      // The server's own reading of the window, from this lookup — not the
+                      // tablet's clock. Whatever decides the label here is what will accept or
+                      // refuse the confirm a second later, so the two cannot disagree.
+                      // `sessionRemaining` is null for a shut desk, which is not zero.
+                      disabled={busy || stale || t.sessionRemaining === null || t.sessionRemaining <= 0}
+                      onClick={() => confirm(t.id)}
+                      aria-live="polite"
+                    >
+                      <span className="min-w-0 truncate">{
+                        t.sessionRemaining === null
+                          ? (lookup.nextOpensAt ? `Opens ${lookup.nextOpensAt.at}` : 'Desk closed')
+                          : t.sessionRemaining <= 0 ? 'Out of stock'
+                          : armed === t.id ? `Confirm ${t.name}` : 'Hand over'
+                      }</span>
+                    </button>
+                  )
+                  : <span className="shrink-0 text-xs text-ink-soft">{t.thresholdPoints - lookup.visitor.points} pts short</span>}
+              </li>
+            ))}
+          </ul>
+          {armed && <p className="mt-2 text-xs text-ink-soft">Press the gold button again to confirm — a hand-over cannot be undone at the desk.</p>}
+          {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+          {stale && (
+            <form onSubmit={useFreshCode} className="mt-3 flex gap-2">
+              <input className="field flex-1 font-mono uppercase" value={freshCode} onChange={(e) => setFreshCode(e.target.value)} placeholder="New 8-character code" autoFocus aria-label="New 8-character code" />
+              <button className="btn-primary shrink-0" disabled={freshCode.replace(/\s+/g, '').length !== 8}>Use it</button>
+            </form>
+          )}
+          <button className="btn-ghost mt-4 w-full" onClick={reset}>Next visitor</button>
+        </section>
+      ) : null}
+
+      {/* The camera stays mounted behind the card so "Next visitor" never re-asks for permission. */}
+      <div hidden={!!lookup || !!done}>
+        {/* Capped and centred: the desk column is as wide as the display now, and a viewfinder
+            stretched to 1600px is neither easier to aim at nor pleasant to stand in front of. */}
+        <Scanner onResult={(t) => void onCred({ payload: t })} paused={busy || !!lookup || !!done} className="mx-auto mt-4 aspect-[4/3] w-full max-w-2xl"
+          fallback="Type the visitor's passport number and 8-character code below instead." />
+        {busy && <Spinner label="Looking up…" />}
+        <form onSubmit={submitManual} className="glass mt-4 p-4">
+          <div className="stamp-text text-ink-soft">Or type what the visitor reads out</div>
+          <div className="mt-2 grid gap-2 [&>*]:min-w-0 sm:grid-cols-[1fr_1fr_auto]">
+            <label className="block text-xs text-ink-soft">Passport number
+              <input className="field mt-1 bg-white/90 font-mono text-base uppercase" value={passport} onChange={(e) => setPassport(e.target.value.toUpperCase())}
+                placeholder={`${prefix}-0042`} autoCapitalize="characters" autoComplete="off" inputMode="text" />
+            </label>
+            <label className="block text-xs text-ink-soft">8-character code
+              <input className="field mt-1 bg-white/90 font-mono text-base uppercase" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="ABCD EFGH" autoCapitalize="characters" autoComplete="off" />
+            </label>
+            <button className="btn-gold self-end" disabled={busy || !(PAYLOAD_RE.test(code) || (passport.trim() && code.replace(/\s+/g, '').length === 8))}>Look up</button>
+          </div>
+          <p className="mt-2 text-xs text-ink-soft">Both are on the visitor's Prize page. Just the digits work for the passport number ("42" means {prefix}-0042).</p>
+        </form>
+        {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+        {recent.length > 0 && (
+          <section className="mt-5">
+            <h2 className="stamp-text text-ink-soft">Handed over on this device</h2>
+            <ul className="mt-2 flex flex-col gap-1 text-sm">
+              {recent.map((r) => (
+                <li key={r.at} className="flex justify-between gap-3 rounded-lg bg-white/5 px-3 py-2">
+                  <span className="truncate"><b>{r.tier}</b> · {r.name}{r.passportNo ? <span className="text-ink-soft"> · {r.passportNo}</span> : null}</span>
+                  <span className="shrink-0 tabular-nums text-ink-soft">{clock(r.at)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+    </>,
+  )
+}

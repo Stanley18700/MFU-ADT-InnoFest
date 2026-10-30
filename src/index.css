@@ -1,0 +1,891 @@
+@import 'tailwindcss';
+
+/*
+ * A kiosk-shaped screen: wide AND tall. `sm:` alone is not it — a phone held sideways is 844px
+ * wide and 390px tall, and every rule that treats it as a table-top display (a fixed stage, a
+ * measured QR, the print button) is wrong there. Same thresholds as `isPhone` in Booth.tsx.
+ */
+@custom-variant kiosk (@media (min-width: 640px) and (min-height: 500px));
+
+/*
+ * MFU International Festival 2026 — one theme for the guest app, the booth kiosk and the admin
+ * console. Values come from design-system/tokens/*.css (mirrored from the Claude Design project);
+ * this block maps them onto Tailwind utility names. Semantic names, not raw scale steps, are what
+ * pages use: `text-ink`, `bg-chrome`, `bg-action`, `text-foil`.
+ */
+@theme {
+  /* Sky scale — grounds and fills. Only 900/950 carry white text. */
+  --color-sky-100: #EDFBFE;
+  --color-sky-200: #D6F4FB;
+  --color-sky-300: #AEEAF7;
+  --color-sky-400: #93E4F4;
+  --color-sky-500: #7EDFF2;
+  --color-sky-600: #4FCBE6;
+  --color-sky-700: #23A9C9;
+  --color-sky-800: #1A8AA6;
+  --color-sky-900: #12708A;
+  --color-sky-950: #0D5A70;
+  /* Green — mountains, chrome, "connected". */
+  --color-green-300: #8FC08C;
+  --color-green-500: #4C764F;
+  --color-green-700: #2F5D3E;
+  --color-green-900: #1E3F2A;
+  /* Orange and gold — energy, reward, foil. */
+  --color-orange-300: #FFD9A3;
+  --color-orange-400: #FABD6D;
+  --color-orange-500: #F0A445;
+  --color-orange-600: #DC8A2A;
+  --color-gold: #F5C63C;
+
+  /* Ink — deep teal, never black. `ink-soft` is the only muted text: 7.7:1 on white, 5:1 on sky. */
+  --color-ink: #17414E;
+  --color-ink-soft: #1F5A6B;
+  --color-ink-line: #5E93A1;        /* rules, chart tracks, disabled fills — never text (3.4:1) */
+
+  /* Surfaces */
+  --color-page: #7EDFF2;            /* visitor phone ground — full sky */
+  --color-page-quiet: #EDFBFE;      /* console ground */
+  --color-panel: #FFFFFF;
+  --color-panel-warm: #F4E4C4;
+  /*
+   * Chrome is the deep teal the design system already calls ink — the colour sampled from the key
+   * visual's own body copy — not the dark green it started as. Green stays where it belongs: the
+   * paper mountains, the "connected" dot, success. Everything that reads on the old green reads on
+   * this within a tenth of a point (white is 11.0:1 here against 11.7:1 there).
+   */
+  --color-chrome: #17414E;          /* sidebar, kiosk, cover, auth */
+  --color-chrome-soft: #1F5A6B;
+  /*
+   * The organizer's ground — sky-950, two steps lighter and bluer than chrome. The booth screens
+   * carry a booth's own accent as their heading, manual code and figures, and on chrome five of
+   * the nine accents had to be mixed halfway to white before they were legible, which left a pale
+   * wash where the booth's colour should be. On this, six of the nine are used as drawn.
+   */
+  --color-stage: #094859;
+  --color-on-chrome-soft: #CFE3EA;  /* secondary text on chrome — solid, 8.3:1. Never white/60. */
+
+  /* Interactive */
+  --color-action: #12708A;          /* the one sky step that carries white text (5.7:1) */
+  --color-action-hover: #0D5A70;
+  --color-foil: #F5C63C;            /* reward states: tier pips, unlocked visa border, crest */
+  --color-reward: #FABD6D;          /* prize fill — under ink, never under white */
+
+  /* Status — each has a fill (dots, bars), a text value, and a ground. Fills never carry type. */
+  --color-success: #4C764F;
+  --color-success-text: #1F4A25;
+  --color-success-bg: #E4F2E5;
+  --color-warn: #DC8A2A;
+  --color-warn-text: #9A5A0F;
+  --color-warn-bg: #FDEFD9;
+  --color-danger: #C13A38;
+  --color-danger-text: #8F2A1C;
+  --color-danger-bg: #FCE6E5;
+  --color-offline: #D94A48;
+
+  /*
+   * The same three states, as text on the chrome ground. The `-text` values above are tuned for
+   * white and are unreadable on it — success is 2.2:1 there. `.on-chrome` already restates them
+   * for pages inside that system; these give the same values a name, for the surfaces that frame
+   * a light card and so cannot take `.on-chrome` wholesale.
+   */
+  --color-success-on-chrome: #BDE8C4;
+  --color-warn-on-chrome: #FFD9A3;
+  --color-danger-on-chrome: #FFC9BF;
+
+  --font-sans: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-display: 'Baloo 2', 'Mitr', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Small-phone tier. Tailwind ships nothing below sm (640px), but §12.11 asks for 320px. */
+  --breakpoint-xs: 380px;
+
+  /* Shadows are teal-tinted, never grey. */
+  --shadow-card: 0 2px 10px rgba(23, 65, 78, .08);
+  --shadow-raised: 0 8px 24px rgba(23, 65, 78, .12);
+  --shadow-float: 0 18px 44px rgba(23, 65, 78, .18);
+  --shadow-paper: 2px 3px 0 rgba(23, 65, 78, .14);
+
+  --radius-card: 28px;
+  --radius-frame: 36px;
+  --radius-scrap: 2px;
+
+  /*
+   * The design system's duration scale (design-system/tokens/motion.css), as tokens rather than
+   * literals, so `prefers-reduced-motion` is one override at the foot of this file instead of a
+   * rule-by-rule opt-out.
+   */
+  --dur-instant: 120ms;
+  --dur-fast: 180ms;
+  --dur-base: 260ms;
+  --dur-page: 320ms;
+  --dur-drop: 420ms;
+  --dur-slow: 900ms;
+
+  --ease-standard: cubic-bezier(.2, .8, .3, 1);
+  --ease-settle: cubic-bezier(.2, .9, .3, 1.2);
+  --ease-out: cubic-bezier(0, 0, .28, 1);
+  /*
+   * For movement that ANSWERS A CLICK — the pill chasing a tapped tab. It is 30% of the way in the
+   * first 60ms; `--ease-standard` is 5% by then, and on something the eye is already tracking to
+   * its destination that reads as lag rather than as smoothing.
+   */
+  --ease-enter: cubic-bezier(.16, 1, .3, 1);
+}
+
+:root {
+  --rule: rgba(23, 65, 78, 0.14);
+  color-scheme: light;
+}
+
+/*
+ * The other way the bar could change width under its own pill: on a desktop browser, going from a
+ * tall page to a short one takes the scrollbar away and widens the viewport by 15px. Reserving the
+ * gutter costs nothing on a phone, where scrollbars are overlaid anyway. The larger cause was the
+ * page-enter animation; see `page-in` below.
+ */
+html { scrollbar-gutter: stable; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-page-quiet);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/*
+ * Display type is the rounded festival voice. Every heading and every figure takes it; eyebrows
+ * (`.stamp-text`) stay in the body face because uppercase Baloo reads as a toy.
+ */
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; line-height: 1.18; }
+.fig {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.stamp-text {
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+}
+/*
+ * Layered, unlike the rest of the recipe, so a `text-[…]` utility can override it. Unlayered CSS
+ * beats every Tailwind utility (layers are compared before specificity), which is what made the
+ * kiosk's `stamp-text text-[0.5em]` labels render at a fixed 11px on every screen size. Same
+ * treatment for `.field`'s width below, for `field w-auto`.
+ */
+@layer components {
+  .stamp-text { font-size: 0.7rem; }
+  .field { width: 100%; }
+}
+.rule { border-color: var(--rule); }
+
+/* §2.4 motion — paper drops, settles and drifts. One overshoot, never two. */
+@keyframes stamp-land {
+  0% { transform: scale(1.5) rotate(var(--tilt, 6deg)); opacity: 0; }
+  60% { transform: scale(0.97) rotate(var(--tilt, 6deg)); opacity: 1; }
+  100% { transform: scale(1) rotate(var(--tilt, 6deg)); opacity: 1; }
+}
+.stamp-land { animation: stamp-land var(--dur-drop) var(--ease-settle) both; }
+
+/*
+ * No horizontal travel, deliberately. `translateX(20px)` pushed a full-width page 20px past the
+ * right edge for the length of the animation, which extends the document's scrollable width — and
+ * a mobile layout viewport grows to match it. Measured on a tab change, the bottom bar went
+ * 412 -> 429 -> 412 across 350ms, so its tabs moved while the sliding pill was chasing one: the
+ * pill flew 6px past its target and then walked back. Clipping the overflow does not help, because
+ * the viewport has already been resized by the time anything is painted.
+ *
+ * A scale that only ever grows *into* its box cannot overflow anything, and it keeps what the
+ * slide was for: the page arrives rather than appearing.
+ */
+@keyframes page-in {
+  from { transform: scale(0.975); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+/*
+ * `backwards`, never `both` — and the same goes for every animation below whose last keyframe is
+ * the element's resting state.
+ *
+ * `backwards` applies the from-state during a delay, which the landing page needs for its
+ * staggered blocks. `forwards`/`both` additionally HOLDS the last keyframe, and a held
+ * `transform: none` computes to `matrix(1, 0, 0, 1, 0, 0)` — still a transform, and a transformed
+ * ancestor is the containing block for every `position: fixed` descendant. That is what clipped
+ * the passport's booth sheet to a 448px column, and the admin user drawer and every admin toast to
+ * the content pane, since `.page-in` wraps those pages too.
+ *
+ * `.stamp-land` and `.seal-draw` keep `both` on purpose: their last keyframe is a rotation and a
+ * dash offset that must persist.
+ */
+.page-in { animation: page-in var(--dur-page) var(--ease-out) backwards; }
+
+@keyframes pulse-once { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.pulse-once { animation: pulse-once 500ms ease-in-out 1; }
+
+@keyframes seal-draw { from { stroke-dashoffset: 600; } to { stroke-dashoffset: 0; } }
+.seal-draw { stroke-dasharray: 600; animation: seal-draw var(--dur-slow) ease-out both; }
+
+/**
+ * §5.2 — the booth code changes every period. Animate the swap so the screen reads as live
+ * rather than a printed sticker. Deliberately short: a camera must not sit on a half-faded
+ * frame for long, though the server's one-period grace window covers a missed read anyway.
+ */
+@keyframes qr-swap {
+  /* Starts at 0.55/0.98, not 0 — a phone pointed at the screen mid-swap must still decode. */
+  from { opacity: 0.55; transform: scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.qr-swap { animation: qr-swap var(--dur-base) cubic-bezier(0.2, 0.9, 0.3, 1) backwards; }
+
+@keyframes code-swap {
+  from { opacity: 0; transform: translateY(-0.14em); }
+  to   { opacity: 1; transform: none; }
+}
+.code-swap { animation: code-swap var(--dur-base) ease-out backwards; }
+
+/* The countdown border eases between the 100 ms ticks that drive it. */
+.qr-countdown { transition: stroke-dashoffset 110ms linear, stroke var(--dur-base) var(--ease-standard); }
+
+/*
+ * Text protection over the illustrated sky: a soft-edged sheet of the sky itself at 72% over an 8px
+ * blur, so clouds and the rocket soften into haze behind type without a card breaking the poster.
+ * Blur only ever over the sky ground (design system rule) — never over chrome.
+ */
+.haze { position: relative; isolation: isolate; }
+.haze::before {
+  content: '';
+  position: absolute;
+  inset: -12px -28px;
+  z-index: -1;
+  background: rgb(126 223 242 / 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  /* The sheet dissolves toward its edge: what sits half under it turns to haze rather than being cut. */
+  mask-image: radial-gradient(ellipse at center, #000 52%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 52%, transparent 100%);
+}
+
+/* Ambient weather: clouds cross a few px over half a minute, the sun breathes. transform only. */
+@keyframes cloud-drift { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
+.cloud-a { animation: cloud-drift 26s ease-in-out infinite alternate; }
+.cloud-b { animation: cloud-drift 34s ease-in-out infinite alternate-reverse; }
+@keyframes sun-drift { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(6px) scale(1.04); } }
+.sun-drift { animation: sun-drift 12s ease-in-out infinite; }
+@keyframes drift { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
+.drift { animation: drift 9s cubic-bezier(.45, 0, .55, 1) infinite; }
+
+/*
+ * Waiting, in the festival's own language. A rotating ring is the one gesture nothing else in this
+ * app makes — paper drops, settles and drifts, it does not spin — so the wordmark breathes instead,
+ * on the same slow ease as the clouds and the sun above it. Reduced motion keeps the mark still and
+ * lets the label do the work; a screen that only says it is loading by moving says nothing then.
+ */
+@keyframes mark-breathe {
+  0%, 100% { transform: translateY(0) scale(1); opacity: .92; }
+  50% { transform: translateY(-6px) scale(1.025); opacity: 1; }
+}
+.mark-breathe { animation: mark-breathe 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .mark-breathe { animation: none; } }
+
+/*
+ * The stage-draw reveal on the hall screen: the festival's own motion — paper drops, one
+ * overshoot, settles — at the size of a projector. The blur is doing work rather than decorating:
+ * a name that cuts in hard reads as a slide change from the back of a hall, and resolving out of
+ * blur reads as an arrival. The overshoot is in the keyframes, so the curve is a plain ease-out.
+ * `--dur-drop` is one of the tokens the reduced-motion block below zeroes.
+ */
+@keyframes winner-in {
+  0% { opacity: 0; transform: translateY(-2.5vh) scale(.92); filter: blur(12px); }
+  60% { opacity: 1; transform: translateY(0) scale(1.03); filter: blur(0); }
+  100% { transform: translateY(0) scale(1); }
+}
+.winner-in { animation: winner-in var(--dur-drop) var(--ease-out) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Zero the scale in one place: every animation and every transition in this file reads from it.
+   * 1ms rather than 0 so `animationend` and `transitionend` still fire for anything sequencing on
+   * them. `--dur-instant` stays — a 120ms press is feedback, not motion to sit through.
+   */
+  :root {
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-page: 1ms;
+    --dur-drop: 1ms;
+    --dur-slow: 1ms;
+  }
+  .pulse-once, .scrim-in, .sheet-in, .drawer-in, .toast-in,
+  details[open] > .pop { animation-duration: 1ms !important; }
+  details.reveal-host::details-content { transition-duration: 1ms !important; }
+  /* The shadow still deepens, so hover is still answered — it is the 2px of travel that goes. */
+  a.card:hover, button.card:hover, .card-interactive:hover { transform: none; }
+  .drift, .cloud-a, .cloud-b, .sun-drift { animation: none; }
+  /* Not on the scale: a 110ms linear tick is data, not decoration. */
+  .qr-countdown { transition: none; }
+}
+
+/*
+ * Overlays. Each of these used `.page-in`, the route transition, which slides in from the right —
+ * right for a page turn, wrong for a sheet that should rise and a drawer that should come from the
+ * edge it is docked to. The scrims had no fade at all.
+ */
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+.scrim-in { animation: scrim-in var(--dur-fast) var(--ease-enter) backwards; }
+
+@keyframes sheet-up { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-in { animation: sheet-up var(--dur-base) var(--ease-enter) backwards; }
+
+@keyframes drawer-in { from { transform: translateX(100%); } to { transform: none; } }
+.drawer-in { animation: drawer-in var(--dur-base) var(--ease-enter) backwards; }
+
+/* Slower in than out is the toast's own rule; it only ever enters here, and it enters from below
+ * because that is the edge it is pinned to. */
+@keyframes toast-up { from { transform: translateY(14px); opacity: 0; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
+.toast-in { animation: toast-up var(--dur-page) var(--ease-enter) backwards; }
+
+/*
+ * Booth screen must be legible at 3 m (§2.6) — on a kiosk. Scaled by the shorter axis as well as
+ * the wider one: a laptop window is often 1900 wide and only 800 tall, and a width-only clamp put
+ * hall-display type into two-thirds of the height, which squeezed the QR to its 150px floor. The
+ * code is what this screen exists to show, so height wins the argument.
+ */
+.booth-screen { font-size: clamp(24px, min(2.2vw, 3.4vh), 36px); }
+/*
+ * On a phone the 24px floor overflows the manual code and the footer; scale with the short side of
+ * the viewport instead, in either orientation. The thresholds mirror `isPhone` in Booth.tsx.
+ */
+@media (max-width: 639px) {
+  .booth-screen { font-size: clamp(13px, 4.2vw, 22px); }
+}
+@media (max-height: 499px) {
+  .booth-screen { font-size: clamp(13px, 4.2vh, 22px); }
+}
+/* Only a kiosk-shaped screen is a fixed stage the QR is measured against; a phone scrolls. */
+@media (min-width: 640px) and (min-height: 500px) {
+  .booth-screen { overflow: hidden; }
+}
+
+input, select, textarea, button { font: inherit; }
+/* 14px corner, hairline at 28% ink, focus = solid sky-800 border plus a 3px sky ring at 20%. */
+/* Width lives in `@layer components` above, so `field w-auto` / `field w-56` can narrow it. */
+.field {
+  @apply rounded-[14px] border border-ink/28 bg-white px-3.5 py-2.5 text-ink outline-none transition
+    placeholder:text-ink-soft/70 focus:border-sky-800 focus:ring-[3px] focus:ring-sky-700/20;
+}
+/*
+ * Every clickable control shares one recipe — a pill, hover darkens (never lightens), press
+ * shrinks to .98, keyboard focus ring, disabled look — so a button reads as a button wherever it
+ * sits. Variants only add colour; `btn-sm` shrinks any of them.
+ */
+.btn, .btn-primary, .btn-ghost, .btn-gold, .btn-danger, .btn-quiet, .btn-danger-soft, .btn-amber-soft, .btn-dark {
+  @apply inline-flex cursor-pointer select-none items-center justify-center gap-2 rounded-full px-[18px] py-2.5 font-semibold transition
+    active:scale-[0.98]
+    focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-sky-700/45 focus-visible:ring-offset-2 focus-visible:ring-offset-page-quiet
+    disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100;
+}
+.btn-primary { @apply bg-action text-white hover:bg-action-hover; }
+.btn-ghost { @apply bg-ink/6 text-ink hover:bg-ink/12; }
+/* Reward moments: orange under ink, never white. */
+.btn-gold { @apply bg-reward text-ink hover:bg-orange-500; }
+.btn-danger { @apply bg-danger text-white hover:bg-[#A32E2C]; }
+/* Low-emphasis actions that used to be underlined words: Resend, Edit details, CSV, Copy, Hide. */
+.btn-quiet { @apply bg-white font-medium text-ink-soft shadow-[0_1px_2px_rgba(23,65,78,.08)] hover:bg-sky-100 hover:text-ink; }
+/* Destructive but secondary: Revoke, Delete draft, Remove, Void. */
+.btn-danger-soft { @apply bg-danger-bg font-medium text-danger-text hover:bg-danger/20; }
+.btn-amber-soft { @apply bg-warn-bg font-medium text-warn-text hover:bg-warn/25; }
+/* On chrome: the kiosk, the desk, the auth screens. */
+.btn-dark { @apply bg-white/14 text-white hover:bg-white/22 focus-visible:ring-foil/60 focus-visible:ring-offset-chrome; }
+.btn-sm { @apply gap-1.5 px-3.5 py-1.5 text-xs; }
+/* The one big primary action on a phone screen — "Show code to visitor", "Next visitor". A recipe
+ * rather than `py-3.5 text-base` on the element, which the unlayered `.btn-*` padding would beat. */
+.btn-lg { @apply gap-2.5 px-6 py-3.5 text-base; }
+/* Square, and exactly as tall as `.btn-sm` (12px padding + a 16px text-xs line), so an icon-only
+ * control and a labelled one sit at the same height in one row. */
+.btn-icon-sm { @apply h-7 w-7 shrink-0 p-0; }
+.btn-icon { @apply h-8 w-8 p-0 text-base leading-none; }
+
+/*
+ * An icon-only control's label, shown on hover and on keyboard focus. `title` alone waits about a
+ * second, cannot be styled and never appears for a keyboard user; this does all three. The label
+ * is still the button's `aria-label`, so a screen reader gets it either way.
+ */
+.tip { @apply relative; }
+.tip > .tip-label {
+  @apply pointer-events-none absolute left-1/2 top-full z-30 mt-1.5 -translate-x-1/2 translate-y-1
+    whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium opacity-0 shadow-lg transition;
+}
+/*
+ * Only where a real pointer exists. On a touchscreen `:hover` latches when you tap and stays until
+ * you tap something else, so the label sat open over the booth screen after every press.
+ * `:focus-visible` is kept unconditionally — that is the keyboard route, and it never latches.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .tip:hover > .tip-label { @apply translate-y-0 opacity-100; }
+}
+.tip:focus-visible > .tip-label { @apply translate-y-0 opacity-100; }
+/* Inverted against whatever it sits on, so it reads as a tooltip and not another button. */
+.tip-dark > .tip-label { @apply bg-white text-ink; }
+.tip-light > .tip-label { @apply bg-ink text-white; }
+
+/*
+ * Touch. `.btn-sm`, `.seg-item`, `.tab` and the icon buttons are 28–32px, which is right beside
+ * 12px text on a laptop and too small for a finger — and the booth tablet and the prize desk are
+ * both touch-only. Raised here rather than in each recipe so a mouse-driven console keeps its
+ * density and only the coarse pointer pays for the room.
+ */
+@media (pointer: coarse) {
+  .btn-sm { @apply px-4 py-2.5; }
+  .btn-icon-sm { @apply h-11 w-11; }
+  .btn-icon { @apply h-11 w-11; }
+  .seg-item { @apply px-4 py-2.5; }
+  .tab { @apply px-4 py-2.5; }
+  .menu-item { @apply py-2.5; }
+  /*
+   * A 44px floor as well as the padding: inside `.organizer-bar-lg` the padding is in `em` of a
+   * 12.8px font on a tablet, and `min-*` wins over `inline-size`/`block-size` whatever the order.
+   */
+  .btn-sm, .seg-item, .tab, .menu-item, summary.btn-sm { min-block-size: 2.75rem; }
+  .btn-icon-sm, .btn-icon, .organizer-bar-lg .btn-icon-sm { min-inline-size: 2.75rem; min-block-size: 2.75rem; }
+  /* iOS Safari zooms into any focused field under 16px; a finger never needs `text-sm` density. */
+  .field { font-size: 1rem; }
+}
+
+/*
+ * The panel of a `<details>` popover — the account menu, the organizer's page menu, the booths
+ * "More" menu. It grows from its trigger rather than appearing: origin at the top edge, nearest
+ * corner set by `.pop-right`.
+ *
+ * Open only. `<details>` gives no closing state to animate without JS, and an instant exit is the
+ * right shape regardless: arriving is worth watching, leaving is not.
+ *
+ * An animation rather than a transition with `@starting-style`. The children of a closed
+ * `<details>` are not `display: none` — the engine skips them with `content-visibility` — so there
+ * is no display change for `@starting-style` to key off, and it silently does nothing. An
+ * animation simply runs when the element starts being rendered, which is the moment we want.
+ */
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(.97) translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop-in-up {
+  from { opacity: 0; transform: scale(.97) translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.pop { transform-origin: top left; }
+.pop-right { transform-origin: top right; }
+details[open] > .pop { animation: pop-in var(--dur-fast) var(--ease-enter) backwards; }
+/* A panel above its trigger grows up out of it. With the default origin and slide it scaled from a
+ * corner it does not touch and drifted downwards, against the direction it had just opened in. */
+.pop-up { transform-origin: bottom left; }
+.pop-up.pop-right { transform-origin: bottom right; }
+details[open] > .pop-up { animation-name: pop-in-up; }
+
+/*
+ * An inline disclosure — the bulk-paste box, the archive section, an audit row's JSON, the
+ * create-a-user form. These grow the page rather than floating over it, so the shape is a height
+ * change, not a popover.
+ *
+ * `::details-content` is what makes a height animation possible at all on a `<details>`: the
+ * element's own children are not rendered while it is closed, so there is nothing to tween from,
+ * and an animation on a child would start after the jump has already happened. It is recent
+ * (Chromium 131); everywhere else the body appears the way it always did.
+ */
+@supports selector(::details-content) {
+  details.reveal-host { interpolate-size: allow-keywords; }
+  details.reveal-host::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size var(--dur-base) var(--ease-enter), content-visibility var(--dur-base) allow-discrete;
+  }
+  /*
+   * `overflow: clip` is what makes the height animation a reveal instead of a jump, but it also
+   * clips anything a child wants to hang outside the box — the create-a-user form holds four of
+   * the new selects, and their lists would be cut off at the fold. Once the box has finished
+   * growing it is its natural height and there is nothing left to clip, so the clip is lifted
+   * then: duration 0s, delay one animation. Closing uses the rule above, which has no overflow
+   * entry, so the clip returns at once and the collapse still reads as a reveal in reverse.
+   */
+  details.reveal-host[open]::details-content {
+    block-size: auto;
+    overflow: visible;
+    transition: block-size var(--dur-base) var(--ease-enter),
+      content-visibility var(--dur-base) allow-discrete,
+      overflow 0s var(--dur-base) allow-discrete;
+  }
+}
+
+/* Rows inside a card's "More" popover. */
+.menu-item {
+  @apply flex w-full cursor-pointer items-center rounded-lg px-3 py-1.5 text-left text-sm text-ink transition
+    hover:bg-ink/6 focus-visible:bg-ink/6 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+/*
+ * Segmented page navigation — the organizer's booth/stats/desk switcher.
+ *
+ * Distinct from `.tab` below, which picks a filter *inside* one page: this moves between pages,
+ * so it is driven by the `aria-current` a NavLink sets itself rather than by `aria-selected`.
+ * Metrics deliberately match `.btn-sm`, so a nav item and a button sit at the same height and
+ * radius when they share a row — which is the whole point of grouping them.
+ */
+/*
+ * One pill per strip, drawn once and MOVED between items, instead of a background that appears on
+ * one item and vanishes from another. `useSlidingPill` writes the current item's box into
+ * --tab-x/y/w/h; everything here is the tween.
+ *
+ * --tab-y and --tab-h are not decoration. `.tab-group` wraps — the reference lists' filters do it
+ * at any width — and without them the pill would stay on the first line.
+ *
+ * Physical `top`/`left`, not the logical properties: `offsetLeft` is physical, and mixing the two
+ * is silently correct in LTR and silently wrong in RTL. This app ships English and Thai, both LTR.
+ */
+.seg::before, .tab-group::before, .tab-rail::before, .tab-rail-v::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--tab-w, 0);
+  height: var(--tab-h, 0);
+  border-radius: 9999px;
+  transform: translate3d(var(--tab-x, 0), var(--tab-y, 0), 0);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dur-base) var(--ease-enter),
+    width var(--dur-base) var(--ease-enter),
+    height var(--dur-base) var(--ease-enter),
+    opacity var(--dur-fast) var(--ease-enter);
+}
+/*
+ * The gate. Until the hook has measured, the pill is invisible and the `:not([data-tab-ready])`
+ * rules below keep the old static background. Those fallbacks are load-bearing, not defensive
+ * padding: the current item's own fill is gone, so on `.seg-dark` an unmeasured strip would be
+ * dark teal text on green.
+ */
+.seg[data-tab-jump]::before,
+.tab-group[data-tab-jump]::before,
+.tab-rail[data-tab-jump]::before,
+.tab-rail-v[data-tab-jump]::before { transition: none; }
+
+.seg[data-tab-ready='true']::before,
+.tab-group[data-tab-ready='true']::before,
+.tab-rail[data-tab-ready='true']::before,
+.tab-rail-v[data-tab-ready='true']::before { opacity: 1; }
+
+/*
+ * Segmented page navigation — the organizer's booth/stats/survey/desk switcher.
+ *
+ * Distinct from `.tab` below, which picks a filter *inside* one page: this moves between pages,
+ * so it is driven by the `aria-current` a NavLink sets itself rather than by `aria-selected`.
+ * Metrics deliberately match `.btn-sm`, so a nav item and a button sit at the same height and
+ * radius when they share a row — which is the whole point of grouping them.
+ */
+.seg { @apply relative flex flex-nowrap items-center gap-0.5 rounded-full p-0.5; }
+.seg-item {
+  @apply relative z-[1] cursor-pointer select-none rounded-full px-3.5 py-1.5 text-xs font-medium transition
+    focus-visible:outline-none focus-visible:ring-2;
+}
+.seg-light { @apply bg-ink/6; }
+.seg-light::before { @apply bg-white shadow-sm; }
+.seg-light .seg-item { @apply text-ink-soft hover:bg-white/70 hover:text-ink focus-visible:ring-sky-700/45; }
+.seg-dark { @apply bg-white/8; }
+.seg-dark::before { @apply bg-white; }
+.seg-dark .seg-item { @apply text-on-chrome-soft hover:bg-white/14 hover:text-white focus-visible:ring-foil/60; }
+/*
+ * The switch when it floats on artwork rather than sitting inside a card — the landing page and
+ * the signed-out screens.
+ *
+ * Nothing here is translucent. At 90% white over the pale sky the slip was within a few percent
+ * of its own background and disappeared, and a white pill on a white slip left the chosen
+ * language with nothing to stand against either. So: an opaque slip with a real edge, and the
+ * selected item in `action` with white text — the one sky step that carries white at 5.7:1. It
+ * reads the same over sky, campus canopy and the seal, which is what "at all screen widths"
+ * needs, since the artwork behind it moves with the viewport.
+ */
+/* `shadow-raised`, not a raw `box-shadow`: the ring compiles to `box-shadow` too, so a hand-written
+ * declaration is simply overwritten by it. Tailwind's own utility composes with the ring instead. */
+.seg-floating { @apply bg-white shadow-raised ring-1 ring-inset ring-ink/15; }
+.seg-floating .seg-item { @apply text-ink hover:bg-ink/8 hover:text-ink; }
+/* The current item is text colour only — the pill carries the fill. Resetting its hover stops the
+ * item painting its own background over the pill it is sitting on. */
+.seg .seg-item[aria-current="page"],
+.seg .seg-item[aria-pressed="true"] { @apply text-ink hover:bg-transparent hover:text-ink; }
+.seg-light:not([data-tab-ready]) .seg-item[aria-current="page"],
+.seg-light:not([data-tab-ready]) .seg-item[aria-pressed="true"] { @apply bg-white shadow-sm; }
+.seg-dark:not([data-tab-ready]) .seg-item[aria-current="page"],
+.seg-dark:not([data-tab-ready]) .seg-item[aria-pressed="true"] { @apply bg-white; }
+
+/* After the `.seg-light` rules above, which this variant is always applied alongside: the sliding
+ * pill and the chosen item both have to be restated, or the white pill and the white slip cancel. */
+.seg-floating::before { @apply bg-action shadow-none; }
+.seg-floating .seg-item[aria-current="page"],
+.seg-floating .seg-item[aria-pressed="true"] { @apply text-white hover:bg-transparent hover:text-white; }
+.seg-floating:not([data-tab-ready]) .seg-item[aria-current="page"],
+.seg-floating:not([data-tab-ready]) .seg-item[aria-pressed="true"] { @apply bg-action text-white shadow-none; }
+
+/* Segmented tabs: the day picker, the invitation filter, the reference-list tabs. `bg-ink/5` moves
+ * off the call sites and into the recipe, so `.tab` is self-contained and the pill has one owner. */
+.tab-group { @apply relative; }
+.tab-group::before { @apply bg-white shadow-sm; }
+.tab {
+  @apply relative z-[1] cursor-pointer rounded-full bg-ink/5 px-3.5 py-1.5 text-xs font-medium text-ink-soft transition
+    hover:bg-ink/10 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-700/45;
+}
+.tab[aria-selected="true"] { @apply bg-transparent font-semibold text-ink hover:bg-transparent hover:text-ink; }
+.tab-group:not([data-tab-ready]) .tab[aria-selected="true"] { @apply bg-white shadow-sm; }
+
+/*
+ * The organizer's bar holds still while the page moves under it.
+ *
+ * Its background is painted by a pseudo-element stretched well past the page's own gutter, so the
+ * strip spans the full width from inside a centred, padded column without every page having to
+ * know its own padding. The colour matches the page ground, so all it actually does is stop
+ * scrolled content showing through.
+ */
+/*
+ * The kiosk's bar. Every other thing on that screen is sized against the `.booth-screen` clamp, so
+ * a bar in fixed rem sat at 12px next to a 42px title on a hall display. Font-size scales with the
+ * viewport and the padding is in `em`, so the controls grow with it in proportion rather than
+ * becoming tall thin pills.
+ *
+ * From `sm` up only. On a phone the clamp bottoms out at 12.8px and these two-class selectors beat
+ * the coarse-pointer bumps above, which left every chip in the bar about 30px tall under a thumb.
+ * Below 640px the bar is the ordinary recipe those bumps were written for.
+ */
+@media (min-width: 640px) {
+  .organizer-bar-lg { font-size: clamp(0.8rem, 0.95vw, 1.25rem); }
+  .organizer-bar-lg .seg-item,
+  .organizer-bar-lg .btn-sm,
+  .organizer-bar-lg summary { font-size: 1em; padding-inline: 1.1em; padding-block: 0.5em; }
+  .organizer-bar-lg .btn-icon-sm { inline-size: 2.4em; block-size: 2.4em; padding: 0; }
+  .organizer-bar-lg .btn-icon-sm svg { inline-size: 1.15em; block-size: 1.15em; }
+  .organizer-bar-lg .account-avatar { inline-size: 1.7em; block-size: 1.7em; font-size: 0.75em; }
+}
+
+/*
+ * The bar is always the top row of the viewport — never nested inside a page's own column, which
+ * is what used to make it start 217px in on three tabs and 77px in on the kiosk, and left the
+ * account control floating 250px short of the corner. Its one row of chrome spans edge to edge and
+ * only its contents are inset, by the same `4vw` gutter the pages under it use.
+ */
+.organizer-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  /* `viewport-fit=cover` is on: keep the row under a notch or the status bar when standalone. */
+  padding-block-start: calc(0.625rem + env(safe-area-inset-top, 0px));
+  padding-block-end: 0.625rem;
+  /* Frosted, not filled: the wave field runs behind the whole page and the bar is part of it. */
+  background: rgb(255 255 255 / 0.62);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgb(255 255 255 / 0.7);
+}
+
+/*
+ * The admin rail. The pill runs the full width of the nav and travels vertically, so --tab-y is
+ * doing the work --tab-x does on a horizontal strip. It scrolls with the list because it is
+ * absolutely positioned inside the same scroller.
+ */
+.tab-rail-v { @apply relative; }
+.tab-rail-v::before { @apply bg-white/15; }
+
+/* The visitor's bottom bar. Same hook, different geometry: a 3px rule that tracks x only, because
+ * a fixed four-column grid never wraps and a pill a quarter of the screen wide reads as a slab. */
+.tab-rail { @apply relative; }
+.tab-rail::before {
+  top: 0;
+  height: 3px;
+  border-radius: 0 0 9999px 9999px;
+  background: var(--color-action);
+  transform: translate3d(var(--tab-x, 0), 0, 0);
+}
+
+/*
+ * The admin navigation drawer, phone and tablet. A real `<dialog>`, so the focus trap, Escape and
+ * the inert page behind are the browser's job rather than ours — `ui.tsx`'s Drawer traps nothing.
+ * It slides from the LEFT; that Drawer is right-hand, white, and carries its own title bar, which
+ * is why this is twenty lines here instead of four more props on it.
+ *
+ * `overlay` and `display` need `allow-discrete` or the element is gone before the slide can run.
+ */
+.nav-drawer {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  inline-size: 17rem;
+  max-inline-size: 85vw;
+  block-size: 100dvh;
+  max-block-size: 100dvh;
+  background: transparent;
+  translate: -100% 0;
+  transition:
+    translate var(--dur-base) var(--ease-enter),
+    overlay var(--dur-base) allow-discrete,
+    display var(--dur-base) allow-discrete;
+}
+.nav-drawer[open] { translate: 0 0; }
+@starting-style { .nav-drawer[open] { translate: -100% 0; } }
+.nav-drawer::backdrop {
+  background: rgb(23 65 78 / .45);
+  opacity: 1;
+  transition:
+    opacity var(--dur-base),
+    overlay var(--dur-base) allow-discrete,
+    display var(--dur-base) allow-discrete;
+}
+@starting-style { .nav-drawer[open]::backdrop { opacity: 0; } }
+
+/*
+ * Thai typography, for the booth and school names the toggle now surfaces.
+ *
+ * `.stamp-text` is uppercase + letter-spaced — the passport look in English, and actively broken
+ * in Thai: Thai has no uppercase, and tracking pulls vowels and tone marks away from the consonant
+ * they attach to, so the text renders visibly come apart. Thai also writes without spaces between
+ * words, so the browser finds no break opportunity and a long name overflows its tile rather than
+ * wrapping.
+ */
+:lang(th) .stamp-text { @apply normal-case tracking-normal; }
+:lang(th) { line-break: loose; overflow-wrap: anywhere; }
+/* A figure is a figure in either language — never break one mid-number. */
+:lang(th) .fig { overflow-wrap: normal; }
+/* Thai display headings fall through to Mitr; Baloo 2 has no Thai glyphs. */
+:lang(th) h1, :lang(th) h2, :lang(th) h3, :lang(th) .fig { font-family: 'Mitr', var(--font-sans); }
+
+/* A link inside a sentence stays a link, but gets a hover and a focus ring like everything else. */
+.link {
+  @apply rounded-sm underline decoration-current/40 underline-offset-2 transition
+    hover:decoration-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-700/45;
+}
+/* White ground, 28px corner, teal shadow, no border — separation comes from the sky behind it. */
+/*
+ * Hover is behind `(hover: hover)`: a touch device fires it on tap and the card would lift under
+ * the finger and stay lifted. `.card-static` opts a card out — a panel that is not a target for
+ * anything should not answer the pointer.
+ */
+.card {
+  @apply rounded-[28px] bg-white p-5 shadow-card;
+  transition: box-shadow var(--dur-fast) var(--ease-enter), transform var(--dur-fast) var(--ease-enter);
+}
+@media (hover: hover) and (pointer: fine) {
+  /*
+   * Written out rather than through `@apply`: Tailwind v4's translate utilities set the `translate`
+   * property, not `transform`, so the transition above would have had nothing to tween and the
+   * lift would have snapped.
+   */
+  a.card:hover, button.card:hover, .card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raised);
+  }
+}
+a.card:active, button.card:active, .card-interactive:active {
+  transform: none;
+  box-shadow: var(--shadow-card);
+}
+
+/* A card whose children own the padding — a sheet of rows rather than a padded panel. Declared
+ * after `.card` on purpose: same specificity, no cascade layer, so the later rule takes the box. */
+.card-flush { @apply overflow-hidden p-0; }
+
+/*
+ * Glass panel, for figures sitting on the green kiosk. `backdrop-blur` has little to chew on over
+ * flat chrome, so the read comes from the translucent fill, a hairline border and a lit top edge —
+ * the blur only earns its keep where a panel overlaps the QR frame's glow. The gradient is what
+ * stops it looking like a plain grey box.
+ */
+/*
+ * Frosted white over the sky wave field: the pane is a sheet of paper held up to the light, not a
+ * card sitting on a colour. `backdrop-blur` is what makes the waves under it soften rather than
+ * cut, which is the whole reason it can be this translucent and still carry ink type.
+ */
+.glass {
+  @apply rounded-[20px] border border-white/70 bg-white/60 backdrop-blur-xl;
+  box-shadow: 0 10px 30px -18px rgb(23 65 78 / 0.35);
+}
+
+/* The four Notice tones on light grounds. Class-driven so `.on-chrome` below can restate them. */
+.notice { @apply rounded-[20px] px-4 py-3 text-sm; }
+.notice-info { @apply bg-sky-200 text-ink; }
+.notice-amber { @apply bg-warn-bg text-warn-text; }
+.notice-red { @apply bg-danger-bg text-danger-text; }
+.notice-green { @apply bg-success-bg text-success-text; }
+
+/*
+ * A chrome (green-900) page built out of the light components.
+ *
+ * `/booth/stats` and `/account` match the booth kiosk's ground without forking a component or
+ * threading a `dark` prop through Fig, CsvButton, Notice, Spinner and the rest: every shared
+ * surface is restated once here for a dark ground. Shape stays defined above — only colour
+ * changes. A descendant selector outranks the bare utility it overrides, which is what lets a
+ * page keep `text-ink-soft` in its markup and still read correctly on chrome.
+ */
+/*
+ * Text and component colours only — no ground. Both callers already paint their own backdrop
+ * behind everything, and a fill here sat on top of it: on the organizer pages it covered the
+ * booth's visa watermark with an opaque slab the width of the content column.
+ */
+.on-chrome { @apply text-white; }
+.on-chrome .card { @apply border border-white/15 bg-white/10 shadow-none backdrop-blur-xl; }
+/*
+ * The organizer's own surfaces. Their ground is the sky wave field, so a panel is frosted glass
+ * rather than an opaque white card — the waves keep running underneath it.
+ */
+.on-stage .card { @apply border border-white/70 bg-white/60 shadow-[0_10px_30px_-18px_rgb(23_65_78/0.35)] backdrop-blur-xl; }
+.on-stage .field { @apply border-ink/15 bg-white/75; }
+.on-chrome .field { @apply border-white/25 bg-white/10 text-white placeholder:text-on-chrome-soft/70 focus:border-foil focus:ring-foil/25; }
+.on-chrome .btn-ghost, .on-chrome .btn-quiet { @apply bg-white/14 font-medium text-white shadow-none hover:bg-white/22 hover:text-white focus-visible:ring-foil/60 focus-visible:ring-offset-chrome; }
+.on-chrome .btn-primary { @apply bg-reward text-ink hover:bg-orange-500 focus-visible:ring-foil/60 focus-visible:ring-offset-chrome; }
+.on-chrome .btn-danger-soft { @apply bg-[rgba(217,74,72,.26)] text-[#FFC9BF] hover:bg-[rgba(217,74,72,.36)]; }
+.on-chrome .btn-amber-soft { @apply bg-[rgba(250,189,109,.24)] text-orange-300 hover:bg-[rgba(250,189,109,.34)]; }
+.on-chrome .tab { @apply bg-white/[0.07] text-on-chrome-soft hover:bg-white/14 hover:text-white focus-visible:ring-foil/60; }
+.on-chrome .tab[aria-selected="true"] { @apply bg-transparent text-ink hover:bg-transparent hover:text-ink; }
+.on-chrome .tab-group::before { @apply shadow-none; }
+.on-chrome .tab-group:not([data-tab-ready]) .tab[aria-selected="true"] { @apply bg-white; }
+.on-chrome .link { @apply text-white; }
+/* The Notice tones again, on chrome — the same values DarkNotice uses, so the two agree. */
+/*
+ * One glass for all four tones, with the tone in the type. The coloured washes composited against
+ * the teal ground rather than sitting on it: amber at 24% came out olive and green at 34% came out
+ * green, and a green band across a booth screen is a status nobody asked for.
+ */
+.on-chrome .notice-info,
+.on-chrome .notice-amber,
+.on-chrome .notice-red,
+.on-chrome .notice-green { @apply border border-white/15 bg-white/10; }
+.on-chrome .notice-info { @apply text-white; }
+.on-chrome .notice-amber { @apply text-orange-300; }
+.on-chrome .notice-red { @apply text-[#FFC9BF]; }
+.on-chrome .notice-green { @apply text-[#BDE8C4]; }
+/* Utilities the light components set inline. Two classes beat one, so these win. */
+.on-chrome .text-ink-soft { @apply text-on-chrome-soft; }
+.on-chrome .text-ink { @apply text-white; }
+.on-chrome .text-success-text { @apply text-success-on-chrome; }
+.on-chrome .text-danger-text { @apply text-danger-on-chrome; }
+.on-chrome .text-warn-text { @apply text-warn-on-chrome; }
+.on-chrome .bg-white\/50, .on-chrome .bg-white\/70 { @apply bg-white/[0.07]; }
+.on-chrome .bg-ink\/5, .on-chrome .bg-ink\/6 { @apply bg-white/[0.07]; }
+/* The hover variant needs its own line: the rule above matches the class, not `:hover`, so an
+   ink wash on glass came out invisible and the account rows answered nothing on the dark ground. */
+.on-chrome .hover\:bg-ink\/6:hover { @apply bg-white/[0.10]; }
+/*
+ * A row-shaped control answers a press by darkening; only pills scale.
+ *
+ * `.btn`'s `active:scale-[.98]` is right for a pill and wrong for a 20rem row — a full-width strip
+ * that shrinks reads as the page flexing, not as the row being pressed. Disclosure summaries, list
+ * rows and field-shaped triggers use this instead, so every one of them answers, and answers alike.
+ */
+.press-row { @apply transition active:bg-ink/10; }
+.on-chrome .press-row:active { @apply bg-white/20; }
+.on-chrome .border-ink\/10, .on-chrome .border-ink\/15, .on-chrome .border-ink\/20 { @apply border-white/20; }
+.on-chrome .border-t-action { @apply border-t-foil; }
+
+/* Paper: the booth table card (organizer/Booth.tsx) and the dashboard summary (admin/Print.tsx). */
+@page { size: A4; margin: 12mm; }
+@media print {
+  body { background: #fff !important; color: #000; }
+  .card { box-shadow: none; break-inside: avoid; }
+  .print-page { break-after: page; }
+}
