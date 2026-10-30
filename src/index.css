@@ -122,7 +122,7 @@ html { scrollbar-gutter: stable; }
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  background: var(--color-page-quiet);
+  background: var(--color-page);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -362,11 +362,24 @@ input, select, textarea, button { font: inherit; }
     focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#00B4EE]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white
     disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100;
 }
-.btn-primary { @apply text-white; background: linear-gradient(100deg, #2E3CFF 0%, #1D5BFF 50%, #0A86DA 100%); }
-.btn-primary:hover { background: linear-gradient(100deg, #2532E0 0%, #1A4FE6 50%, #0A78C4 100%); }
+.btn-primary { @apply text-white; }
+/*
+ * The two filled buttons are cut-cornered everywhere — passport, kiosk and console alike. The
+ * fill is a pseudo-element with the cut, so the button itself is never clipped and its focus ring
+ * (a box-shadow) still draws all the way round.
+ */
+.btn-primary, .btn-gold { position: relative; isolation: isolate; border-radius: 0; }
+.btn-primary::before, .btn-gold::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.btn-primary::before { background: linear-gradient(100deg, #2E3CFF 0%, #1D5BFF 50%, #0A86DA 100%); }
+.btn-primary:hover::before { background: linear-gradient(100deg, #2532E0 0%, #1A4FE6 50%, #0A78C4 100%); }
+.btn-primary:not(:disabled) { filter: drop-shadow(0 4px 10px rgb(29 91 255 / .28)); }
 .btn-ghost { @apply bg-ink/6 text-ink hover:bg-ink/12; }
 /* Reward moments: orange under ink, never white. */
-.btn-gold { color: #2B1B00; background: linear-gradient(135deg, #FFE48A 0%, #FFC93C 34%, #EFA400 58%, #FFD866 82%, #FFC93C 100%); }
+.btn-gold { color: #2B1B00; }
+.btn-gold::before { background: linear-gradient(135deg, #FFE48A 0%, #FFC93C 34%, #EFA400 58%, #FFD866 82%, #FFC93C 100%); }
 .btn-gold:hover { filter: brightness(.95); }
 .btn-danger { @apply bg-danger text-white hover:bg-[#A00D25]; }
 /* Low-emphasis actions that used to be underlined words: Resend, Edit details, CSV, Copy, Hide. */
@@ -909,7 +922,9 @@ a.card:active, button.card:active, .card-interactive:active {
 /* ---- Type ---- */
 .a-hd { font-family: var(--font-display); }
 .a-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.a-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--a-blue); }
+.a-label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+/* Blue unless the call site says otherwise: in a layer, so a `text-*` utility on the same element wins. */
+@layer components { .a-label { color: var(--a-blue); } }
 :lang(th) .a-label { letter-spacing: .02em; }
 .a-neon-text { background: var(--a-neon); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
@@ -1072,4 +1087,11 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   .a-glitch > .gl-a, .a-glitch > .gl-b { opacity: 0; }
   .a-sheen > .sheen { display: none; }
   .a-scanline { top: 45%; }
+}
+
+/* The visitor tab bar's indicator: a short glowing bar above the current tab, not a slab. */
+.a-tabrail::before {
+  top: -1px; height: 3px; width: 32px; border-radius: 0;
+  background: linear-gradient(90deg, #2E3CFF, #00D2FF); box-shadow: 0 0 8px rgb(0 200 255 / .7);
+  transform: translate3d(calc(var(--tab-x, 0px) + var(--tab-w, 0px) / 2 - 16px), 0, 0);
 }

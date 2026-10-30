@@ -3,9 +3,9 @@
  * where there is no frosted pane over it — the survey's eyebrow, for one. Measured from the
  * screen, an accent tuned against the pane instead came out 3.5:1 there against a promised 4.5.
  */
-const STAGE = '#7EDFF2'
+const STAGE = '#6E96FF'
 /** Ink, never black: what an accent is darkened toward. */
-const INK = '#17414E'
+const INK = '#0A1433'
 const cache = new Map<string, string>()
 
 const chan = (c: number) => { const s = c / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }

@@ -4,7 +4,8 @@ import { useAuth } from '../../lib/auth'
 import { api, errorMessage } from '../../lib/api'
 import { useEthnicGroups, useRefList } from '../../lib/data'
 import { COUNTRIES, PINNED_COUNTRIES, countryName } from '../../lib/countries'
-import { DataErrors, LangToggle, Notice, Spinner } from '../../components/ui'
+import { DataErrors, Notice, Spinner } from '../../components/ui'
+import { AGround, AHeader, Eyebrow, PrimaryBtn } from '../../components/agency'
 import { Select } from '../../components/Select'
 import type { VisitorType } from '../../../shared/model'
 import { useLocale } from '../../lib/locale'
@@ -112,19 +113,19 @@ export default function Join() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-5 pb-16 pt-8 page-in">
-      {/* The longest thing a visitor reads in the whole app, and the first: the switch belongs
-          beside its heading, not three screens away in a menu that does not exist yet. */}
-      <div className="flex items-start justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t('v.join.title')}</h1>
-        <LangToggle className="seg-floating mt-0.5" />
-      </div>
-      <p className="mt-1 text-sm text-ink-soft">{t('v.join.lead')}</p>
+    <AGround className="mx-auto max-w-md" grid="h-[260px]">
+    {/* The longest thing a visitor reads in the whole app, and the first: the switch belongs
+        beside its heading, not three screens away in a menu that does not exist yet. */}
+    <AHeader lead="marks" />
+    <main className="px-4 pb-16 page-in">
+      <Eyebrow>{t('a.join.eyebrow')}</Eyebrow>
+      <h1 className="a-hd mb-0 mt-2 text-[28px] font-bold leading-[1.15]">{t('v.join.title')}</h1>
+      <p className="mb-0 mt-1.5 text-sm text-[#33415F]">{t('v.join.lead')}</p>
 
       {/* The account email is the contact; it is already confirmed, so it is shown, not asked for. */}
-      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border rule bg-white/40 px-3.5 py-3">
+      <div className="a-cut a-solid a-fill-tint mt-4 flex items-center justify-between gap-3 px-3.5 py-3">
         <div className="min-w-0">
-          <div className="stamp-text text-ink-soft">{t('v.join.signedIn')}</div>
+          <div className="a-label text-[var(--a-muted)]">{t('v.join.signedIn')}</div>
           <div className="truncate text-sm font-medium">{user?.email}</div>
         </div>
         <button type="button" className="btn-quiet btn-sm shrink-0" onClick={() => void signOut()}>{t('v.join.notYou')}</button>
@@ -134,16 +135,17 @@ export default function Join() {
 
       <form onSubmit={submit} className="mt-6 flex flex-col gap-5">
         <label className="block">
-          <span className="stamp-text text-ink-soft">{t('v.join.name')}</span>
-          <input className="field mt-1" required maxLength={80} autoComplete="name" value={f.displayName} onChange={(e) => set('displayName', e.target.value)} placeholder={t('v.join.namePlaceholder')} />
+          <span className="a-lbl">{t('v.join.name')}</span>
+          <input className="a-field" required maxLength={80} autoComplete="name" value={f.displayName} onChange={(e) => set('displayName', e.target.value)} placeholder={t('v.join.namePlaceholder')} />
         </label>
 
         <fieldset>
-          <legend className="stamp-text text-ink-soft">{t('v.join.iAm')}</legend>
+          <legend className="a-lbl">{t('v.join.iAm')}</legend>
           <div className="mt-1 grid grid-cols-2 gap-2">
             {TYPES.map((ty) => (
-              <label key={ty.v} className={`cursor-pointer rounded-lg border px-3 py-2.5 text-sm font-medium ${f.visitorType === ty.v ? 'border-action bg-action/10 text-ink' : 'border-ink/15 bg-white/60'}`}>
+              <label key={ty.v} className={`a-cut flex min-h-[52px] cursor-pointer items-center gap-2.5 px-3 text-[15px] font-medium has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-[#00B4EE] ${f.visitorType === ty.v ? 'a-edge-neon a-fill-ok' : 'a-edge-strong'}`}>
                 <input type="radio" name="vt" className="sr-only" checked={f.visitorType === ty.v} onChange={() => set('visitorType', ty.v)} />
+                <span aria-hidden className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border-2 ${f.visitorType === ty.v ? 'border-[#1D5BFF]' : 'border-[#8C97AD]'}`}>{f.visitorType === ty.v && <span className="h-2 w-2 rounded-full bg-[#1D5BFF]" />}</span>
                 {t(ty.label)}
               </label>
             ))}
@@ -152,8 +154,8 @@ export default function Join() {
 
         {f.visitorType !== 'guest' && (
           <label className="block">
-            <span className="stamp-text text-ink-soft">{t('v.join.id')} <span className="font-normal normal-case tracking-normal">{t('v.join.optional')}</span></span>
-            <input className="field mt-1" maxLength={40} inputMode="numeric" value={f.studentId} onChange={(e) => set('studentId', e.target.value)} />
+            <span className="a-lbl">{t('v.join.id')} <span className="font-normal text-[var(--a-muted)]">{t('v.join.optional')}</span></span>
+            <input className="a-field" maxLength={40} inputMode="numeric" value={f.studentId} onChange={(e) => set('studentId', e.target.value)} />
           </label>
         )}
 
@@ -165,7 +167,7 @@ export default function Join() {
           * field below.
           */}
         <div>
-          <label htmlFor="join-institution" className="stamp-text block text-ink-soft">{t('v.join.institution')}</label>
+          <label htmlFor="join-institution" className="a-lbl">{t('v.join.institution')}</label>
           <Select
             id="join-institution" ariaLabel={t('v.join.institution')} className="mt-1"
             value={f.institution} onChange={(v) => set('institution', v)}
@@ -176,14 +178,14 @@ export default function Join() {
 
         {f.institution === 'Other' && (
           <label className="block">
-            <span className="stamp-text text-ink-soft">{t('v.join.institutionName')}</span>
-            <input className="field mt-1" required maxLength={120} value={f.institutionOther} onChange={(e) => set('institutionOther', e.target.value)} />
+            <span className="a-lbl">{t('v.join.institutionName')}</span>
+            <input className="a-field" required maxLength={120} value={f.institutionOther} onChange={(e) => set('institutionOther', e.target.value)} />
           </label>
         )}
 
         {f.institution === 'MFU' && (
           <div>
-            <label htmlFor="join-school" className="stamp-text block text-ink-soft">{t('v.join.school')}</label>
+            <label htmlFor="join-school" className="a-lbl">{t('v.join.school')}</label>
             <Select
               id="join-school" ariaLabel={t('v.join.school')} className="mt-1"
               value={f.school} onChange={(v) => set('school', v)}
@@ -194,7 +196,7 @@ export default function Join() {
         )}
 
         <div>
-          <label htmlFor="join-country" className="stamp-text block text-ink-soft">{t('v.join.country')}</label>
+          <label htmlFor="join-country" className="a-lbl">{t('v.join.country')}</label>
           {/*
             * Nine options and a way out, rather than 256. Whatever has been chosen from the
             * search stays in the list as its own option, so the field always shows the answer
@@ -216,9 +218,9 @@ export default function Join() {
           />
 
           {findCountry && (
-            <div className="mt-2 rounded-xl border rule bg-white p-2">
+            <div className="a-cut a-edge-line mt-2 p-2">
               <input
-                autoFocus type="search" className="field w-full" value={countryQuery}
+                autoFocus type="search" className="a-field" value={countryQuery}
                 onChange={(e) => setCountryQuery(e.target.value)}
                 placeholder={t('v.join.searchCountry')} aria-label={t('v.join.searchCountry')}
                 // Enter in a one-line field submits the form; here it should pick the only match.
@@ -249,9 +251,9 @@ export default function Join() {
           )}
         </div>
 
-        <div className="rounded-xl border rule bg-white/40 p-3">
+        <div className="a-cut a-edge-line px-3.5 py-3">
           <label className="block">
-            <span className="stamp-text text-ink-soft">{t('v.join.ethnic')} <span className="font-normal normal-case tracking-normal">{t('v.join.optional')}</span></span>
+            <span className="a-lbl">{t('v.join.ethnic')} <span className="font-normal text-[var(--a-muted)]">{t('v.join.optional')}</span></span>
             <p className="mt-1 text-xs text-ink-soft">{t('v.join.ethnicNote')}</p>
           </label>
           {/*
@@ -282,7 +284,7 @@ export default function Join() {
             <label className="mt-2 block">
               <span className="sr-only">{t('v.join.ethnicOtherLabel')}</span>
               <input
-                autoFocus className="field" maxLength={80} value={f.ethnicGroup}
+                autoFocus className="a-field" maxLength={80} value={f.ethnicGroup}
                 onChange={(e) => set('ethnicGroup', e.target.value)}
                 placeholder={t('v.join.ethnicOtherLabel')} aria-label={t('v.join.ethnicOtherLabel')}
               />
@@ -290,29 +292,30 @@ export default function Join() {
           )}
           {f.ethnicGroup && f.ethnicGroup !== 'Prefer not to say' && (
             <label className="mt-3 flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-1" checked={f.ethnicConsent} onChange={(e) => set('ethnicConsent', e.target.checked)} />
+               <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#1D5BFF]" checked={f.ethnicConsent} onChange={(e) => set('ethnicConsent', e.target.checked)} />
               <span>{t('v.join.ethnicConsent')} <span className="text-ink-soft">{t('v.join.ethnicConsentNote')}</span></span>
             </label>
           )}
         </div>
 
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" className="mt-1" checked={f.consent} onChange={(e) => set('consent', e.target.checked)} required />
+           <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-[#1D5BFF]" checked={f.consent} onChange={(e) => set('consent', e.target.checked)} required />
           <span>
             {t('v.join.consent')}{' '}
-            <a className="link" href="/privacy.html" target="_blank" rel="noreferrer">{t('v.join.privacy')}</a>
+            <a className="a-link" href="/privacy.html" target="_blank" rel="noreferrer">{t('v.join.privacy')}</a>
           </span>
         </label>
 
         {err && <Notice tone="red">{err}</Notice>}
-        <button className="btn-primary py-3.5 text-lg" disabled={busy}>{busy ? t('v.join.creating') : t('v.join.create')}</button>
+        <PrimaryBtn type="submit" disabled={busy}>{busy ? t('v.join.creating') : t('v.join.create')}</PrimaryBtn>
       </form>
       {/* The one screen a booth host who is not on anyone list reliably lands on: the guard sends
           every roleless account here. Without this they would have to be told the URL. */}
       <p className="mt-6 text-center text-xs text-ink-soft">
         {t('v.join.staffPrompt')}{' '}
-        <Link to="/booth-access" className="link">{t('v.join.staffLink')}</Link>
+        <Link to="/booth-access" className="a-link">{t('v.join.staffLink')}</Link>
       </p>
     </main>
+    </AGround>
   )
 }

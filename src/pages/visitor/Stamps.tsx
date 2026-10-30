@@ -1,19 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../../lib/auth'
-import { useBooths, useEvent, useMyScans } from '../../lib/data'
-import { Stamp } from '../../components/Stamp'
-import { stampMarks } from '../../lib/eventText'
+import { ms, useBooths, useEvent, useMyScans } from '../../lib/data'
+import { AIcon, FileTile, GhostBtn, InkTag, LockedTag, PrimaryBtn, pad3 } from '../../components/agency'
 import { Spinner } from '../../components/ui'
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
 import { dayOf, type BoothDoc } from '../../../shared/model'
 import { rewardExpiry, usePointsClock, useRewardBooths } from '../../lib/points'
 import { useLocale } from '../../lib/locale'
-
-function tiltFor(id: string) {
-  let h = 0
-  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) | 0
-  return ((Math.abs(h) % 9) - 4) * 1.5 // -6 … +6 degrees, stable per booth
-}
 
 function makeDayLabel(days: string[], dayName: (n: number) => string) {
   return (day: string) => {
@@ -30,22 +23,27 @@ export default function Stamps() {
   const event = useEvent()
   const { t, pick } = useLocale()
   const dayLabel = makeDayLabel(event.days, (n) => t('v.stamps.day', { n }))
-  const marks = stampMarks(event)
   const [openId, setOpen] = useState<string | null>(null)
   const [fullId, setFull] = useState<string | null>(null)
   useBodyScrollLock(!!openId)
   const today = dayOf(new Date())
 
-  const { collected, remaining } = useMemo(() => {
+  const { collected, remaining, newest } = useMemo(() => {
     const have = new Set(profile?.stampedBoothIds ?? [])
-    const awards = new Map(scans.filter((s) => s.eventId === event.id).map((s) => [s.boothId, s.pointsAwarded]))
+    const mine = scans.filter((s) => s.eventId === event.id)
+    const awards = new Map(mine.map((s) => [s.boothId, s.pointsAwarded]))
     const collected = booths.filter((b) => b.eventId === event.id && have.has(b.id))
       .map((b) => ({ ...b, displayPoints: awards.get(b.id) }))
-    // §4.2 — uncollected sorted by value so the 20-point booths lead; this is what turns points into a route.
+    // §4.2 — uncollected sorted by value so the best booths lead; this is what turns points into a route.
     const remaining = booths.filter((b) => b.eventId === event.id && b.active && !have.has(b.id))
       .map((b) => ({ ...b, displayPoints: b.rewardPoints }))
       .sort((a, b) => b.rewardPoints - a.rewardPoints || a.sortOrder - b.sortOrder)
-    return { collected, remaining }
+    // The file just recovered wears NEW until the next one replaces it.
+    const newest = mine.reduce<{ id: string; at: number } | null>((best, s) => {
+      const at = ms(s.scannedAt) ?? 0
+      return !best || at > best.at ? { id: s.boothId, at } : best
+    }, null)?.id ?? null
+    return { collected, remaining, newest }
   }, [booths, profile, scans, event.id])
 
   const rows = [...collected, ...remaining]
@@ -55,115 +53,103 @@ export default function Stamps() {
   if (!profile) return <Spinner />
   const have = !!open && (profile.stampedBoothIds?.includes(open.id) ?? false)
   const remainingPoints = remaining.reduce((s, b) => s + b.rewardPoints, 0)
+  const tileLabels = { recovered: t('a.file.recovered'), encrypted: t('a.file.encrypted'), isNew: t('a.file.new'), isNext: t('a.file.next') }
+  const tile = (b: (typeof rows)[number], recovered: boolean, isNext = false) => (
+    <li key={b.id}>
+      <FileTile
+        to="#" code={b.shortName || b.id} title={pick(b.nameEn, b.nameTh)} recovered={recovered}
+        isNew={recovered && b.id === newest} isNext={isNext} labels={tileLabels}
+        onOpen={() => setOpen(b.id)}
+      />
+    </li>
+  )
 
   return (
-    <main className="px-5 pt-6">
-      <header>
-        <div className="stamp-text text-ink-soft">{t('v.stamps.title')}</div>
-        <div className="mt-1 flex items-baseline gap-3">
-          <h1 className="text-2xl font-bold">{t('v.stamps.ofTotal', { have: collected.length, total: rows.length })}</h1>
-        </div>
-        {/* "1 of 12" was the only account of progress on a page whose whole subject is progress. */}
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink/10" role="img" aria-label={t('v.stamps.progress', { have: collected.length, total: rows.length })}>
-          <div className="h-full rounded-full bg-action transition-[width] duration-500 ease-out" style={{ width: `${rows.length ? (collected.length / rows.length) * 100 : 0}%` }} />
-        </div>
-      </header>
+    <main className="px-4 pt-1">
+      {/* "057/100" — the only account of progress a page whose whole subject is progress needs. */}
+      <div className="flex items-center gap-3" role="img" aria-label={t('v.stamps.progress', { have: collected.length, total: rows.length })}>
+        <span className="a-mono text-[15px] font-semibold text-[#1450E6]">{pad3(collected.length)}/{rows.length}</span>
+        <span className="a-bar h-[5px] flex-1"><span className="fill" style={{ width: `${rows.length ? (collected.length / rows.length) * 100 : 0}%` }} /></span>
+        <span className="text-xs text-[var(--a-muted)]">{t('a.files.recoveredLabel')}</span>
+      </div>
 
-      {/*
-        * Your stamps first. The collected section was below eleven things you had not done, so a
-        * passport — a collection — opened on its own to-do list, and the one visa you had earned
-        * was a long scroll away. Full width, because a visa is the reward and the reward is worth
-        * reading; the two-up grid put a detailed document at thumbnail size.
-        */}
-      <section className="mt-7">
-        <h2 className="stamp-text text-ink-soft">{t('v.stamps.yours')}</h2>
+      {/* Recovered first: a collection should open on what you have, not on its to-do list. */}
+      <section className="mt-6">
+        <h2 className="a-label m-0">{t('v.stamps.yours')} · {collected.length}</h2>
         {collected.length === 0 ? (
-          <p className="mt-3 rounded-[20px] bg-white p-6 text-center text-sm text-ink-soft shadow-card">{t('v.stamps.none')}</p>
+          <p className="a-cut a-edge-line mt-3 px-4 py-6 text-center text-sm text-ink-soft">{t('v.stamps.none')}</p>
         ) : (
-          <ul className="mt-3 flex flex-col gap-3">
-            {collected.map((b) => (
-              <li key={b.id}>
-                <button onClick={() => setOpen(b.id)} className="press-row flex w-full cursor-pointer items-center gap-4 rounded-[20px] bg-white p-3 text-left shadow-card transition hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/45">
-                  <Stamp booth={b} collected tilt={tiltFor(b.id)} size={132} points={b.displayPoints} {...marks} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold leading-tight">{pick(b.nameEn, b.nameTh)}</span>
-                    <span className="mt-1 block text-xs text-success-text">
-                      {t('v.stamps.stamped')}
-                      {b.displayPoints === undefined ? ` · ${t('v.stamps.earning')}` : ` · ${t('v.stamps.plusPts', { n: b.displayPoints })}`}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <ul className="mt-4 grid list-none grid-cols-3 gap-x-2.5 gap-y-3.5 p-0">{collected.map((b) => tile(b, true))}</ul>
         )}
       </section>
 
       {/*
-        * What is left is a route through the hall, not a collection, so it is a list rather than a
-        * wall of faded visas. The short code is what is printed on the booth itself, and the points
-        * are what the ordering is for.
+        * What is left is a route through the hall: best first, the first one tagged NEXT. Encrypted
+        * tiles keep their booth code readable, because that code is what is printed on the booth.
         */}
       {remaining.length > 0 && (
         <section className="mt-8">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-            <h2 className="stamp-text text-ink-soft">{t('v.stamps.left')}</h2>
+            <h2 className="a-label m-0 text-[var(--a-muted)]">{t('v.stamps.left')} · {remaining.length}</h2>
             <span className="text-xs text-ink-soft">{t('v.stamps.onFloor', { n: remainingPoints })}</span>
           </div>
-          <p className="mt-2 text-xs text-ink-soft">{t('v.stamps.rewardsNote')}</p>
-          <ul className="mt-3 overflow-hidden rounded-[20px] bg-white shadow-card">
-            {remaining.map((b) => {
-              const notToday = !b.activeDays.includes(today) && event.days.includes(today)
-              return (
-                <li key={b.id} className="border-t rule first:border-t-0">
-                  <button onClick={() => setOpen(b.id)} className="press-row flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left transition hover:bg-ink/6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-action/45">
-                    {/* The visa itself, uncollected. Below 150px the component drops to its plain
-                        variant, which is what a row-height preview wants — the shape and the booth's
-                        own code, not the micro-print. */}
-                    <Stamp booth={b} collected={false} size={84} points={b.displayPoints} {...marks} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm">{pick(b.nameEn, b.nameTh)}</span>
-                      {rewardExpiry(b, now) && <span className="block text-xs text-ink-soft">{rewardExpiry(b, now)}</span>}
-                      {notToday && <span className="block text-[11px] text-warn-text">{t('v.stamps.onlyOn', { days: b.activeDays.map(dayLabel).join(' · ') })}</span>}
-                    </span>
-                    <span className="shrink-0 text-xs font-semibold tabular-nums text-ink">{t('v.stamps.pts', { n: b.displayPoints })}</span>
-                    <span aria-hidden className="shrink-0 text-ink-soft">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+          <ul className="mt-4 grid list-none grid-cols-3 gap-x-2.5 gap-y-3.5 p-0">{remaining.map((b, i) => tile(b, false, i === 0))}</ul>
+          <p className="mt-4 text-xs text-ink-soft">{t('v.stamps.rewardsNote')}</p>
         </section>
       )}
 
       {open && (
-        <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-ink/60 p-4 sm:items-center" onClick={() => setOpen(null)}>
-          <div className="card card-static sheet-in w-full max-w-md bg-white" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start gap-4">
-              <Stamp booth={open} collected={have} size={152} points={open.displayPoints} {...marks} />
-              <div className="min-w-0 flex-1">
-                <div className="stamp-text text-ink-soft">{open.location} · {open.displayPoints ?? '…'} {have ? t('v.stamps.pointsEarned') : t('v.stamps.pointsWorth')}</div>
-                {!have && rewardExpiry(open, now) && <p className="text-xs text-ink-soft">{rewardExpiry(open, now)}</p>}
-                <h3 className="text-lg font-bold leading-tight">{pick(open.nameEn, open.nameTh)}</h3>
-                <div className="text-sm text-ink-soft">{open.hostUnit}</div>
+        <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-[rgb(10_19_64/.55)] p-3 sm:items-center" onClick={() => setOpen(null)}>
+          <div role="dialog" aria-modal="true" aria-label={pick(open.nameEn, open.nameTh)} className={`a-cut a-cut-xl ${have ? 'a-edge-neon' : 'a-edge-strong'} sheet-in w-full max-w-md px-5 pb-5 pt-5`} onClick={(e) => e.stopPropagation()}>
+            <CaseFileHead booth={open} recovered={have} />
+            {!have && rewardExpiry(open, now) && <p className="mt-2 text-xs text-ink-soft">{rewardExpiry(open, now)}</p>}
+            {open.hostUnit && (
+              <div className="mt-4">
+                <div className="a-label text-[var(--a-muted)]">{t('a.case.team')}</div>
+                <ul className="mt-2 flex list-none flex-wrap gap-2 p-0">
+                  {open.hostUnit.split(/\s*[·,]\s*/).filter(Boolean).map((m) => (
+                    <li key={m} className="a-cut a-cut-s a-solid flex items-center gap-2 px-3 py-1.5 text-sm" style={{ ['--fill' as string]: '#F2F5FB' }}><span aria-hidden className="a-dot !h-1.5 !w-1.5 !bg-[#1D5BFF]" />{m}</li>
+                  ))}
+                </ul>
               </div>
+            )}
+            {(open.descriptionEn || open.descriptionTh) && (
+              <div className="mt-4">
+                <div className="a-label text-[var(--a-muted)]">{t('a.case.about')}</div>
+                <p className="mb-0 mt-1.5 text-[15px] leading-relaxed text-[#24324F]">{pick(open.descriptionEn, open.descriptionTh)}</p>
+              </div>
+            )}
+            <p className="mt-3 text-xs text-ink-soft">{t('v.stamps.present', { days: open.activeDays.map(dayLabel).join(', ') })}</p>
+            {!have && !open.activeDays.includes(today) && event.days.includes(today) && <p className="mt-1 text-xs text-warn-text">{t('v.stamps.onlyOn', { days: open.activeDays.map(dayLabel).join(' · ') })}</p>}
+            <div className="mt-5 flex gap-2.5">
+              {/* Only for a file actually recovered — offering it on an encrypted one would read
+                  as a way to claim it. */}
+              {have
+                ? <><GhostBtn onClick={() => setFull(open.id)} className="flex-1">{t('v.stamps.viewFull')}</GhostBtn><GhostBtn plain onClick={() => setOpen(null)} className="!w-auto px-5">{t('v.close')}</GhostBtn></>
+                : <PrimaryBtn to="/scan" className="flex-1" icon={AIcon.scan}>{t('a.case.scanThis')}</PrimaryBtn>}
             </div>
-            {(open.descriptionEn || open.descriptionTh) && <p className="mt-3 text-sm">{pick(open.descriptionEn, open.descriptionTh)}</p>}
-            <p className="mt-2 text-xs text-ink-soft">{t('v.stamps.present', { days: open.activeDays.map(dayLabel).join(', ') })}</p>
-            <div className="mt-4 flex gap-2">
-              {/* Only for a visa that has actually been issued — there is nothing to admire about
-                  an unstamped one, and offering it would read as a way to claim it. */}
-              {have && <button className="btn-secondary flex-1" onClick={() => setFull(open.id)}>{t('v.stamps.viewFull')}</button>}
-              <button className={`btn-ghost ${have ? '' : 'flex-1'} ${have ? 'px-5' : 'w-full'}`} onClick={() => setOpen(null)}>{t('v.close')}</button>
-            </div>
+            {!have && <button type="button" onClick={() => setOpen(null)} className="a-link mx-auto mt-3 block min-h-11 cursor-pointer border-0 bg-transparent">{t('v.close')}</button>}
           </div>
         </div>
       )}
 
-      {full && <StampViewer booth={full} points={full.displayPoints} marks={marks} onClose={() => setFull(null)} />}
+      {full && <StampViewer booth={full} onClose={() => setFull(null)} />}
     </main>
+  )
+}
+
+/** Code, title and status: the top of a case file, in the sheet and the full-screen view. */
+function CaseFileHead({ booth, recovered, big = false }: { booth: BoothDoc & { id: string }; recovered: boolean; big?: boolean }) {
+  const { t, pick } = useLocale()
+  return (
+    <div className={`a-cut ${recovered ? 'a-edge-neon a-fill-foil' : 'a-edge-strong a-fill-muted'} ${big ? 'px-6 py-6' : 'px-4 py-3.5'}`}>
+      <div className="flex items-start justify-between gap-3">
+        <span className={`a-mono font-semibold ${big ? 'text-[34px]' : 'text-[22px]'} ${recovered ? 'text-[var(--a-blue-deep)]' : ''}`}>{booth.shortName || booth.id}</span>
+        {recovered ? <InkTag>{AIcon.check}{t('a.file.recovered')}</InkTag> : <LockedTag>{t('a.file.encrypted')}</LockedTag>}
+      </div>
+      <div className={`a-hd mt-1 font-bold leading-tight text-ink ${big ? 'text-[34px]' : 'text-[22px]'}`}>{pick(booth.nameEn, booth.nameTh)}</div>
+      {booth.location && <div className="a-mono mt-2 inline-flex items-center gap-1 bg-white/80 px-2 py-1 text-xs text-[#33415F]">{AIcon.pin}{booth.location}</div>}
+    </div>
   )
 }
 
@@ -175,10 +161,8 @@ export default function Stamps() {
  * fills the screen the way a passport page does when you tilt it. The two widths are the same
  * expression with the axes swapped; 133 is 94 x the 105/74 ratio.
  */
-function StampViewer({ booth, points, marks, onClose }: {
+function StampViewer({ booth, onClose }: {
   booth: BoothDoc & { id: string }
-  points?: number
-  marks: { markTop: string; markBottom: string }
   onClose: () => void
 }) {
   const { t, pick } = useLocale()
@@ -190,25 +174,13 @@ function StampViewer({ booth, points, marks, onClose }: {
   return (
     <dialog
       ref={dlg} onClose={onClose} onClick={onClose} aria-label={t('v.stamps.visa', { booth: pick(booth.nameEn, booth.nameTh) })}
-      // The ground is on the dialog itself, not on `::backdrop`: the element already covers
-      // the viewport, and one fill is cheaper than a variant that has to survive a Tailwind upgrade.
-      className="m-0 h-dvh max-h-none w-full max-w-none bg-ink/90 p-0"
+      className="m-0 h-dvh max-h-none w-full max-w-none bg-[rgb(10_19_64/.9)] p-0"
     >
-      {/* Absolutely centred, not grid-centred: turned a quarter turn the visa is laid out wider
-          than the screen, and an oversized grid item is aligned safely — pushed to one edge — so
-          its right-hand third was cut off. */}
-      <div className="relative h-full w-full overflow-hidden">
-        <div className="absolute left-1/2 top-1/2 w-[min(94vw,133vh)] -translate-x-1/2 -translate-y-1/2 portrait:w-[min(94vh,133vw)] portrait:rotate-90">
-          <Stamp booth={booth} collected size={720} points={points} className="!w-full" {...marks} />
-        </div>
+      <div className="grid h-full w-full place-items-center p-5">
+        <div className="a-glow w-full max-w-md"><CaseFileHead booth={booth} recovered big /></div>
       </div>
-      {/* Outside the rotation, so the way back is upright wherever the phone is. */}
-      <button
-        type="button" onClick={onClose} autoFocus
-        className="btn-quiet btn-sm fixed right-4 top-4 shadow-raised"
-      >
-        {t('v.close')}
-      </button>
+      {/* The way back stays in the corner, wherever the phone is. */}
+      <button type="button" onClick={onClose} autoFocus className="btn-quiet btn-sm fixed right-4 top-4 shadow-raised">{t('v.close')}</button>
     </dialog>
   )
 }

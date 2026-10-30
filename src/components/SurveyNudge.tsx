@@ -1,3 +1,4 @@
+import { Eyebrow, GoldTag } from './agency'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
@@ -97,28 +98,29 @@ export function SurveyNudge() {
   const title = gift ? t('v.nudge.giftTitle') : t('v.nudge.title')
 
   return (
-    <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-ink/50 p-4" onClick={() => setOpen(null)}>
+    <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-[rgb(10_19_64/.5)] p-3" onClick={() => setOpen(null)}>
       <div role="dialog" aria-label={title}
-        className="card card-static sheet-in max-h-[90dvh] w-full max-w-md overflow-y-auto bg-white p-5"
+        className={`a-cut a-cut-xl a-edge-neon ${gift ? 'a-fill-foil' : ''} sheet-in max-h-[90dvh] w-full max-w-md overflow-y-auto px-5 pt-5`}
         style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
         onClick={(e) => e.stopPropagation()}>
-        {gift && <div className="text-center text-4xl" aria-hidden>🎁</div>}
-        <div className={`stamp-text text-sky-900 ${gift ? 'mt-2 text-center' : ''}`}>
-          {gift ? t('v.nudge.giftEyebrow') : t('v.prize.feedbackEyebrow')}
-        </div>
-        <h2 className={`mt-1 text-lg font-semibold leading-snug ${gift ? 'text-center' : ''}`}>{title}</h2>
-        <p className={`mt-2 text-sm text-ink-soft ${gift ? 'text-center' : ''}`}>{lead}</p>
-        <div className="mt-4 flex gap-2">
-          <button type="button" className="btn-ghost flex-1" onClick={() => setOpen(null)}>{t('v.nudge.later')}</button>
+        {gift
+          ? <GoldTag pop>{t('v.nudge.giftEyebrow')}</GoldTag>
+          : <Eyebrow pulse>{t('v.prize.feedbackEyebrow')}</Eyebrow>}
+        <h2 className="a-hd mb-0 mt-2 text-[22px] font-bold leading-snug">{title}</h2>
+        <p className="mb-0 mt-2 text-sm text-[#33415F]">{lead}</p>
+        <div className="mt-5 flex gap-2.5">
+          <button type="button" className="a-btn a-btn-plain a-cut !w-auto flex-1" onClick={() => setOpen(null)}>{t('v.nudge.later')}</button>
           {/*
             * `?from=gift` is what arms the short hold on the survey's own way out. Only this CTA
             * sets it: someone who chooses the survey from the cover row or the Prize card asked
             * for it themselves and is never held.
             */}
-          <Link to={gift ? `/survey/${EVENT_SURVEY_ID}?from=gift` : `/survey/${EVENT_SURVEY_ID}`}
-            className={`${gift ? 'btn-gold' : 'btn-primary'} flex-1`} onClick={() => setOpen(null)}>
-            {gift ? t('v.nudge.giftTake') : t('v.nudge.answer')}
-          </Link>
+          <div className="a-brk a-glow flex-1">
+            <Link to={gift ? `/survey/${EVENT_SURVEY_ID}?from=gift` : `/survey/${EVENT_SURVEY_ID}`}
+              className="a-btn a-btn-primary a-cut !h-[49px] !text-base" onClick={() => setOpen(null)}>
+              {gift ? t('v.nudge.giftTake') : t('v.nudge.answer')}
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -136,26 +138,32 @@ export function SurveyBanner({ className = '' }: { className?: string }) {
   if (fs.loading || !fs.live || !profile || (profile.stampCount ?? 0) < 1) return null
   if (fs.taken) {
     return (
-      <Link to="/passport/prize" className={`card press-row flex items-center gap-3 border border-sky-800/15 bg-sky-100/70 hover:bg-sky-100 ${className}`}>
-        <span className="text-2xl" aria-hidden>🎫</span>
+      <Link to="/passport/prize" className={`a-cut a-solid a-fill-tint flex min-h-14 items-center gap-3 px-3.5 py-2.5 text-ink no-underline ${className}`}>
+        <span aria-hidden className="text-[#1450E6]">{BannerIcon.pass}</span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold">{t('v.cover.passBanner')}</span>
           <span className="block text-xs text-ink-soft">{t('v.cover.passBannerSub')}</span>
         </span>
-        <span className="text-ink-soft" aria-hidden>›</span>
+        <span className="text-[#1450E6]" aria-hidden>›</span>
       </Link>
     )
   }
   return (
-    <Link to={`/survey/${EVENT_SURVEY_ID}`} className={`card press-row flex items-center gap-3 border border-sky-800/20 bg-sky-100 hover:bg-sky-50 ${className}`}>
-      <span className="text-2xl" aria-hidden>📝</span>
+    <Link to={`/survey/${EVENT_SURVEY_ID}`} className={`a-cut a-solid a-fill-tint flex min-h-14 items-center gap-3 px-3.5 py-2.5 text-ink no-underline ${className}`}>
+      <span aria-hidden className="text-[#1450E6]">{BannerIcon.report}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold">{t('v.cover.rateBanner')}</span>
         <span className="block text-xs text-ink-soft">{t('v.cover.rateBannerSub', { q: fs.count })}</span>
       </span>
-      <span className="text-ink-soft" aria-hidden>›</span>
+      <span className="text-[#1450E6]" aria-hidden>›</span>
     </Link>
   )
+}
+
+/* Stroke icons in place of the emoji the festival theme used: the agency draws, it does not paste. */
+const BannerIcon = {
+  pass: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4z" /><path d="M14 7v12" strokeDasharray="2 2.5" /></svg>,
+  report: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h9l4 4v14H6z" /><path d="M9 11h7M9 15h7M9 7h3" /></svg>,
 }
 
 // ---- once-per-visitor memory, in this browser ----

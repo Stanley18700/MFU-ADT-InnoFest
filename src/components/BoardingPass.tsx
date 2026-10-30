@@ -40,7 +40,7 @@ export function BoardingPass({ className = '' }: { className?: string }) {
     return () => { live = false }
   }, [name, passportNo, stamps, points, eventName, dates])
 
-  const fileName = `mfu-festival-pass-${passportNo || 'visitor'}.png`
+  const fileName = `innofest-mission-certificate-${passportNo || 'agent'}.png`
 
   async function share() {
     if (!png) return
@@ -62,21 +62,21 @@ export function BoardingPass({ className = '' }: { className?: string }) {
   if (!profile) return null
 
   return (
-    <section className={`rounded-3xl border border-sky-800/15 bg-white p-4 text-center ${className}`}>
-      <div className="stamp-text text-sky-900">{t('v.pass.title')}</div>
-      <p className="mt-1 text-sm text-ink-soft">{t('v.pass.lead')}</p>
+    <section className={`a-cut a-edge-line px-4 pb-4 pt-3.5 text-center ${className}`}>
+      <div className="a-label">{t('v.pass.title')}</div>
+      <p className="mb-0 mt-1 text-sm text-[#33415F]">{t('v.pass.lead')}</p>
       {png
-        ? <img src={png} alt={t('v.pass.alt', { name })} className="mx-auto mt-3 w-full max-w-[320px] rounded-2xl shadow-card" />
-        : <div className="mx-auto mt-3 aspect-[4/5] w-full max-w-[320px] animate-pulse rounded-2xl bg-sky-100" />}
-      <div className="mt-3 flex gap-2">
-        {png && (
-          <a href={png} download={fileName} className="btn-primary flex-1">{t('v.pass.save')}</a>
-        )}
+        ? <img src={png} alt={t('v.pass.alt', { name })} className="mx-auto mt-3 block w-full max-w-[320px]" />
+        : <div className="mx-auto mt-3 aspect-[4/5] w-full max-w-[320px] animate-pulse bg-sky-100" />}
+      <div className="mt-3 flex gap-2.5">
         {png && 'share' in navigator && (
-          <button type="button" className="btn-ghost flex-1" onClick={() => void share()}>{t('v.pass.share')}</button>
+          <button type="button" className="a-btn a-btn-ghost a-cut !w-auto flex-1" onClick={() => void share()}>{t('v.pass.share')}</button>
+        )}
+        {png && (
+          <div className="a-brk a-glow flex-1"><a href={png} download={fileName} className="a-btn a-btn-primary a-cut !h-[49px] !text-base">{t('v.pass.save')}</a></div>
         )}
       </div>
-      <p className="mt-2 text-xs text-ink-soft">{msg ?? t('v.pass.hint')}</p>
+      <p className="mb-0 mt-2.5 text-xs text-[var(--a-muted)]">{msg ?? t('v.pass.hint')}</p>
     </section>
   )
 }

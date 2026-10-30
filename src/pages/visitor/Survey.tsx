@@ -6,10 +6,10 @@ import { EVENT_SURVEY_ID } from '../../../shared/model'
 import { useLocale } from '../../lib/locale'
 import { useCooldown } from '../../lib/useCooldown'
 import { SurveyForm, useAnswers, useMissing } from '../../components/SurveyForm'
-import { BackLink, Notice, Spinner } from '../../components/ui'
+import { Notice, Spinner } from '../../components/ui'
+import { AGround, AHeader, AIcon, ALang, Eyebrow, PrimaryBtn } from '../../components/agency'
 import { BoardingPass } from '../../components/BoardingPass'
 import { SurveyReward } from '../../components/SurveyReward'
-import { FestivalBackdrop } from '../auth/parts'
 import { useFestivalSurvey } from '../../lib/festivalSurvey'
 
 /**
@@ -94,18 +94,16 @@ export default function Survey() {
   }
 
   const shell = (children: React.ReactNode) => (
-    <><FestivalBackdrop hills={false} /><main className="relative mx-auto flex min-h-full max-w-md flex-col text-ink">
-      <header className="flex items-center justify-between gap-2 px-5 py-4">
-        {holding
-          ? <span className="w-16 text-sm text-ink-soft/70" aria-live="off">{t('v.survey.holdBack', { s: holdLeft })}</span>
-          : <BackLink to={festival ? '/passport/prize' : '/passport/stamps'}>{festival ? t('v.back.prize') : t('v.back.passport')}</BackLink>}
-        <div className="stamp-text truncate text-ink">
-          {festival ? t('v.survey.title') : booth ? pick(booth.nameEn, booth.nameTh) : t('v.survey.booth')}
-        </div>
-        <span className="w-16" />
-      </header>
-      <div className="flex-1 px-5 pb-8">{children}</div>
-    </main></>
+    <AGround className="mx-auto max-w-md" grid="h-[220px]"><main className="flex min-h-dvh flex-col text-ink">
+      {holding
+        ? <header className="flex h-16 items-center justify-between gap-3 px-4">
+            <span className="a-mono text-sm text-[var(--a-muted)]" aria-live="off">{t('v.survey.holdBack', { s: holdLeft })}</span>
+            <ALang />
+          </header>
+        : <AHeader lead="close" to={festival ? '/passport/prize' : '/passport/stamps'}
+            title={festival ? t('v.survey.title') : booth ? pick(booth.nameEn, booth.nameTh) : t('v.survey.booth')} />}
+      <div className="flex-1 px-4 pb-8">{children}</div>
+    </main></AGround>
   )
 
   if (err && !offer) return shell(<Notice tone="red">{err}</Notice>)
@@ -114,10 +112,10 @@ export default function Survey() {
   if (done) {
     return shell(
       <div className="flex flex-col items-center gap-4 py-10 text-center page-in">
-        <div className="text-5xl" aria-hidden>✓</div>
+        <span aria-hidden className="a-cut a-solid a-fill-neon grid h-14 w-14 place-items-center text-white [&_svg]:h-7 [&_svg]:w-7">{AIcon.check}</span>
         <div>
-          <div className="stamp-text text-ink">{t('v.survey.thanks')}</div>
-          <p className="mt-1 text-ink-soft">
+          <div className="a-hd text-2xl font-bold">{t('v.survey.thanks')}</div>
+          <p className="mb-0 mt-1 text-[#33415F]">
             {festival
               ? t('v.survey.thanksFestival')
               : t('v.survey.thanksBooth', { booth: booth ? pick(booth.nameEn, booth.nameTh) : t('v.survey.booth') })}
@@ -131,10 +129,8 @@ export default function Survey() {
           : <SurveyReward rewardIndex={rewardIndex} className="w-full" />)}
         {/* For someone already past the threshold: the gift QR is now waiting on the Prize tab. */}
         {festival && <p className="text-sm text-ink-soft">{t('v.survey.qrReady')}</p>}
-        <Link to={home} className="btn-primary w-full py-3.5 text-lg">
-          {festival ? t('v.survey.backPrize') : t('v.survey.scanAnother')}
-        </Link>
-        <Link to="/passport/stamps" className="text-sm text-ink-soft underline">{t('v.survey.myStamps')}</Link>
+        <PrimaryBtn to={home} className="w-full">{festival ? t('v.survey.backPrize') : t('v.survey.scanAnother')}</PrimaryBtn>
+        <Link to="/passport/stamps" className="a-link text-sm">{t('v.survey.myStamps')}</Link>
       </div>,
     )
   }
@@ -147,7 +143,7 @@ export default function Survey() {
             ? (festival ? t('v.survey.doneFestival') : t('v.survey.doneBooth'))
             : (festival ? t('v.survey.noneFestival') : t('v.survey.noneBooth'))}
         </Notice>
-        <Link to={home} className="btn-primary">{festival ? t('v.survey.backPrize') : t('v.survey.scanAnother')}</Link>
+        <PrimaryBtn to={home}>{festival ? t('v.survey.backPrize') : t('v.survey.scanAnother')}</PrimaryBtn>
       </div>,
     )
   }
@@ -155,16 +151,17 @@ export default function Survey() {
   return shell(
     <div className="page-in">
       {offer.headerImageUrl && <img src={offer.headerImageUrl} alt="" className="mb-4 max-h-40 w-full rounded-xl object-cover" />}
-      <h1 className="text-2xl font-bold">{offer.title}</h1>
-      {offer.description && <p className="mt-1 text-sm text-ink-soft">{offer.description}</p>}
-      <p className="mt-2 text-xs text-ink-soft">
+      <Eyebrow>{t('a.survey.eyebrow')}</Eyebrow>
+      <h1 className="a-hd mb-0 mt-1.5 text-[26px] font-bold leading-tight">{offer.title}</h1>
+      {offer.description && <p className="mb-0 mt-1 text-sm text-[#33415F]">{offer.description}</p>}
+      <p className="mb-0 mt-2 text-xs text-[var(--a-muted)]">
         {t('v.survey.count', { n: questions.length })}
         {' · '}
         {gatingGift ? t('v.survey.gateRelease') : festival ? t('v.survey.noPrizeEffect') : t('v.survey.pointsSaved')}
       </p>
 
       {/* The questions sit on a white panel, the same surface every passport card uses. */}
-      <div className="card card-static mt-5 p-3">
+      <div className="a-cut a-edge-neon mt-5 px-3 py-3">
         {/* Anchors for the scroll-to-first-missing jump. */}
         {questions.map((q) => <span key={q.id} id={`q-${q.id}`} />)}
         <SurveyForm questions={questions} answers={answers} onChange={setAnswers}
@@ -177,10 +174,10 @@ export default function Survey() {
       )}
 
       <div className="mt-5 flex flex-col gap-2">
-        <button className="btn-gold py-3.5 text-lg" onClick={submit} disabled={busy}>
+        <PrimaryBtn onClick={() => void submit()} disabled={busy}>
           {busy ? t('v.survey.sending') : t('v.survey.submit')}
-        </button>
-        <button className="text-sm text-ink-soft underline disabled:no-underline disabled:opacity-60"
+        </PrimaryBtn>
+        <button className="a-link min-h-11 cursor-pointer border-0 bg-transparent text-sm disabled:no-underline disabled:opacity-60"
           onClick={() => nav(home, { replace: true })} disabled={holding}>
           {holding
             ? t('v.survey.holdSkip', { s: holdLeft })

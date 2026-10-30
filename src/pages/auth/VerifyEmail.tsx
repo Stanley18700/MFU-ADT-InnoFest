@@ -71,7 +71,7 @@ export default function VerifyEmail() {
         {note && <Notice tone="green">{note}</Notice>}
         {err && <Notice tone="red">{err}</Notice>}
 
-        <button className="btn-gold py-3.5" onClick={check}>I have tapped it — continue</button>
+        <button className="btn-primary py-3.5" onClick={check}>I have tapped it — continue</button>
         <button className="btn-ghost" onClick={resend} disabled={busy || left > 0}>
           {busy ? 'Sending…' : left > 0 ? `Send it again in ${left}s` : 'Send the link again'}
         </button>

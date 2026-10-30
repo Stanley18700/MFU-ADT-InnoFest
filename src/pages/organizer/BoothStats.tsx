@@ -97,10 +97,10 @@ export default function BoothStats() {
         <div className="mt-3 h-52">
           <ResponsiveContainer>
             <BarChart data={hourly} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="rgba(23,65,78,.10)" />
-              <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#1F5A6B' }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={4} />
-              <YAxis tick={{ fontSize: 11, fill: '#1F5A6B' }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip cursor={{ fill: 'rgba(23,65,78,.06)' }} contentStyle={{ borderRadius: 12, border: 'none', fontSize: 12, background: '#17414E', color: '#CFE3EA' }} itemStyle={{ color: '#CFE3EA' }} labelStyle={{ color: '#CFE3EA' }} />
+              <CartesianGrid vertical={false} stroke="rgba(10,20,51,.10)" />
+              <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#4A5875' }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={4} />
+              <YAxis tick={{ fontSize: 11, fill: '#4A5875' }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip cursor={{ fill: 'rgba(10,20,51,.06)' }} contentStyle={{ borderRadius: 12, border: 'none', fontSize: 12, background: '#0A1433', color: '#CFE3EA' }} itemStyle={{ color: '#CFE3EA' }} labelStyle={{ color: '#CFE3EA' }} />
               <Bar dataKey="visitors" fill={onStage(booth.accentColor, true)} radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>

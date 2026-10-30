@@ -97,13 +97,18 @@ export function Scanner({ onResult, paused = false, className = '', fallback = V
   }, [])
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl bg-chrome ${className}`}>
+    <div className={`relative overflow-hidden bg-chrome ${className}`}>
       <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
-      {state === 'live' && (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <div className="aspect-square w-[65%] max-w-[14rem] rounded-2xl border-2 border-white/80 shadow-[0_0_0_9999px_rgba(14,24,38,.45)]" />
+      {/* The viewfinder: four cyan corners and a scan line sweeping between them (still, under
+          reduced motion). Drawn whatever the camera's state, so the frame never jumps in. */}
+      <div className="pointer-events-none absolute inset-0 grid place-items-center">
+        <div className="relative aspect-square w-[68%] max-w-[15rem] shadow-[0_0_0_9999px_rgba(10,19,64,.5)]">
+          {(['left-0 top-0 border-l-[3px] border-t-[3px]', 'right-0 top-0 border-r-[3px] border-t-[3px]', 'left-0 bottom-0 border-l-[3px] border-b-[3px]', 'right-0 bottom-0 border-r-[3px] border-b-[3px]'] as const).map((c) => (
+            <span key={c} className={`absolute h-9 w-9 border-[#00D2FF] ${c}`} style={{ filter: 'drop-shadow(0 0 4px rgb(0 210 255 / .8))' }} />
+          ))}
+          {state === 'live' && <span className="a-scanline" />}
         </div>
-      )}
+      </div>
       {state === 'starting' && <p className="absolute inset-0 grid place-items-center text-sm text-white/80">Starting camera…</p>}
       {state === 'denied' && (
         <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-white/90">

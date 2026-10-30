@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useTiers } from '../lib/data'
 import { useLocale } from '../lib/locale'
 import { useBodyScrollLock } from '../lib/useBodyScrollLock'
-import { LangToggle } from './ui'
+import { AIcon, ALang, Eyebrow, GhostBtn, PrimaryBtn } from './agency'
 
 /**
  * What the app is for, said once, in the reader's language.
@@ -70,42 +70,44 @@ export function VisitorWelcome() {
   const threshold = tiers[0]?.thresholdPoints ?? 100
   const close = () => { if (uid) remember(`mfu-welcome:${uid}`); setOpen(false); window.dispatchEvent(new Event(CLOSED_EVENT)) }
 
-  const steps: Array<[string, string, string]> = [
-    ['📷', t('v.welcome.s1Title'), t('v.welcome.s1Text')],
-    ['🎁', t('v.welcome.s2Title', { n: threshold }), t('v.welcome.s2Text', { n: threshold })],
-    ['⭐', t('v.welcome.s3Title'), t('v.welcome.s3Text')],
-    ['🧭', t('v.welcome.s4Title'), t('v.welcome.s4Text')],
+  const steps: Array<[ReactNode, string, string]> = [
+    [AIcon.pin, t('v.welcome.s1Title'), t('v.welcome.s1Text')],
+    [AIcon.scan, t('v.welcome.s2Title'), t('v.welcome.s2Text')],
+    [AIcon.star(false, 24), t('v.welcome.s3Title'), t('v.welcome.s3Text')],
+    [AIcon.rewards, t('v.welcome.s4Title', { n: threshold }), t('v.welcome.s4Text', { n: threshold })],
   ]
 
   return (
-    <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-ink/50 p-4 sm:items-center" onClick={close}>
+    <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-[rgb(10_19_64/.5)] p-3 sm:items-center" onClick={close}>
       <div role="dialog" aria-label={t('v.welcome.title')}
-        className="card card-static sheet-in max-h-[90vh] w-full max-w-md overflow-y-auto bg-white p-5" onClick={(e) => e.stopPropagation()}>
+        className="a-cut a-cut-xl a-edge-neon sheet-in max-h-[90vh] w-full max-w-md overflow-y-auto px-5 pb-5 pt-5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="stamp-text text-sky-900">{t('v.welcome.eyebrow')}</div>
-            <h2 className="mt-1 text-xl font-bold leading-snug">{t('v.welcome.title')}</h2>
+            <Eyebrow pulse>{t('v.welcome.eyebrow')}</Eyebrow>
+            <h2 className="a-hd mb-0 mt-1.5 text-[24px] font-bold leading-tight">{t('v.welcome.title')}</h2>
           </div>
           {/* The one place the toggle must be: a reader who cannot follow this sheet cannot
               find the toggle behind it either. */}
-          <LangToggle className="seg-floating shrink-0" />
+          <ALang />
         </div>
-        <p className="mt-2 text-sm text-ink-soft">{t('v.welcome.lead')}</p>
-        <ol className="mt-4 space-y-3">
+        <p className="mb-0 mt-2 text-sm text-[#33415F]">{t('v.welcome.lead')}</p>
+        {/* Four steps on a rail: a numbered sequence is what this is, so the numbers are real. */}
+        <ol className="relative mt-4 flex list-none flex-col gap-2.5 p-0">
+          <span aria-hidden className="absolute bottom-6 left-[21px] top-6 w-0.5" style={{ background: 'linear-gradient(#1D5BFF,#00D2FF)' }} />
           {steps.map(([icon, title, text], i) => (
-            <li key={i} className="flex gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-sky-100 text-xl" aria-hidden>{icon}</span>
-              <span className="min-w-0">
-                <span className="block font-semibold leading-tight">{title}</span>
-                <span className="block text-sm text-ink-soft">{text}</span>
+            <li key={i} className="relative flex gap-3">
+              <span className="a-cut a-cut-s a-solid a-fill-neon grid h-11 w-11 shrink-0 place-items-center text-white [&_svg]:h-6 [&_svg]:w-6" aria-hidden>{icon}</span>
+              <span className="a-cut a-solid a-fill-tint block min-w-0 flex-1 px-3 py-2.5">
+                <span className="a-hd block text-[16px] font-bold leading-tight"><span className="a-mono mr-1.5 text-xs text-[#1450E6]">{String(i + 1).padStart(2, '0')}</span>{title}</span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-[#33415F]">{text}</span>
               </span>
             </li>
           ))}
         </ol>
-        <p className="mt-4 text-xs text-ink-soft">{t('v.welcome.free')}</p>
-        <div className="mt-4 flex gap-2">
-          <button type="button" className="btn-primary flex-1 py-3 text-base" onClick={close}>{t('v.welcome.start')}</button>
-          <Link to="/scan" className="btn-gold flex-1 py-3 text-base" onClick={close}>{t('v.welcome.scanNow')}</Link>
+        <p className="mb-0 mt-4 text-xs text-[var(--a-muted)]">{t('v.welcome.free')}</p>
+        <div className="mt-4 flex flex-col gap-3">
+          <PrimaryBtn onClick={close}>{t('v.welcome.start')}</PrimaryBtn>
+          <GhostBtn to="/scan" onClick={close} icon={AIcon.scan}>{t('v.welcome.scanNow')}</GhostBtn>
         </div>
       </div>
     </div>
@@ -116,7 +118,7 @@ export function VisitorWelcome() {
 export function HowItWorksLink({ className = '' }: { className?: string }) {
   const { t } = useLocale()
   return (
-    <button type="button" className={`text-sm text-ink-soft underline ${className}`} onClick={openWelcome}>
+    <button type="button" className={`a-link min-h-11 cursor-pointer border-0 bg-transparent text-sm ${className}`} onClick={openWelcome}>
       {t('v.welcome.howItWorks')}
     </button>
   )
@@ -167,7 +169,7 @@ export function OrganizerWelcome({ boothId }: { boothId: string }) {
         onClick={(e) => e.stopPropagation()}>
         {/* The toggle gets its own row rather than sharing one with the heading: the eyebrow
             carries both languages, and beside a pill it wrapped to three lines on a phone. */}
-        <div className="flex justify-end"><LangToggle className="seg-floating" /></div>
+        <div className="flex justify-end"><ALang /></div>
         <div className="stamp-text mt-2 text-sky-900">{t('org.welcome.eyebrow')}</div>
         <h2 className="mt-1 text-lg font-bold leading-snug">{t('org.welcome.title')}</h2>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">

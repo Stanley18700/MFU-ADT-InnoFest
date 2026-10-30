@@ -49,9 +49,9 @@ export function Stamp({ booth, collected, size = 148, tilt = 0, animate = false,
   const badge = booth.badgeThumbUrl || booth.badgeUrl
   const shortName = booth.shortName || 'MFU'
   const num = 'MFU' + az(shortName) + '26'
-  const ink = collected ? '#17414E' : 'rgba(23,65,78,.34)'
-  const inkSoft = collected ? '#1F5A6B' : 'rgba(23,65,78,.30)'
-  const line = collected ? accent : 'rgba(23,65,78,.30)'
+  const ink = collected ? '#0A1433' : 'rgba(10,20,51,.34)'
+  const inkSoft = collected ? '#4A5875' : 'rgba(10,20,51,.30)'
+  const line = collected ? accent : 'rgba(10,20,51,.30)'
   const mrz = mrzLines(shortName, booth.nameEn || markTop, num, points, mrzDates)
   // maxWidth keeps a fixed px label inside its grid cell on a 320px phone (§12.11); aspect-ratio keeps the height honest when it shrinks.
   const style = { width: size, maxWidth: '100%', aspectRatio: `${RATIO}`, ['--tilt' as string]: `${tilt}deg`, transform: animate ? undefined : `rotate(${tilt}deg)` }
@@ -79,7 +79,7 @@ export function Stamp({ booth, collected, size = 148, tilt = 0, animate = false,
             <rect width="1.1" height="9" fill={accent} opacity={collected ? 0.16 : 0.07} />
           </pattern>
           <pattern id={`m-${uid}`} width="10.6" height="14" patternUnits="userSpaceOnUse">
-            <rect width="6.4" height="14" fill="#17414E" opacity={collected ? 0.5 : 0.14} />
+            <rect width="6.4" height="14" fill="#0A1433" opacity={collected ? 0.5 : 0.14} />
           </pattern>
           <clipPath id={`c-${uid}`}><rect width={VB_W} height={VB_H} rx="8" /></clipPath>
           <clipPath id={`e-${uid}`}><circle cx={emblemX} cy={emblemY} r="42" /></clipPath>
@@ -99,7 +99,7 @@ export function Stamp({ booth, collected, size = 148, tilt = 0, animate = false,
         </g>
         <rect x="7" y="7" width={VB_W - 14} height={VB_H - 14} rx="5" fill="none" stroke={line} strokeWidth="3" strokeDasharray={collected ? undefined : '7 6'} />
         <rect x="15" y="15" width={VB_W - 30} height={VB_H - 30} rx="2" fill="none" stroke={line} strokeWidth="1" opacity=".5" />
-        <rect x=".5" y=".5" width={VB_W - 1} height={VB_H - 1} rx="8" fill="none" stroke="rgba(23,65,78,.12)" />
+        <rect x=".5" y=".5" width={VB_W - 1} height={VB_H - 1} rx="8" fill="none" stroke="rgba(10,20,51,.12)" />
 
         {dense ? (
           <>
@@ -156,7 +156,7 @@ export function Stamp({ booth, collected, size = 148, tilt = 0, animate = false,
           </>
         )}
 
-        <rect x="15" y={VB_H - 68} width={VB_W - 30} height="53" fill="rgba(23,65,78,.045)" />
+        <rect x="15" y={VB_H - 68} width={VB_W - 30} height="53" fill="rgba(10,20,51,.045)" />
         {collected && dense ? (
           <g style={mono}>
             <text x="28" y={VB_H - 44} fontSize="13" textLength={VB_W - 56} lengthAdjust="spacingAndGlyphs" opacity=".9">{mrz[0]}</text>

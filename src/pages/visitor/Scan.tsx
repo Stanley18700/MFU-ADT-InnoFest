@@ -1,11 +1,12 @@
 import { useCallback, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { Scanner } from '../../components/Scanner'
 import { api, errorMessage } from '../../lib/api'
 import { normaliseManualCode } from '../../../shared/token'
 import type { ScanResult } from '../../../shared/model'
 import { ScanResultView } from './ScanResult'
-import { BackLink, Notice, Spinner } from '../../components/ui'
-import { FestivalBackdrop } from '../auth/parts'
+import { Notice } from '../../components/ui'
+import { AIcon, ALang, ErrorPanel } from '../../components/agency'
 import { useOnline } from '../../lib/useOnline'
 import { setServerTime } from '../../lib/serverClock'
 import { useLocale } from '../../lib/locale'
@@ -40,39 +41,44 @@ export default function Scan() {
   }
 
   return (
-    <><FestivalBackdrop hills={false} /><main className="relative mx-auto flex min-h-full max-w-md flex-col text-ink">
-      <header className="flex items-center justify-between gap-2 px-5 py-4">
-        <BackLink to="/passport">{t('v.back.passport')}</BackLink>
-        <div className="stamp-text text-ink">{t('v.scan.title')}</div>
-        <span className="w-16" />
-      </header>
-
+    <main className="relative mx-auto flex min-h-full max-w-md flex-col bg-white text-ink">
       {result ? (
-        <div className="m-4 rounded-3xl bg-white text-ink"><ScanResultView result={result} onRetry={() => { setResult(null); setManual('') }} /></div>
+        <ScanResultView result={result} onRetry={() => { setResult(null); setManual('') }} />
       ) : (
         <>
-          {/* The one place the dark ground still earns its keep: a lens reads against it. */}
-          <div className="mx-4 overflow-hidden rounded-[28px] bg-chrome p-2 shadow-float">
-            <Scanner onResult={(t) => void submit(t)} paused={busy} className="aspect-square max-h-[50dvh] w-full" />
+          {/* The one place the dark ground earns its keep: a lens reads against it. */}
+          <div className="relative bg-chrome text-white">
+            <header className="relative z-10 flex h-16 items-center justify-between gap-3 px-4">
+              <div className="flex min-w-0 items-center gap-2">
+                <Link to="/passport" aria-label={t('v.back.passport')} className="-ml-3 flex h-11 w-11 items-center justify-center text-white focus-visible:outline-[3px] focus-visible:outline-[#00B4EE]">{AIcon.close}</Link>
+                <h1 className="a-hd m-0 truncate text-[22px] font-bold">{t('v.scan.title')}</h1>
+              </div>
+              <ALang />
+            </header>
+            <Scanner onResult={(t) => void submit(t)} paused={busy} className="aspect-square max-h-[56dvh] w-full" />
           </div>
-          {busy && <Spinner label={t('v.scan.checking')} />}
-          {/*
-            * Ahead of the error, because it explains it. A stamp is recorded by the server, so
-            * scanning offline cannot work — and without this the visitor reads a network
-            * failure as a broken QR code and tries the booth's sign again and again.
-            */}
-          {!online && <div className="mx-4 mt-3"><Notice tone="amber">{t('v.scan.offline')}</Notice></div>}
-          {err && <div className="mx-4 mt-3"><Notice tone="red">{err}</Notice></div>}
-          <form onSubmit={onManual} className="card card-static mx-4 mt-4 mb-8">
-            <label className="stamp-text text-ink-soft" htmlFor="manual">{t('v.scan.manualLabel')}</label>
-            <div className="mt-2 flex gap-2">
-              <input id="manual" className="field flex-1 text-center font-mono text-xl tracking-[0.35em] uppercase" maxLength={7} autoCapitalize="characters" autoCorrect="off" spellCheck={false}
-                value={manual} onChange={(e) => setManual(normaliseManualCode(e.target.value))} placeholder="ABC234" />
-              <button className="btn-primary shrink-0" disabled={normaliseManualCode(manual).length !== 6 || busy}>{t('v.scan.stamp')}</button>
-            </div>
-          </form>
+          <div className="relative -mt-4 flex flex-1 flex-col gap-3 bg-white px-4 pb-8 pt-5" style={{ clipPath: 'polygon(18px 0,100% 0,100% 100%,0 100%,0 18px)' }}>
+            {busy && <div className="flex items-center gap-2"><span aria-hidden className="a-dot a-pulse" /><span className="a-label">{t('v.scan.checking')}</span></div>}
+            {/*
+              * Ahead of the error, because it explains it. A stamp is recorded by the server, so
+              * scanning offline cannot work — and without this the visitor reads a network
+              * failure as a broken QR code and tries the booth's sign again and again.
+              */}
+            {!online && <Notice tone="amber">{t('v.scan.offline')}</Notice>}
+            {err && <ErrorPanel>{err}</ErrorPanel>}
+            <form onSubmit={onManual}>
+              <label className="a-hd block text-lg font-bold" htmlFor="manual">{t('v.scan.manualLabel')}</label>
+              <div className="mt-3 flex gap-2.5">
+                <input id="manual" className="a-field a-mono flex-1 text-center text-xl tracking-[0.35em] uppercase" maxLength={7} autoCapitalize="characters" autoCorrect="off" spellCheck={false}
+                  value={manual} onChange={(e) => setManual(normaliseManualCode(e.target.value))} placeholder="ABC234" />
+                <div className={normaliseManualCode(manual).length === 6 && !busy ? 'a-glow' : ''}>
+                  <button className="a-btn a-btn-primary a-cut !h-12 !w-auto px-5 !text-base" disabled={normaliseManualCode(manual).length !== 6 || busy}>{t('v.scan.stamp')}</button>
+                </div>
+              </div>
+            </form>
+          </div>
         </>
       )}
-    </main></>
+    </main>
   )
 }

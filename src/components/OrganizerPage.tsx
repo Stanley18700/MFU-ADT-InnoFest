@@ -1,24 +1,23 @@
 import type { ReactNode } from 'react'
 import { OrganizerBar } from './OrganizerBar'
-import { Stamp } from './Stamp'
 import type { BoothDoc } from '../../shared/model'
 
 type BoothLike = Pick<BoothDoc, 'shortName' | 'accentColor' | 'badgeThumbUrl' | 'badgeUrl' | 'nameEn'>
 
 /**
- * The booth's own visa, blown up and turned down, as the ground of its pages.
+ * A faint InnoFest logo as the ground of the booth's pages (InterFest drew the booth's visa here).
  *
  * Sized in `vmin` so it is the same fraction of the screen on a phone, a booth tablet and a
  * desk monitor rather than a fixed slab that swamps one and disappears on another. It hangs off
  * the bottom-right corner, which is the quiet part of every one of these layouts.
  */
 export function BoothWatermark({ booth, marks }: { booth: BoothLike | null | undefined; marks?: { markTop: string; markBottom: string } }) {
+  // InnoFest: the festival's own logo, faint, in the quiet corner — not the InterFest visa.
+  void marks
   if (!booth) return null
   return (
-    <div className="pointer-events-none fixed bottom-[-6vmin] right-[-10vmin] -z-10 opacity-[0.16] mix-blend-multiply print:hidden" aria-hidden>
-      <div className="w-[min(78vmin,720px)] -rotate-[8deg]">
-        <Stamp booth={booth} collected size={720} className="!w-full" {...marks} />
-      </div>
+    <div className="pointer-events-none fixed bottom-[2vmin] right-[-4vmin] -z-10 opacity-[0.10] print:hidden" aria-hidden>
+      <img src="/brand/logo-innofest.webp" alt="" className="w-[min(60vmin,560px)]" />
     </div>
   )
 }
@@ -45,7 +44,7 @@ export function BoothWatermark({ booth, marks }: { booth: BoothLike | null | und
 export function StageGround() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-20 bg-page print:hidden" aria-hidden>
-      <img src="/brand/bg-sky-waves.webp" alt="" className="h-full w-full object-cover" />
+      <div className="a-grid" />
     </div>
   )
 }

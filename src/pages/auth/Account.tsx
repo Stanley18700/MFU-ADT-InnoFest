@@ -7,7 +7,7 @@ import { auth, db } from '../../lib/firebase'
 import { api, errorMessage } from '../../lib/api'
 import { ms, useDoc } from '../../lib/data'
 import { BackLink, Notice, Spinner } from '../../components/ui'
-import { FestivalBackdrop } from './parts'
+import { AIcon, GhostBtn, initials } from '../../components/agency'
 import { useLocale } from '../../lib/locale'
 import { useLabels } from '../../lib/labels'
 
@@ -43,10 +43,10 @@ export default function Account({ variant = 'page' }: { variant?: 'page' | 'pass
         * It used to be chrome and glass here and sky and paper there: the same settings, in two
         * visual systems, depending only on which door you came through.
         */}
-      {!inPassport && <FestivalBackdrop hills={false} />}
+      {!inPassport && <div aria-hidden className="a-grid fixed" />}
       <main className={inPassport
-        ? 'mx-auto max-w-md px-5 pb-8 pt-6 text-ink page-in'
-        : 'mx-auto min-h-full max-w-md px-5 pb-16 pt-6 text-ink page-in'}>
+        ? 'relative mx-auto max-w-md px-4 pb-8 pt-1 text-ink page-in'
+        : 'relative mx-auto min-h-full max-w-md px-4 pb-16 pt-6 text-ink page-in'}>
         {!inPassport && <div className="mb-4"><BackLink to={back} label={t('account.back')} /></div>}
 
         <Identity
@@ -62,7 +62,7 @@ export default function Account({ variant = 'page' }: { variant?: 'page' | 'pass
           * full-width buttons gave a routine email edit the same weight as ending the session.
           * Each row now says what it holds and what state it is in, and opens where it stands.
           */}
-        <div className="card card-flush mt-5">
+        <div className="a-cut a-edge-line mt-4">
           <Row
             title={t('acct.email.title')} value={user.email ?? '—'}
             status={emailVerified ? t('acct.email.ok') : t('acct.email.pending')}
@@ -86,8 +86,8 @@ export default function Account({ variant = 'page' }: { variant?: 'page' | 'pass
           </Row>
 
           {/* No disclosure: there is nothing to open. It is two facts, so it is two rows of facts. */}
-          <div className="border-t rule px-5 py-4">
-            <div className="text-sm font-semibold">{t('acct.methods.title')}</div>
+          <div className="border-t border-[#D2DCEE] px-4 py-4">
+            <div className="a-hd text-[15px] font-semibold">{t('acct.methods.title')}</div>
             <ul className="mt-2 flex flex-col gap-1.5 text-xs">
               {([[t('acct.methods.google'), hasGoogle(user)], [t('acct.methods.password'), hasPassword(user)]] as const).map(([label, on]) => (
                 <li key={label} className="flex items-center justify-between gap-3">
@@ -105,7 +105,7 @@ export default function Account({ variant = 'page' }: { variant?: 'page' | 'pass
           {/* `btn-ghost` is a 6%-ink wash, which on the passport's own sky read as a disabled strip rather
               than a control. The raised white pill is the same one the landing page uses for "I already
               have a passport" — plainly pressable, and still quieter than anything primary. */}
-          <button className="btn-quiet w-full py-3 text-base font-semibold text-ink shadow-raised" onClick={() => void signOut()}>{t('acct.leaving.signOut')}</button>
+          <GhostBtn onClick={() => void signOut()} icon={<svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 17l-5-5 5-5M5 12h11M14 4h5v16h-5" /></svg>}>{t('acct.leaving.signOut')}</GhostBtn>
           <p className="text-center text-xs text-ink-soft">{t('acct.leaving.note')}</p>
           <div className="mt-3 flex justify-center"><EraseData /></div>
         </div>
@@ -129,27 +129,23 @@ function Identity({ name, passportNo, role, email, className = '' }: {
   className?: string
 }) {
   const { ROLE_LABEL } = useLabels()
-  const body = (
-    <>
-      <div className="stamp-text text-sky-100">Mae Fah Luang University</div>
-      <div className="mt-1 truncate text-2xl font-bold text-white">{name}</div>
-      {passportNo
-        ? <div className="mt-1 font-mono text-xl font-bold tracking-[0.18em] text-foil">{passportNo}</div>
-        : role && <div className="mt-1 text-sm text-sky-200">{ROLE_LABEL[role as keyof typeof ROLE_LABEL] ?? role}</div>}
-      {email && <div className="mt-3 truncate text-xs text-sky-200">{email}</div>}
-    </>
-  )
   return (
-    <div className={`relative isolate overflow-hidden rounded-[28px] bg-sky-950/85 px-5 py-5 shadow-float backdrop-blur-xl ${className}`}>
-      {/* The cover's own mountains, at the cover's own size and strength — the two boards are the
-          same printed object and must not drift apart. */}
-      <img
-        src="/brand/illus-campus-papercut.webp" alt="" aria-hidden
-        className="pointer-events-none absolute -bottom-5 left-[-11%] -z-10 w-[128%] max-w-none opacity-[0.22]"
-        style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 26%)', maskImage: 'linear-gradient(to bottom, transparent, #000 26%)' }}
-      />
-      <div aria-hidden className="pointer-events-none absolute inset-2.5 rounded-[22px] ring-1 ring-inset ring-white/[0.12]" />
-      {body}
+    <div className={`a-cut a-edge-neon a-fill-id relative overflow-hidden px-4 py-4 ${className}`}>
+      <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 343 120" preserveAspectRatio="none">
+        <path d="M250 0l-36 120h22L286 0z" fill="#8FEAFF" opacity=".14" />
+      </svg>
+      <div className="relative flex items-center gap-3.5">
+        <div className="a-cut a-edge-neon grid h-14 w-12 shrink-0 place-items-center" style={{ ['--fill' as string]: 'linear-gradient(#14307f,#0b1a57)' }}>
+          <span className="a-hd text-xl font-bold text-white">{initials(name)}</span>
+        </div>
+        <div className="min-w-0">
+          <div className="a-hd truncate text-[22px] font-bold leading-tight text-white">{name}</div>
+          {passportNo
+            ? <div className="a-mono text-base font-semibold tracking-[.08em] text-[#8FEAFF]">{passportNo}</div>
+            : role && <div className="text-sm text-[#BFD3FF]">{ROLE_LABEL[role as keyof typeof ROLE_LABEL] ?? role}</div>}
+          {email && <div className="a-mono mt-1 truncate text-xs text-[#9FD8FF]">{email}</div>}
+        </div>
+      </div>
     </div>
   )
 }
@@ -168,16 +164,16 @@ function Row({ title, value, status, tone = 'text-ink-soft', children }: {
   const ref = useRef<HTMLDetailsElement>(null)
   const close = () => { if (ref.current) { ref.current.open = false; ref.current.querySelector('summary')?.focus() } }
   return (
-    <details ref={ref} className="reveal-host border-t rule first:border-t-0">
-      <summary className="press-row flex cursor-pointer list-none items-center gap-3 px-5 py-4 hover:bg-ink/6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-700/40">
+    <details ref={ref} className="reveal-host border-t border-[#D2DCEE] first:border-t-0">
+      <summary className="press-row flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3.5 hover:bg-[#F2F5FB] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-inset focus-visible:ring-[#00B4EE]">
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold">{title}</span>
+          <span className="a-hd block text-[15px] font-semibold">{title}</span>
           {value && <span className="mt-0.5 block truncate text-xs text-ink-soft">{value}</span>}
         </span>
         {status && <span className={`shrink-0 text-xs font-medium ${tone}`}>{status}</span>}
-        <span aria-hidden className="shrink-0 text-[10px] text-ink-soft transition-transform duration-150 [[open]_&]:rotate-180">▾</span>
+        <span aria-hidden className="shrink-0 text-[#1450E6] transition-transform duration-150 [[open]_&]:rotate-90">{AIcon.chevron}</span>
       </summary>
-      <div className="flex flex-col gap-3 px-5 pb-5">{children(close)}</div>
+      <div className="flex flex-col gap-3 px-4 pb-5">{children(close)}</div>
     </details>
   )
 }
@@ -358,7 +354,7 @@ function EraseData() {
       </Notice>
     )
   }
-  if (state === 'idle') return <button className="btn-quiet btn-sm" disabled={loading} onClick={() => setState('confirm')}>{t('acct.erase.ask')}</button>
+  if (state === 'idle') return <button className="a-hd inline-flex min-h-11 cursor-pointer items-center gap-1.5 border-0 bg-transparent text-[15px] font-semibold text-[#C8102E] underline underline-offset-2 disabled:opacity-50" disabled={loading} onClick={() => setState('confirm')}>{t('acct.erase.ask')}</button>
   return (
     <div className="flex flex-col gap-2">
       <Notice tone="amber">

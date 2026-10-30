@@ -1,9 +1,10 @@
-import { Link, Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
-import { useEvent } from '../../lib/data'
+import { ms, useEvent } from '../../lib/data'
 import { eventDateLine } from '../../lib/eventText'
-import { LangToggle, Spinner } from '../../components/ui'
-import { FestivalBackdrop, ScrapLabel, UniversityMark } from '../auth/parts'
+import type { ReactNode } from 'react'
+import { Spinner } from '../../components/ui'
+import { AGround, AHeader, AIcon, Eyebrow, GhostBtn, PrimaryBtn } from '../../components/agency'
 import { useLocale } from '../../lib/locale'
 
 export default function Landing() {
@@ -18,61 +19,70 @@ export default function Landing() {
   if (user && !emailVerified) return <Navigate to="/verify-email" replace />
   if (user) return <Navigate to="/join" replace />
 
-  /**
-   * One centred column on every width. On a phone the three blocks are pushed apart so the
-   * buttons sit in the thumb zone, standing on the paper hills at the very foot of the screen;
-   * from `sm` up they close into a single centred group, because `justify-between` on a tall
-   * desktop window strands the heading and the buttons at opposite edges of the screen.
-   *
-   * The three blocks enter 60ms apart. A first-visit screen may take a beat; nothing else in the
-   * app staggers, and `prefers-reduced-motion` collapses it with the rest of `.page-in`.
+  /*
+   * Incoming transmission: the story in two lines and one sentence, the event's facts in one
+   * panel, and the two ways in at the foot, in the thumb zone. The logo glitches in once on load
+   * and then holds perfectly still (still from the start under reduced motion).
    */
   return (
-    <><FestivalBackdrop /><main className="relative mx-auto flex min-h-full w-full max-w-md flex-col items-center justify-between gap-6 overflow-x-clip px-6 pt-8 text-center text-ink sm:max-w-lg sm:justify-center sm:gap-14 sm:py-16" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)' }}>
-      {/* No haze behind this block: the wordmark is its own cut-paper shape on a plain sky, and a
-          frosted panel behind it read as a card the artwork was sitting in. */}
-      {/* First screen anyone sees, and the only one before an account exists: the switch has to
-          be here or a Thai speaker meets an English sign-up form with no way out of it. */}
-      <div className="absolute right-4 top-4 z-30"><LangToggle className="seg-floating" /></div>
-      <div className="page-in flex flex-col items-center px-3 py-2">
-        <ScrapLabel tone="ink" tilt={-2.5}>{t('v.landing.university')}</ScrapLabel>
-        {/*
-         * The festival's own wordmark, which the typed heading stood in for while the asset could
-         * not be pulled from the design tool. It carries the name, so the name is its alt text —
-         * an admin who renames the event still renames the page for a screen reader, and the date
-         * line below is still live.
-         */}
-        <img src="/brand/logo-festival-tagline.webp" alt={pick(event.nameEn, event.nameTh)} className="mt-3 w-[min(74vw,340px)] sm:w-[380px]" />
-        <p className="mt-2 text-sm font-medium text-ink-soft sm:text-base">{eventDateLine(event)}</p>
-      </div>
+    <AGround className="mx-auto max-w-md">
+      <main className="flex min-h-dvh flex-col pb-[max(env(safe-area-inset-bottom),12px)]">
+        <AHeader lead="marks" />
+        <section aria-label={t('a.landing.tx')} className="page-in px-4 pt-1">
+          <Eyebrow pulse>{t('a.landing.tx')}</Eyebrow>
+          <h1 className="a-hd mb-0 mt-2.5 text-[31px] font-bold leading-[1.12] tracking-tight">
+            <span className="block">{t('a.landing.h1a')}</span>
+            <span className="a-neon-text block">{t('a.landing.h1b')}</span>
+          </h1>
+          <p className="a-cut a-cut-s a-solid a-fill-tint mb-0 mt-3 px-3 py-2.5 text-sm leading-snug text-[#24324F]">{t('a.landing.story')}</p>
+        </section>
 
-      <div className="page-in flex flex-col items-center gap-5" style={{ animationDelay: '60ms' }}>
-        <UniversityMark className="h-28 w-28 xs:h-36 xs:w-36" />
-        {/*
-          * A tinted panel rather than `.haze`: over the campus its backdrop blur draws a hard
-          * rectangle that the recipe's radial mask fades the colour out of but not the blur.
-          *
-          * The scrap sits astride the panel's top edge rather than inside it. Inside, it read as
-          * the first line of the content; taped across the edge it labels the panel, which is what
-          * it is for — and a paper scrap stuck slightly askew over a join is the festival's own
-          * idiom rather than a heading borrowed from somewhere else.
-          */}
-        <div className="relative mt-2">
-          {/* The wrapper does the positioning: ScrapLabel spends `transform` on its own tilt. */}
-          <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2">
-            <ScrapLabel tone="orange" tilt={1.75}>{t('v.landing.badge')}</ScrapLabel>
-          </div>
-          <div className="rounded-[28px] bg-sky-100/75 px-5 pb-4 pt-7">
-            <p className="max-w-xs text-pretty text-ink sm:max-w-sm">{t('v.landing.pitch')}</p>
+        <div className="relative mt-2 flex justify-center">
+          <div aria-hidden className="absolute left-1/2 top-1/2 h-[240px] w-[360px] -translate-x-1/2 -translate-y-1/2" style={{ background: 'radial-gradient(closest-side, rgb(0 210 255 / .26), rgb(46 60 255 / .12) 55%, rgb(255 255 255 / 0))' }} />
+          {/* The festival's own wordmark carries the name, so the name is its alt text. */}
+          <div className="a-glitch relative aspect-[270/174] w-[min(72vw,280px)]">
+            <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="gl-base absolute inset-0 h-full w-full object-contain" />
+            <img src="/brand/logo-innofest.webp" alt="" aria-hidden className="gl-a" />
+            <img src="/brand/logo-innofest.webp" alt="" aria-hidden className="gl-b" />
           </div>
         </div>
-      </div>
+        <img src="/brand/campus-holo.webp" alt="" aria-hidden className="-mt-2 block h-auto w-full" />
 
-      {/* Capped rather than full-width: a 32rem button reads as a banner, not a button. */}
-      <div className="page-in flex w-full max-w-sm flex-col gap-3" style={{ animationDelay: '120ms' }}>
-        <Link to="/signup" className="btn-primary py-3.5 text-lg shadow-raised">{t('v.landing.start')}</Link>
-        <Link to="/signin" className="btn-quiet py-3.5 text-base font-semibold text-ink shadow-raised">{t('v.landing.have')}</Link>
-      </div>
-    </main></>
+        <div className="relative z-10 mx-4 -mt-7">
+          <div className="a-cut a-edge-soft grid grid-cols-2 gap-x-3 gap-y-2.5 px-3.5 py-3">
+            <Fact icon={AIcon.calendar} label={t('a.landing.date')}>{eventDateLine(event, false)}</Fact>
+            <Fact icon={AIcon.clock} label={t('a.landing.time')} mono>{eventTimeLine(event)}</Fact>
+            <div className="col-span-2 border-t border-dashed border-[#C9D4EA] pt-2.5">
+              <Fact icon={AIcon.pin} label={t('a.landing.venue')}>{t('a.landing.venueName')}</Fact>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-auto flex flex-col gap-3.5 px-4 pt-6">
+          <PrimaryBtn to="/signup">{t('v.landing.start')}</PrimaryBtn>
+          <GhostBtn to="/signin">{t('v.landing.have')}</GhostBtn>
+          <div className="a-mono mt-1 text-center text-[10px] tracking-[.1em] text-[var(--a-muted)]">{t('a.landing.foot')}</div>
+        </div>
+      </main>
+    </AGround>
   )
+}
+
+function Fact({ icon, label, children, mono = false }: { icon: ReactNode; label: string; children: ReactNode; mono?: boolean }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="mt-0.5 shrink-0 text-[#1450E6]">{icon}</span>
+      <div className="min-w-0">
+        <div className="a-mono text-[10px] tracking-[.08em] text-[#55627E]">{label}</div>
+        <div className={`${mono ? 'a-mono' : 'a-hd'} text-[15px] font-semibold leading-tight`}>{children}</div>
+      </div>
+    </div>
+  )
+}
+
+/** 08:00–17:00 in Bangkok time, from the live event's own start and end. */
+function eventTimeLine(event: { startsAt: unknown; endsAt: unknown }) {
+  const f = (v: unknown) => { const n = ms(v); return n ? new Date(n).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }) : null }
+  const a = f(event.startsAt), b = f(event.endsAt)
+  return a && b ? `${a}–${b}` : '—'
 }

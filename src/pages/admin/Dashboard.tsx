@@ -48,7 +48,7 @@ export default function Dashboard() {
 
       <section className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Fig value={fmt(m.scoped.visitors)} label={t('print.visitors')} />
-        <Fig value={fmt(m.scoped.stamps)} label={t('print.stamps')} accent="#1A8AA6" />
+        <Fig value={fmt(m.scoped.stamps)} label={t('print.stamps')} accent="#1450E6" />
         <Fig value={fmt(ev.totals.redeemed)} label={t('print.redeemed')} accent="#9A5A0F" />
         <Fig value={fmt(ev.activeLast15m)} label={t('print.active15')} accent="#4C764F" />
       </section>
@@ -65,7 +65,7 @@ export default function Dashboard() {
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: b.accentColor }} />
                 <span className="min-w-0 flex-1 truncate font-medium lg:w-40 lg:flex-none">{b.nameEn}</span>
                 <div className="relative order-1 h-5 w-full min-w-0 flex-1 overflow-hidden rounded bg-ink/5 lg:order-none lg:w-auto">
-                  <div className="h-full rounded" style={{ width: `${(b.stamps / max) * 100}%`, background: i === 0 && b.stamps > 0 ? '#F5C63C' : lowest.has(b.id) ? '#DC8A2A' : b.accentColor, opacity: 0.85 }} />
+                  <div className="h-full rounded" style={{ width: `${(b.stamps / max) * 100}%`, background: i === 0 && b.stamps > 0 ? '#FFC93C' : lowest.has(b.id) ? '#DC8A2A' : b.accentColor, opacity: 0.85 }} />
                 </div>
                 <span className="fig order-1 w-12 shrink-0 text-right text-base lg:order-none">{fmt(b.stamps)}</span>
                 <span className="order-1 shrink-0 text-right text-xs lg:order-none lg:w-24">{i === 0 && b.stamps > 0 ? <span className="text-foil">{t('dash.topBooth')}</span> : lowest.has(b.id) ? <span className="text-warn-text">{t('dash.needsTraffic')}</span> : null}</span>
@@ -80,12 +80,12 @@ export default function Dashboard() {
             {timeline.length === 0 ? <p className="grid h-full place-items-center text-sm text-ink-soft">{t('print.noScans')}</p> : (
               <ResponsiveContainer>
                 <AreaChart data={timeline} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1A8AA6" stopOpacity={0.35} /><stop offset="100%" stopColor="#1A8AA6" stopOpacity={0.02} /></linearGradient></defs>
+                  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1450E6" stopOpacity={0.35} /><stop offset="100%" stopColor="#1450E6" stopOpacity={0.02} /></linearGradient></defs>
                   <CartesianGrid vertical={false} stroke="rgba(23,38,63,.1)" />
-                  <XAxis dataKey="t" tick={{ fontSize: 11, fill: '#1F5A6B' }} axisLine={false} tickLine={false} minTickGap={32} />
-                  <YAxis tick={{ fontSize: 11, fill: '#1F5A6B' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <XAxis dataKey="t" tick={{ fontSize: 11, fill: '#4A5875' }} axisLine={false} tickLine={false} minTickGap={32} />
+                  <YAxis tick={{ fontSize: 11, fill: '#4A5875' }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip contentStyle={{ borderRadius: 12, border: 'none', fontSize: 12 }} />
-                  <Area type="monotone" dataKey="stamps" stroke="#1A8AA6" strokeWidth={2} fill="url(#g)" dot={false} activeDot={{ r: 4 }} />
+                  <Area type="monotone" dataKey="stamps" stroke="#1450E6" strokeWidth={2} fill="url(#g)" dot={false} activeDot={{ r: 4 }} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -195,7 +195,7 @@ function CrossSchool({ rows, cols, max }: { rows: Array<[string, Record<string, 
               {cols.map((c) => {
                 const n = r[c.id] ?? 0
                 const own = c.hostUnit.toLowerCase().includes(school.toLowerCase().replace(/^school of /, ''))
-                return <td key={c.id} className="p-0.5"><div className={`grid h-7 w-9 place-items-center rounded ${own ? 'ring-1 ring-foil' : ''}`} style={{ background: `rgba(26,138,166,${0.08 + (n / max) * 0.8})`, color: n / max > 0.5 ? '#fff' : '#17414E' }}>{n || ''}</div></td>
+                return <td key={c.id} className="p-0.5"><div className={`grid h-7 w-9 place-items-center rounded ${own ? 'ring-1 ring-foil' : ''}`} style={{ background: `rgba(26,138,166,${0.08 + (n / max) * 0.8})`, color: n / max > 0.5 ? '#fff' : '#0A1433' }}>{n || ''}</div></td>
               })}
             </tr>
           ))}

@@ -46,8 +46,8 @@ export default function SignUp() {
 
   return (
     <AuthShell
-      title="Create your account"
-      lead="One account holds your passport for the whole festival. Sign in again on a new phone and every stamp is still there."
+      title="Create your agent account"
+      lead="One account keeps your recovered files safe all day. Sign in again on a new phone and every file is still there."
       foot={<>Already have one? <Link to="/signin" state={{ from }} className="link font-semibold text-action">Sign in</Link></>}
     >
       {/* Same reason as SignIn: a redirect failure lands on a fresh page load, with no caller
@@ -62,9 +62,9 @@ export default function SignUp() {
 
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Field label="Your name" required maxLength={80} autoComplete="name"
-          placeholder="Shown on your passport cover" value={name} onChange={(e) => setName(e.target.value)} />
+          placeholder="Shown on your agent ID" value={name} onChange={(e) => setName(e.target.value)} />
         <Field label="Email" type="email" required autoComplete="email" inputMode="email"
-          placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)}
           hint="We send a one-tap link here to confirm the address is yours." />
         <Field label="Password" type="password" required minLength={MIN_PASSWORD} autoComplete="new-password"
           placeholder={`At least ${MIN_PASSWORD} characters`} value={password} onChange={(e) => setPassword(e.target.value)} />

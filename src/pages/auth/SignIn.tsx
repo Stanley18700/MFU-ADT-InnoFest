@@ -38,8 +38,8 @@ export default function SignIn() {
 
   return (
     <AuthShell
-      title="Sign in"
-      lead="Your passport, stamps and points follow the account — sign in on any phone and they are all there."
+      title="Welcome back, agent"
+      lead="Sign in to keep recovering files for 2036. Your agent ID, files and points follow the account to any phone."
       foot={<>New here? <Link to="/signup" state={{ from, email }} className="link font-semibold text-action">Create an account</Link></>}
     >
       {/* A redirect failure comes back on a fresh page load with no caller waiting for it, so it
@@ -54,7 +54,7 @@ export default function SignIn() {
 
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Field label="Email" type="email" required autoComplete="email" inputMode="email"
-          placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         <div>
           <Field label="Password" type="password" required autoComplete="current-password"
             placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />

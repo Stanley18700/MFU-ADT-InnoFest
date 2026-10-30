@@ -79,7 +79,7 @@ function SideNav({ collapsed, onToggle }: { collapsed: boolean; onToggle?: () =>
         */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <img
-          src="/brand/illus-campus-papercut.webp" alt="" aria-hidden
+          src="/brand/campus-holo.webp" alt="" aria-hidden
           className="absolute bottom-0 left-1/2 w-[22rem] max-w-none -translate-x-1/2 opacity-[0.15]"
           // Faded into the chrome, not laid on it: its skyline is otherwise a hard horizontal edge
           // straight across the rail, and a straight edge above the account row reads as a panel.
@@ -184,10 +184,7 @@ export default function AdminLayout() {
         * A sibling of the rail and the content, not a child of either: `main` hosts `.page-in`,
         * whose transform would make itself the containing block for anything fixed inside it.
         */}
-      <img
-        src="/brand/bg-sky-waves.webp" alt="" aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 h-full w-full object-cover print:hidden"
-      />
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-page-quiet print:hidden"><div className="a-grid" /></div>
 
       {/* Phone and tablet: the rail is a drawer, so the bar is what is always on screen. */}
       <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 bg-chrome px-3 text-white lg:hidden">

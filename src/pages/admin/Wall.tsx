@@ -164,7 +164,7 @@ export default function Wall() {
        */
       <section className="mt-[1vh] grid min-h-0 flex-1 grid-cols-[1.05fr_0.95fr] items-center gap-[3vw]">
         <div className="flex min-h-0 flex-col justify-center">
-          <img src="/brand/logo-festival-tagline.webp" alt={pick(event.nameEn, event.nameTh)} className="w-[min(38vw,720px)]" />
+          <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="w-[min(38vw,720px)]" />
           <div className="mt-[2.5vh]"><ScrapLabel tone="orange" tilt={1.75} className="!text-[1.3vw]">{t('v.landing.badge')}</ScrapLabel></div>
           <p className="mt-[2vh] max-w-[36vw] text-[1.7vw] font-medium leading-snug text-ink">{t('v.landing.pitch')}</p>
 

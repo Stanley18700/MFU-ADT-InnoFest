@@ -24,19 +24,28 @@ export function Fig({ value, label, accent, sub }: { value: ReactNode; label: st
  */
 export function Spinner({ label = 'Loading…', page = false }: { label?: string; page?: boolean }) {
   if (page) {
+    /*
+     * Establishing the link: the white ground and grid, the InnoFest logo with a cyan scan line
+     * sweeping it, and a thin progress line. The boot splash in index.html is the same picture,
+     * so the hand-over from it is invisible.
+     */
     return (
-      <div className="fixed inset-0 z-50 grid place-items-center bg-page" role="status" aria-live="polite">
-        <img src="/brand/bg-sky-waves.webp" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
-        <div className="relative flex flex-col items-center gap-5 px-6">
-          <img src="/brand/logo-festival.webp" alt="" aria-hidden className="mark-breathe w-[min(62vw,300px)]" />
-          <span className="text-sm font-medium text-ink-soft">{label}</span>
+      <div className="fixed inset-0 z-50 grid place-items-center bg-white" role="status" aria-live="polite">
+        <div aria-hidden className="a-grid !h-[65%]" />
+        <div className="relative flex w-[min(80vw,320px)] flex-col items-center">
+          <div className="relative w-full overflow-hidden">
+            <img src="/brand/logo-innofest.webp" alt="" aria-hidden className="block w-full" />
+            <span aria-hidden className="a-scanline" />
+          </div>
+          <div className="mt-6 flex items-center gap-2"><span aria-hidden className="a-dot a-pulse" /><span className="a-label">{label}</span></div>
+          <div aria-hidden className="relative mt-4 h-1 w-full overflow-hidden bg-[#E3EAF7]"><span className="absolute inset-y-0 left-0 w-2/3 animate-pulse" style={{ background: 'var(--a-neon-bar)' }} /></div>
         </div>
       </div>
     )
   }
   return (
     <div className="flex items-center justify-center gap-3 p-8 text-ink-soft" role="status">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/20 border-t-action" />
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/15 border-t-[#1D5BFF]" />
       <span className="text-sm">{label}</span>
     </div>
   )

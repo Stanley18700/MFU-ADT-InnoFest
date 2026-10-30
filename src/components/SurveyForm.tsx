@@ -139,7 +139,7 @@ function QuestionInput({ q, value, onChange, accent, readOnly = false }: {
               return (
                 <button key={n} type="button" role="radio" aria-checked={on} onClick={() => onChange(on ? undefined : n)}
                   className={`h-11 min-w-11 rounded-lg border px-2 text-sm tabular-nums ${on ? 'border-transparent text-white' : 'border-ink/15 hover:bg-ink/5'}`}
-                  style={on ? { background: accent ?? '#12708A' } : undefined}>
+                  style={on ? { background: accent ?? '#1D5BFF' } : undefined}>
                   {n}
                 </button>
               )

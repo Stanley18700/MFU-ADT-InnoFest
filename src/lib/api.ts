@@ -1,10 +1,13 @@
 import { httpsCallable } from 'firebase/functions'
 import { functions } from './firebase'
+import * as fx from '@fixtures'
 import type { ApplyPointsInput, ApplyPointsResult, PointPreview } from '../../shared/points'
 import type { PrizeSession, Role, ScanResult, SurveyAnswer, SurveyQuestion, VisitorType, Zone } from '../../shared/model'
 
 function call<Req, Res>(name: string) {
   const fn = httpsCallable<Req, Res>(functions, name)
+  // `--mode fixtures` (design review): canned answers, no network. Dead code in a real build.
+  if (import.meta.env.MODE === 'fixtures') return async (data: Req): Promise<Res> => fx.fxCall(name, data) as Res
   return async (data: Req): Promise<Res> => (await fn(data)).data
 }
 
