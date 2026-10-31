@@ -46,7 +46,9 @@ export default function Landing() {
             <img src="/brand/logo-innofest.webp" alt="" aria-hidden className="gl-b" />
           </div>
         </div>
-        <img src="/brand/campus-holo.webp" alt="" aria-hidden className="-mt-2 block h-auto w-full" />
+        <div className="landing-campus-wrap -mt-2">
+          <img src="/brand/cyber-campus-cutout.png" alt="" aria-hidden className="landing-campus block h-auto w-full" />
+        </div>
 
         <div className="relative z-10 mx-4 -mt-7">
           <div className="a-cut a-edge-soft grid grid-cols-2 gap-x-3 gap-y-2.5 px-3.5 py-3">
