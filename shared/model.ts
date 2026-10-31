@@ -25,12 +25,17 @@ export const BOOTH_CATEGORY_LABELS: Record<BoothCategory, string> = {
  * `events/{id}` with `status: 'live'` — so the app can be run again for a new event
  * without a redeploy. Read it with `getActiveEvent()` (functions) or `useEvent()` (client).
  */
-export const EVENT_ID = 'mfu-go-global-2026'
-export const EVENT_DAYS = ['2026-09-16', '2026-09-17', '2026-09-18'] as const
+export const EVENT_ID = 'adt-innofest-2026'
+/** ADT InnoFest 2026 is one day: Wednesday 11 November 2026. */
+export const EVENT_DAYS = ['2026-11-11'] as const
 export type EventDay = (typeof EVENT_DAYS)[number]
 
-/** Every booth is worth this before the quiet/busy adjustment moves it (shared/points.ts). */
-export const BOOTH_BASE_POINTS = 10
+/**
+ * Every booth is worth this before the quiet/busy adjustment moves it (shared/points.ts).
+ * InnoFest: 1 point per project, so points are simply the number of files recovered —
+ * 50 unlocks MFU333 activity credit and 100 the prize.
+ */
+export const BOOTH_BASE_POINTS = 1
 
 /**
  * Zone weighting is switched off for 2026: with 76 booths spread over the whole hall,
@@ -41,7 +46,7 @@ export const BOOTH_BASE_POINTS = 10
 export const ZONE_POINTS: Record<Zone, number> = {
   entrance: BOOTH_BASE_POINTS, middle: BOOTH_BASE_POINTS, far: BOOTH_BASE_POINTS,
 }
-export const DEFAULT_PASSPORT_PREFIX = 'MFU-GG'
+export const DEFAULT_PASSPORT_PREFIX = 'ADT-IF'
 export type EventStatus = 'draft' | 'live' | 'archived'
 
 export const ACCENTS = [
@@ -64,9 +69,9 @@ export interface PrizeSession {
   endMinute: number
 }
 
+/** InnoFest: the agency desk is open the whole event, 08:00–17:00, as one session. */
 export const DEFAULT_PRIZE_SESSIONS: PrizeSession[] = [
-  { id: 'am', label: 'Morning', startMinute: 9 * 60, endMinute: 12 * 60 },
-  { id: 'pm', label: 'Afternoon', startMinute: 12 * 60, endMinute: 16 * 60 },
+  { id: 'day', label: 'All day', startMinute: 8 * 60, endMinute: 17 * 60 },
 ]
 
 export interface EventDoc {
@@ -79,7 +84,7 @@ export interface EventDoc {
   boothCount: number
   /** The days this event runs, 'YYYY-MM-DD' in Asia/Bangkok. Was the EVENT_DAYS constant. */
   days: string[]
-  /** Passport number prefix, e.g. 'MFU-GG' -> MFU-GG-0001. */
+  /** Passport number prefix, e.g. 'ADT-IF' -> ADT-IF-0001. */
   passportPrefix: string
   /** Default points offered per zone when a booth is created. */
   zonePoints: Record<Zone, number>

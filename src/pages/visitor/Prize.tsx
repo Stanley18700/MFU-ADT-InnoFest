@@ -156,7 +156,9 @@ export default function Prize() {
                 * also renders while the desk is shut: "how many are left" is the question people
                 * open this page to ask, before as well as during.
                 */}
-              {!redeemed && stock.capacity > 0 && (
+              {/* A reward with no real limit (the MFU333 credit, stocked far past attendance)
+                  has no count worth showing. */}
+              {!redeemed && stock.capacity > 0 && stock.capacity < 10000 && (
                 <div className="mt-3 border-t border-[#D2DCEE] pt-2.5">
                   {stock.state === 'closed' ? (
                     <p className="m-0 text-sm text-[#33415F]">

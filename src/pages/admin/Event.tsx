@@ -49,7 +49,7 @@ function blank(): Form {
     nameEn: '', nameTh: '',
     startsAt: toLocalInput(start.getTime()), endsAt: toLocalInput(end.getTime()),
     days: daysBetween(start.getTime(), end.getTime()),
-    qrPeriodSeconds: 20, passportPrefix: 'MFU-GG',
+    qrPeriodSeconds: 20, passportPrefix: 'ADT-IF',
     zonePoints: { entrance: 10, middle: 15, far: 20 },
     prizeSessions: DEFAULT_PRIZE_SESSIONS.map((x) => ({ ...x })),
   }
@@ -228,7 +228,7 @@ export default function EventAdmin() {
         </label>
         <label>{t('event.prefix')}
           <input className="field mt-1" value={form.passportPrefix} onChange={(e) => setForm({ ...form, passportPrefix: e.target.value.toUpperCase() })} />
-          <span className="text-xs text-ink-soft">{t('event.prefixHint', { prefix: form.passportPrefix || 'MFU-GG' })}</span>
+          <span className="text-xs text-ink-soft">{t('event.prefixHint', { prefix: form.passportPrefix || 'ADT-IF' })}</span>
         </label>
 
         <fieldset className="md:col-span-2">

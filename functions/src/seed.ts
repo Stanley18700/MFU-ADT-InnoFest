@@ -1,6 +1,6 @@
 /**
- * Seed the event, the 76 booths of the official booth sheet (with secrets), the single
- * main-organiser prize and reference data.
+ * Seed ADT InnoFest 2026: the event, its booths (with secrets) once the list is in
+ * booths.data.ts, the two rewards (MFU333 at 50, the prize at 100) and reference data.
  *
  *   npm run seed                 -> against the real project (needs `gcloud auth application-default login`
  *                                   or GOOGLE_APPLICATION_CREDENTIALS)
@@ -33,34 +33,40 @@ function readFirebaserc(): string {
     const rc = require('node:fs').readFileSync(require('node:path').resolve(__dirname, '..', '..', '.firebaserc'), 'utf8')
     return JSON.parse(rc).projects.default
   } catch {
-    return 'mfu-passport'
+    return 'adt-innofest'
   }
 }
 
 /**
- * One prize from the main organisers, at 100 points. Booths hand out their own small gifts
- * themselves — those are deliberately outside the app, so nothing about them is modelled here.
+ * Two rewards, both collected at the agency (prize) desk and confirmed there by staff, exactly
+ * as the InterFest gift was. One visitor can get both.
  *
- * Stock is per SESSION, not per event: 50 gifts each morning and each afternoon, every day.
- * Points are never reset by a session boundary, so a visitor who qualifies once the morning's
- * 50 are gone simply collects after 12:00.
+ *  - MFU333 activity credit at 50 points. Not a physical item, so its "stock" is set far above
+ *    any possible attendance; the Rewards tab does not show a count for it.
+ *  - The prize at 100 points. PLACEHOLDER stock until the organisers say what it is and how
+ *    many there are — set the real number in Admin → Prizes & stock.
  */
-const PRIZE = {
-  id: 'global-passport',
-  name: 'Global Passport Gift',
-  thresholdPoints: 100,
-  reward: 'The MFU Go Global gift, collected at the prize desk',
-  stockPerSession: 50,
-  grantsDrawEntry: false,
-}
+const TIERS = [
+  {
+    id: 'mfu333', name: 'MFU333', thresholdPoints: 50, sortOrder: 1, stockTotal: 100000,
+    reward: 'MFU333 activity credit — MFU students, at the agency desk with your student ID',
+    outOfStockNoteEn: '',
+  },
+  {
+    id: 'prize', name: 'Prize', thresholdPoints: 100, sortOrder: 2, stockTotal: 300,
+    reward: 'The ADT InnoFest prize, collected at the agency desk',
+    outOfStockNoteEn: 'The prizes have all been collected — thank you for completing the mission.',
+  },
+] as const
 
 async function main() {
   console.log(`Seeding project ${projectId}${process.env.FIRESTORE_EMULATOR_HOST ? ' (emulator)' : ''}`)
 
   await db.doc(`events/${EVENT_ID}`).set({
-    nameTh: 'เทศกาลนานาชาติ MFU 2026', nameEn: 'MFU International Festival 2026',
-    startsAt: Timestamp.fromDate(new Date('2026-09-16T09:00:00+07:00')),
-    endsAt: Timestamp.fromDate(new Date('2026-09-18T16:00:00+07:00')),
+    nameTh: 'ADT InnoFest 2026', nameEn: 'ADT InnoFest 2026',
+    startsAt: Timestamp.fromDate(new Date('2026-11-11T08:00:00+07:00')),
+    endsAt: Timestamp.fromDate(new Date('2026-11-11T17:00:00+07:00')),
+    stampMarkTop: 'ADT INNOFEST', stampMarkBottom: '2026 · MFU',
     qrPeriodSeconds: 20, active: true, boothCount: SEED_BOOTHS.length, createdAt: FieldValue.serverTimestamp(),
     // The event is data, not a constant, so an admin can archive it and create the next one
     // from /admin/event without a redeploy. The prize windows are data for the same reason:
@@ -88,26 +94,20 @@ async function main() {
     await db.doc(`stats/booths/items/${b.id}`).set({ boothId: b.id, stamps: FieldValue.increment(0), byVisitorType: {}, byDay: {}, byHour: {} }, { merge: true })
   }
 
-  {
-    // Event-wide figures, kept for the audit trail and the archive. What the desk actually
-    // spends is the per-session stock below.
-    const sessionsPerEvent = EVENT_DAYS.length * DEFAULT_PRIZE_SESSIONS.length
-    const stockTotal = PRIZE.stockPerSession * sessionsPerEvent
-    const ref = db.doc(`prizeTiers/${PRIZE.id}`)
+  for (const tier of TIERS) {
+    const ref = db.doc(`prizeTiers/${tier.id}`)
     const exists = (await ref.get()).exists
     await ref.set({
-      eventId: EVENT_ID, name: PRIZE.name, thresholdPoints: PRIZE.thresholdPoints, reward: PRIZE.reward,
-      grantsDrawEntry: PRIZE.grantsDrawEntry, active: true, sortOrder: 1,
-      stockPerSession: PRIZE.stockPerSession,
-      outOfStockNoteEn: "This session's gifts have all been collected — your points stay on your passport, so come back for the next session.",
-      outOfStockNoteTh: '',
-      ...(exists ? {} : { stockTotal, stockRemaining: stockTotal, sessionRemaining: {} }),
+      eventId: EVENT_ID, name: tier.name, thresholdPoints: tier.thresholdPoints, reward: tier.reward,
+      grantsDrawEntry: false, active: true, sortOrder: tier.sortOrder,
+      outOfStockNoteEn: tier.outOfStockNoteEn, outOfStockNoteTh: '',
+      // Stock is only written the first time: a re-seed must never refill what the desk has spent.
+      ...(exists ? {} : { stockTotal: tier.stockTotal, stockRemaining: tier.stockTotal, sessionRemaining: {} }),
     }, { merge: true })
     if (!exists) {
       await db.collection('stockAdjustments').add({
-        tierId: PRIZE.id, delta: stockTotal, actorUid: 'seed', kind: 'load-in',
-        reason: `load-in (seed): ${PRIZE.stockPerSession} per session x ${sessionsPerEvent} sessions`,
-        createdAt: FieldValue.serverTimestamp(),
+        tierId: tier.id, delta: tier.stockTotal, actorUid: 'seed', kind: 'load-in',
+        reason: `load-in (seed): ${tier.stockTotal}`, createdAt: FieldValue.serverTimestamp(),
       })
     }
   }
@@ -146,7 +146,7 @@ async function main() {
     }, { merge: true })
     console.log(`Made ${uid} an admin`)
   }
-  console.log(`Seeded ${SEED_BOOTHS.length} booths, 1 prize (${PRIZE.stockPerSession}/session), reference data.`)
+  console.log(`Seeded ${SEED_BOOTHS.length} booths, ${TIERS.length} rewards, reference data.`)
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1) })

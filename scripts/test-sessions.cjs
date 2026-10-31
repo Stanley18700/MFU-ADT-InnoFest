@@ -18,7 +18,14 @@ const {
 } = require('../functions/lib/shared/model')
 
 const DAYS = ['2026-09-16', '2026-09-17', '2026-09-18']
-const S = DEFAULT_PRIZE_SESSIONS
+// The session logic under test, with a two-window schedule of its own (InterFest's: 09–12 and
+// 12–16). The app's default is now a single all-day window for InnoFest, which exercises far
+// less of the logic, so the tests no longer borrow it.
+const S = [
+  { id: 'am', label: 'Morning', startMinute: 9 * 60, endMinute: 12 * 60 },
+  { id: 'pm', label: 'Afternoon', startMinute: 12 * 60, endMinute: 16 * 60 },
+]
+void DEFAULT_PRIZE_SESSIONS
 const at = (iso) => new Date(iso)
 const cur = (t) => currentPrizeSession(DAYS, S, at(t))
 const nxt = (t) => nextPrizeSession(DAYS, S, at(t))
