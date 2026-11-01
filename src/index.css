@@ -1095,3 +1095,12 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   background: linear-gradient(90deg, #2E3CFF, #00D2FF); box-shadow: 0 0 8px rgb(0 200 255 / .7);
   transform: translate3d(calc(var(--tab-x, 0px) + var(--tab-w, 0px) / 2 - 16px), 0, 0);
 }
+/* The edited asset is already a transparent, compact holographic cutout. Keep layout styling
+ * deliberately light so its natural proportions match the original campus composition. */
+.landing-campus-wrap {
+  position: relative;
+  background: radial-gradient(ellipse at 50% 62%, rgb(0 210 255 / .22), rgb(46 60 255 / .08) 52%, transparent 76%);
+}
+.landing-campus {
+  filter: saturate(.9) brightness(1.02) drop-shadow(0 10px 20px rgb(0 174 238 / .16));
+}
