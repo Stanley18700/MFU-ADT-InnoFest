@@ -110,11 +110,11 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
   const skip = () => { setGap(false); setCount(script.length); setReady(true); setRush(true) }
 
   /*
-   * Autoplay: once a message is fully decoded it stays up for 2 seconds, then the next one arrives
+   * Autoplay: once a message is fully decoded it stays up for 1 second, then the next one arrives
    * by itself. A tap still jumps ahead, and Skip still shows the lot. The last message waits for
    * the reader (the buttons are there).
    */
-  const holdMs = 2000
+  const holdMs = 1000
   const autoplaying = ready && !gap && count < script.length
   useEffect(() => {
     if (!autoplaying) return
