@@ -109,6 +109,20 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
   }
   const skip = () => { setGap(false); setCount(script.length); setReady(true); setRush(true) }
 
+  /*
+   * Autoplay: once a message is fully decoded it stays up long enough to read — longer for longer
+   * lines, about 2 to 4 seconds after it finishes decoding — then the next one arrives by itself. A tap still jumps ahead,
+   * and Skip still shows the lot. The last message waits for the reader (the buttons are there).
+   */
+  const holdMs = Math.min(3800, 900 + (script[count - 1]?.length ?? 0) * 25)
+  const autoplaying = ready && !gap && count < script.length
+  useEffect(() => {
+    if (!autoplaying) return
+    const id = window.setTimeout(advance, holdMs)
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplaying, count, holdMs])
+
   return (
     <div className="hd-scrim-holo scrim-in fixed inset-0 z-40 flex items-end justify-center p-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:items-center">
       <div role="dialog" aria-modal="true" aria-label={t('h.channel')}
@@ -153,7 +167,9 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
         </div>
 
         {/* Footer: tap hint + skip while the story plays; the two mission buttons once it ends. */}
-        <div className="border-0 border-t border-solid hd-holo-foot border-white/25 px-4 pb-5 pt-3">
+        <div className="relative border-0 border-t border-solid hd-holo-foot border-white/25 px-4 pb-5 pt-3">
+          {/* The countdown to the next message, along the top edge of the footer. */}
+          {autoplaying && <span key={count} aria-hidden className="hd-autobar" style={{ animationDuration: `${holdMs}ms` }} />}
           {finished ? (
             <div className="hd-msg flex flex-col gap-3">
               <PrimaryBtn onClick={onClose}>{t('v.welcome.start')}</PrimaryBtn>

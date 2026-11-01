@@ -1442,3 +1442,11 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   .g-segs i { opacity: .7; }
   .g-float { display: none; }
 }
+
+/* Briefing autoplay: a thin bar filling along the footer's top edge until the next message. */
+.hd-autobar {
+  position: absolute; left: 0; top: -1px; height: 2px; width: 100%; transform-origin: left; pointer-events: none;
+  background: linear-gradient(90deg, #7FE7FF, #fff); box-shadow: 0 0 6px rgb(127 231 255 / .9);
+  animation: hd-autobar linear both;
+}
+@keyframes hd-autobar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
