@@ -95,7 +95,7 @@ export default function Prize() {
             <div className="min-w-0">
               <div className="a-label text-[var(--a-muted)]">{t('a.rewards.agentId')}</div>
               <div className="a-mono text-[15px] font-semibold text-ink">{profile.passportNo}</div>
-              <div className="a-mono mt-2 whitespace-nowrap text-lg font-semibold tracking-[.12em] text-ink">{code ? code.code.slice(0, 4) + ' ' + code.code.slice(4) : '···· ····'}</div>
+              <div className="a-mono mt-2 whitespace-nowrap text-[clamp(14px,4.6vw,18px)] font-semibold tracking-[.08em] text-ink min-[380px]:tracking-[.12em]">{code ? code.code.slice(0, 4) + ' ' + code.code.slice(4) : '···· ····'}</div>
               <p className="mb-0 mt-1.5 text-xs leading-snug text-[#33415F]">{t('v.prize.refresh', { n: code?.secondsLeft ?? '–' })}</p>
             </div>
           </div>

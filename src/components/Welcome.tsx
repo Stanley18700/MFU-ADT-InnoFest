@@ -115,11 +115,11 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
         className="hd-holo hd-pop flex h-[min(600px,80dvh)] w-full max-w-[400px] flex-col overflow-hidden rounded-[22px]">
         {/* Header: the figure, who it is, and the language toggle — the one control a reader who
             cannot yet follow this screen needs most. */}
-        <div className="hd-holo-head flex items-center gap-2.5 border-0 border-b border-solid border-white/25 py-3 pl-5 pr-3">
-          <span className="hd-halo"><HandlerAvatar size={46} /></span>
+        <div className="hd-holo-head flex items-center gap-2 border-0 border-b border-solid border-white/25 py-3 pl-3.5 pr-3 min-[380px]:gap-2.5 min-[380px]:pl-5">
+          <span className="hd-halo shrink-0"><HandlerAvatar size={42} /></span>
           <div className="min-w-0 flex-1">
             <div className="a-mono flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold tracking-[.08em] text-white/90 overflow-hidden"><span className="hd-dot" aria-hidden />{t('h.channel')}</div>
-            <div className="a-hd mt-0.5 whitespace-nowrap text-[18px] font-bold text-white">{t('h.name')}</div>
+            <div className="a-hd mt-0.5 whitespace-nowrap text-[clamp(15px,4.6vw,18px)] font-bold text-white">{t('h.name')}</div>
           </div>
           <ALang />
         </div>

@@ -158,19 +158,19 @@ export default function Exhibitors() {
           <input className="field max-w-xs" placeholder={t('exa.search')} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         {teams.length === 0 && <p className="mt-3 text-sm text-ink-soft">{t('exa.none')}</p>}
-        <ul className="mt-3 grid gap-2 md:grid-cols-2">
+        <ul className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-2 md:grid-cols-2">
           {teams.map(({ r, b }) => (
-            <li key={r.id} className="rounded-xl border border-[var(--a-line)] px-3 py-2.5">
+            <li key={r.id} className="min-w-0 rounded-xl border border-[var(--a-line)] px-3 py-2.5">
               <div className="flex items-baseline gap-2">
                 <span className="font-mono text-sm font-semibold text-action">{b?.shortName ?? r.id}</span>
                 <span className="min-w-0 flex-1 truncate text-sm font-semibold">{b?.nameEn ?? '—'}</span>
                 <span className="shrink-0 text-xs text-ink-soft">{r.members.filter((m) => m.uid).length}/{r.members.length}</span>
               </div>
-              <ul className="mt-1.5 grid gap-1">
+              <ul className="mt-1.5 grid grid-cols-[minmax(0,1fr)] gap-1">
                 {r.members.map((m) => (
                   <li key={m.name} className="flex items-center gap-2 text-sm">
                     <span aria-hidden className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold ${m.uid ? 'bg-action text-white' : 'bg-sky-50 text-ink-soft'}`}>{m.uid ? '✓' : '·'}</span>
-                    <span className="min-w-0 flex-1 truncate">{m.name}{m.email && <span className="ml-1.5 text-xs text-ink-soft">{m.email}</span>}</span>
+                    <span className="min-w-0 flex-1 truncate">{m.name}{m.email && <span className="ml-1.5 text-xs text-ink-soft max-sm:block max-sm:ml-0 max-sm:truncate">{m.email}</span>}</span>
                     {m.uid && <button className="shrink-0 text-xs text-ink-soft underline" onClick={() => void reset(r.id, m.name)}>{t('exa.reset')}</button>}
                   </li>
                 ))}

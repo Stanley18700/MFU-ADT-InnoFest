@@ -53,7 +53,7 @@ export default function Scan() {
             <header className="relative z-10 flex h-16 items-center justify-between gap-3 px-4">
               <div className="flex min-w-0 items-center gap-2">
                 <Link to="/mission" aria-label={t('v.back.passport')} className="-ml-3 flex h-11 w-11 items-center justify-center text-white focus-visible:outline-[3px] focus-visible:outline-[#00B4EE]">{AIcon.close}</Link>
-                <h1 className="a-hd m-0 truncate text-[22px] font-bold">{t('v.scan.title')}</h1>
+                <h1 className="a-hd m-0 truncate text-[clamp(18px,6vw,22px)] font-bold">{t('v.scan.title')}</h1>
               </div>
               <ALang />
             </header>

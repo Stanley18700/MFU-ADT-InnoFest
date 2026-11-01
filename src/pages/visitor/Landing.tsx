@@ -38,7 +38,7 @@ export default function Landing() {
         </section>
 
         <div className="relative mt-2 flex justify-center">
-          <div aria-hidden className="absolute left-1/2 top-1/2 h-[240px] w-[360px] -translate-x-1/2 -translate-y-1/2" style={{ background: 'radial-gradient(closest-side, rgb(0 210 255 / .26), rgb(46 60 255 / .12) 55%, rgb(255 255 255 / 0))' }} />
+          <div aria-hidden className="absolute left-1/2 top-1/2 h-[240px] w-[min(360px,100vw)] -translate-x-1/2 -translate-y-1/2" style={{ background: 'radial-gradient(closest-side, rgb(0 210 255 / .26), rgb(46 60 255 / .12) 55%, rgb(255 255 255 / 0))' }} />
           {/* The festival's own wordmark carries the name, so the name is its alt text. */}
           <div className="a-glitch relative aspect-[270/174] w-[min(72vw,280px)]">
             <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="gl-base absolute inset-0 h-full w-full object-contain" />

@@ -57,7 +57,14 @@ const I = (d: ReactNode, size = 24, sw = 2) => (
 export const AIcon = {
   cover: I(<><rect x="3" y="5" width="18" height="14" rx="1" /><circle cx="9" cy="11" r="2.2" /><path d="M5.8 16.5c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14.5 10h4M14.5 13.5h3" /></>),
   files: I(<path d="M3 6.5V19a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-8l-2-3H4a1 1 0 0 0-1 1.5z" />),
-  scan: I(<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10" />, 28, 2.2),
+  // A scan frame around a small QR code — reads as "scan a QR" even at tab-bar size.
+  scan: I(<>
+    <path d="M3 8V4.5A1.5 1.5 0 0 1 4.5 3H8M16 3h3.5A1.5 1.5 0 0 1 21 4.5V8M21 16v3.5a1.5 1.5 0 0 1-1.5 1.5H16M8 21H4.5A1.5 1.5 0 0 1 3 19.5V16" />
+    <rect x="7" y="7" width="3.6" height="3.6" rx=".4" strokeWidth="1.7" />
+    <rect x="13.4" y="7" width="3.6" height="3.6" rx=".4" strokeWidth="1.7" />
+    <rect x="7" y="13.4" width="3.6" height="3.6" rx=".4" strokeWidth="1.7" />
+    <path d="M13.6 13.6h1.2M16.4 13.6h.6M13.6 16.4h.6M15.6 15.6v1.4" strokeWidth="1.7" />
+  </>, 28, 2.2),
   rewards: I(<><rect x="3.5" y="8" width="17" height="4" rx=".5" /><path d="M5 12v8h14v-8M12 8v12M12 8c-1.5-3-5-3.5-5-1.2C7 8 9.5 8 12 8zM12 8c1.5-3 5-3.5 5-1.2C17 8 14.5 8 12 8z" /></>),
   profile: I(<><circle cx="12" cy="8" r="4" /><path d="M4.5 20.5c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" /></>),
   arrow: I(<path d="M5 12h14M13 6l6 6-6 6" />, 20, 2.4),
@@ -131,7 +138,7 @@ export function AHeader({ lead = 'marks', title, to, onClose, sticky = false }: 
           ? <button type="button" onClick={onClose} aria-label={lead === 'close' ? 'Close' : 'Back'} className={`${btn} cursor-pointer border-0 bg-transparent`}>{icon}</button>
           : <Link to={to ?? '/'} aria-label={lead === 'close' ? 'Close' : 'Back'} className={btn}>{icon}</Link>)}
         {lead === 'mark' && <img src="/brand/adt-mark.webp" alt="ADT" className="h-5 w-auto shrink-0" />}
-        {title && <h1 className="a-hd m-0 truncate text-[22px] font-bold leading-tight tracking-tight">{title}</h1>}
+        {title && <h1 className="a-hd m-0 truncate text-[clamp(18px,6vw,22px)] font-bold leading-tight tracking-tight">{title}</h1>}
       </div>
       <ALang />
     </header>
@@ -402,7 +409,7 @@ export function ATabBar({ tabs, scanTo, scanLabel }: { tabs: Array<{ to: string;
             <div className="a-brk a-brk-wide absolute -top-[34px] left-1/2 h-[62px] w-[62px] -translate-x-1/2">
               <Link to={scanTo} aria-label={scanLabel} className="flex h-[62px] w-[62px] items-center justify-center rounded-full text-white focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-[#00B4EE]"
                 style={{ background: 'linear-gradient(140deg,#2E3CFF 0%,#1D5BFF 50%,#0A86DA 100%)', boxShadow: '0 0 0 4px #fff,0 0 0 6px rgb(0 200 255 / .45),0 8px 22px rgb(29 91 255 / .5),0 0 18px rgb(0 210 255 / .45)' }}>
-                {AIcon.scan}
+                <span className="grid place-items-center [&_svg]:h-[32px] [&_svg]:w-[32px]">{AIcon.scan}</span>
               </Link>
             </div>
             <span className="a-hd text-xs font-bold text-[#1450E6]">{scanLabel}</span>
