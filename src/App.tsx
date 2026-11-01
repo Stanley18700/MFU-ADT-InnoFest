@@ -14,6 +14,7 @@ import Scan from './pages/visitor/Scan'
 import ScanLanding from './pages/visitor/ScanLanding'
 import Invite from './pages/visitor/Invite'
 import BoothAccess from './pages/visitor/BoothAccess'
+import Exhibit from './pages/visitor/Exhibit'
 import Survey from './pages/visitor/Survey'
 import Apply from './pages/visitor/Apply'
 
@@ -61,6 +62,7 @@ const Print = lazy(() => import('./pages/admin/Print'))
 const BoothCards = lazy(() => import('./pages/admin/BoothCards'))
 const Setup = lazy(() => import('./pages/admin/Setup'))
 const Applications = lazy(() => import('./pages/admin/Applications'))
+const Exhibitors = lazy(() => import('./pages/admin/Exhibitors'))
 
 /**
  * Everything past this point needs a real, confirmed account — anonymous sign-in is gone (§4.1),
@@ -114,6 +116,9 @@ export default function App() {
         {/* Outside every guard, like the invitation route: the person has no role yet, and a guard */}
         {/* would send them to /join to become a visitor, which is not what they came for. */}
         <Route path="/booth-access" element={<BoothAccess />} />
+        {/* The exhibitor link: self-registration against the official project list. Outside every
+            guard, like /booth-access — the person has no role yet. */}
+        <Route path="/exhibit" element={<Exhibit />} />
         <Route path="/s/:token" element={<ScanLanding />} />
         <Route path="/r/:token" element={<RedeemLanding />} />
         <Route path="/setup" element={<Setup />} />
@@ -169,6 +174,7 @@ export default function App() {
             <Route path="feedback" element={<FestivalSurvey />} />
             <Route path="audit" element={<Audit />} />
             <Route path="applications" element={<Applications />} />
+            <Route path="exhibitors" element={<Exhibitors />} />
           </Route>
         </Route>
 

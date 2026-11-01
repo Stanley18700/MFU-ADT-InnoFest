@@ -34,6 +34,7 @@ const GROUPS: Array<{ title: StringKey; items: Item[] }> = [
   { title: 'admin.group.setup', items: [
     { to: '/admin/event', label: 'admin.nav.event', icon: Icon.event },
     { to: '/admin/booths', label: 'admin.nav.booths', icon: Icon.booths },
+    { to: '/admin/exhibitors', label: 'exa.nav', icon: Icon.users },
     { to: '/admin/prizes', label: 'admin.nav.prizes', icon: Icon.prizes },
     { to: '/admin/users', label: 'admin.nav.users', icon: Icon.users },
     { to: '/admin/applications', label: 'admin.nav.applications', icon: Icon.users },

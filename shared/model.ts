@@ -178,6 +178,11 @@ export interface BoothDoc {
   active: boolean
   sortOrder: number
   organizerUid?: string | null
+  /**
+   * How many people are on this project's official team list (the names themselves are private,
+   * in `boothRosters`). Public so the exhibitor page can offer only booths someone can register for.
+   */
+  teamSize?: number
   createdAt: unknown
 }
 
@@ -780,4 +785,55 @@ export const FESTIVAL_SURVEY: { title: string; description: string; questions: S
       title: 'หนึ่งคำที่อธิบายประสบการณ์ของท่าน / One word to describe your experience',
     },
   ],
+}
+
+
+// ---------- exhibitor self-registration ----------
+
+/**
+ * One project's official team list, as the organizers sent it. Admin-readable only: it holds
+ * students' names, and a name is the thing an exhibitor proves they are by typing it.
+ */
+export interface BoothRosterDoc {
+  boothId: string
+  members: RosterMember[]
+  updatedAt: unknown
+}
+export interface RosterMember {
+  /** As written in the list, for the admin to read ("Somchai Jaidee / สมชาย ใจดี"). */
+  name: string
+  /** Every accepted spelling, normalised with `normPersonName` (English and Thai forms). */
+  keys: string[]
+  /** The account that registered as this person, once someone has. */
+  uid?: string | null
+  email?: string | null
+  claimedAt?: number | null
+}
+
+const NAME_TITLES = [
+  'mr', 'mrs', 'ms', 'miss', 'mister', 'dr', 'asst prof', 'assoc prof', 'prof', 'aj', 'ajarn',
+  'นางสาว', 'นาง', 'นาย', 'น.ส.', 'นส.', 'ด.ช.', 'ด.ญ.', 'ดร.', 'อ.', 'อาจารย์',
+]
+/**
+ * A person's name reduced to what should match however it is typed: Unicode-normalised, lower
+ * case, a leading title dropped (Mr / นาย / นางสาว …), then everything that is not a letter or a
+ * digit removed — spaces, dots, hyphens. "Ms. Somchai  Jai-dee" and "somchai jaidee" agree, as do
+ * "นางสาว สมใจ ดีมาก" and "สมใจดีมาก".
+ */
+export function normPersonName(raw: string): string {
+  let s = raw.normalize('NFKC').toLowerCase().trim()
+  for (let again = true; again;) {
+    again = false
+    for (const t of NAME_TITLES) {
+      if (s.startsWith(t) && (s.length === t.length || /[\s.]/.test(s[t.length]) || /[\u0E00-\u0E7F]/.test(t))) {
+        s = s.slice(t.length).replace(/^[\s.]+/, ''); again = true; break
+      }
+    }
+  }
+  return s.replace(/[^\p{L}\p{N}\p{M}]/gu, '')
+}
+
+/** The spellings one roster line allows: "English name / ชื่อไทย" gives both. */
+export function rosterKeys(line: string): string[] {
+  return [...new Set(line.split(/[/|]/).map(normPersonName).filter((k) => k.length >= 2))]
 }

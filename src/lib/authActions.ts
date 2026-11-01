@@ -94,10 +94,10 @@ export async function signInWithEmail(email: string, password: string): Promise<
 }
 
 /** Creates the account, puts the name on it, and sends the verification mail. */
-export async function signUpWithEmail(name: string, email: string, password: string): Promise<UserCredential> {
+export async function signUpWithEmail(name: string, email: string, password: string, next = '/mission'): Promise<UserCredential> {
   const cred = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
   if (name.trim()) await updateProfile(cred.user, { displayName: name.trim() })
-  await sendEmailVerification(cred.user, continueTo('/mission'))
+  await sendEmailVerification(cred.user, continueTo(next))
   return cred
 }
 

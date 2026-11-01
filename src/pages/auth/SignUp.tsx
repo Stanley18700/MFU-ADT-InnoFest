@@ -39,7 +39,7 @@ export default function SignUp() {
     if (password !== confirm) { setErr('The two passwords do not match.'); return }
     setBusy('email')
     try {
-      await signUpWithEmail(name, email, password)
+      await signUpWithEmail(name, email, password, from === '/exhibit' ? '/exhibit' : '/mission')
       nav('/verify-email', { replace: true, state: { from } })
     } catch (e) { setErr(authError(e)); setBusy(null) }
   }

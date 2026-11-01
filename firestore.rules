@@ -38,6 +38,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Official team lists (students' names): admins read them; only functions write.
+    match /boothRosters/{boothId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /invites/{inviteId} {
       allow read: if isAdmin();
       allow write: if false;

@@ -21,3 +21,4 @@ export {
 export { rateBooth } from './rating'
 export { requestBoothAccess, decideStaffRequest } from './staffRequest'
 export { onScanCreate, onUserWrite, rankBooths, sweepActive, purgePersonalData } from './triggers'
+export { claimBoothSeat, importProjectList, resetTeamSeat } from './exhibitor'
