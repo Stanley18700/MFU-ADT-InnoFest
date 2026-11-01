@@ -23,6 +23,7 @@ export default function VerifyEmail() {
   const { left, start } = useCooldown(COOLDOWN, true)
   const [note, setNote] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const [waitNote, setWaitNote] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const checking = useRef(false)
 
@@ -51,6 +52,20 @@ export default function VerifyEmail() {
     } catch (e) { setErr(authError(e)) } finally { setBusy(false) }
   }
 
+  /*
+   * The button used to re-check silently: with the mail not yet confirmed it did nothing visible,
+   * which on a phone reads as broken. Now it says what it found.
+   */
+  async function continueNow() {
+    setBusy(true); setErr(null); setNote(null); setWaitNote(null)
+    try {
+      await reloadUser()
+      if (!auth.currentUser?.emailVerified) {
+        setWaitNote(`Not confirmed yet. Open the email to ${user!.email} and tap the link in it — check Spam or Promotions too. It can take a minute to arrive.`)
+      }
+    } catch (e) { setErr(authError(e)) } finally { setBusy(false) }
+  }
+
   async function useAnother() {
     await signOut()
     nav('/signup', { replace: true })
@@ -64,14 +79,15 @@ export default function VerifyEmail() {
     >
       <div className="mt-6 flex flex-col gap-4">
         <div className="flex items-center gap-3 rounded-[20px] bg-sky-100 px-4 py-3 text-sm text-ink-soft">
-          <span className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-white/25 border-t-foil" />
+          <span aria-hidden className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#1D5BFF]/20 border-t-[#1D5BFF]" />
           Waiting for you to tap the link — this page moves on by itself.
         </div>
 
         {note && <Notice tone="green">{note}</Notice>}
+        {waitNote && <Notice tone="amber">{waitNote}</Notice>}
         {err && <Notice tone="red">{err}</Notice>}
 
-        <button className="btn-primary py-3.5" onClick={check}>I have tapped it — continue</button>
+        <button className="btn-primary py-3.5" disabled={busy} onClick={continueNow}>{busy ? 'Checking…' : 'I have tapped it — continue'}</button>
         <button className="btn-ghost" onClick={resend} disabled={busy || left > 0}>
           {busy ? 'Sending…' : left > 0 ? `Send it again in ${left}s` : 'Send the link again'}
         </button>

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import { InAppBanner } from './components/InAppBanner'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { Spinner } from './components/ui'
@@ -99,6 +100,7 @@ export default function App() {
     // One boundary for the lazy staff screens below. The visitor routes are eager, so a
     // visitor never waits on it.
     <Suspense fallback={<Spinner label="Opening…" page />}>
+      <InAppBanner />
       <Routes>
         <Route path="/" element={<Landing />} />
 

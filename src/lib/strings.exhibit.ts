@@ -61,6 +61,11 @@ export const exhibitEn = {
   'exa.resetConfirm': 'Free “{name}” so they can register again? The account that used it loses access to this booth.',
   'exa.none': 'No projects loaded yet.',
   'exa.nav': 'Exhibitors',
+  'iab.title': 'Open this in your browser',
+  'iab.lead': 'You are in an app’s built-in browser, where Google sign-in and the email link don’t work well.',
+  'iab.open': 'Open in browser',
+  'iab.copied': 'Link copied. Tap ⋯ (top right) → Open in browser, or paste it into Chrome or Safari.',
+  'iab.close': 'Dismiss',
 }
 
 export const exhibitTh: Record<keyof typeof exhibitEn, string> = {
@@ -121,4 +126,9 @@ export const exhibitTh: Record<keyof typeof exhibitEn, string> = {
   'exa.resetConfirm': 'ปลดชื่อ “{name}” ให้ลงทะเบียนใหม่ได้หรือไม่ บัญชีที่ใช้ชื่อนี้จะเข้าบูธนี้ไม่ได้อีก',
   'exa.none': 'ยังไม่ได้โหลดโครงงาน',
   'exa.nav': 'ผู้จัดแสดง',
+  'iab.title': 'เปิดในเบราว์เซอร์ของคุณ',
+  'iab.lead': 'คุณกำลังใช้เบราว์เซอร์ในแอป ซึ่งเข้าสู่ระบบด้วย Google และลิงก์ยืนยันอีเมลใช้งานได้ไม่ดี',
+  'iab.open': 'เปิดในเบราว์เซอร์',
+  'iab.copied': 'คัดลอกลิงก์แล้ว แตะ ⋯ (มุมขวาบน) → เปิดในเบราว์เซอร์ หรือวางลิงก์ใน Chrome หรือ Safari',
+  'iab.close': 'ปิด',
 }
