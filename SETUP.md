@@ -176,13 +176,15 @@ Secrets go in Secret Manager, not in files:
 
 ```bash
 firebase functions:secrets:set ADMIN_BOOTSTRAP_KEY     # invent a long random string; you use it once
-firebase functions:secrets:set EMAILJS_PRIVATE_KEY     # only if you set EmailJS up; skip it otherwise
+firebase functions:secrets:set EMAILJS_PRIVATE_KEY     # required; any placeholder if you skip EmailJS
 ```
 
-> `EMAILJS_PRIVATE_KEY` does not need a placeholder. `mailConfigured()` returns false when the
-> key, the service, the public key or the organizer template is missing, and the invitation
-> screen then hands the admin a copyable link per organizer — which is the intended behaviour
-> for a team of twelve, not a degraded one.
+> The `EMAILJS_PRIVATE_KEY` secret must exist before the first deploy: the mail functions are
+> bound to it, and a non-interactive `firebase deploy` aborts with *"have no value for the secret
+> EMAILJS_PRIVATE_KEY"* otherwise. If you are not using EmailJS, set it to any placeholder value.
+> `mailConfigured()` returns false when the key, the service, the public key or the organizer
+> template is missing, and the invitation screen then hands the admin a copyable link per
+> organizer — which is the intended behaviour for a team of twelve, not a degraded one.
 
 ## 2a. EmailJS, for the booth invitations **(you, optional)**
 
@@ -432,7 +434,7 @@ npm run dev              # http://localhost:5173 — auto-connects to the emulat
 
 If the Functions emulator reports *"Cannot determine backend specification. Timeout after
 10000"*, that is the discovery step timing out because the machine's Node is newer than the
-`nodejs20` runtime the functions declare. It is not a code problem — raise the budget (seconds;
+`nodejs22` runtime the functions declare. It is not a code problem — raise the budget (seconds;
 the same variable fixes the identical error from `firebase deploy`, see §3):
 
 ```bash
