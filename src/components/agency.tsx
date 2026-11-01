@@ -406,7 +406,9 @@ export function ATabBar({ tabs, scanTo, scanLabel }: { tabs: Array<{ to: string;
         <div ref={rail} className="tab-rail a-tabrail relative mx-auto grid h-[68px] max-w-md items-end" style={{ gridTemplateColumns: 'repeat(2,minmax(0,1fr)) 5.5rem repeat(2,minmax(0,1fr))' }}>
           {left.map(tab)}
           <div className="relative flex flex-col items-center justify-end pb-1">
-            <div className="a-brk a-brk-wide absolute -top-[34px] left-1/2 h-[62px] w-[62px] -translate-x-1/2">
+            {/* `!absolute`: `.a-brk` sets position: relative (it anchors the brackets), which beat a plain
+                `absolute` here and pushed the button 13px right of centre. */}
+            <div className="a-brk a-brk-wide !absolute -top-[34px] left-1/2 h-[62px] w-[62px] -translate-x-1/2">
               <Link to={scanTo} aria-label={scanLabel} className="flex h-[62px] w-[62px] items-center justify-center rounded-full text-white focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-[#00B4EE]"
                 style={{ background: 'linear-gradient(140deg,#2E3CFF 0%,#1D5BFF 50%,#0A86DA 100%)', boxShadow: '0 0 0 4px #fff,0 0 0 6px rgb(0 200 255 / .45),0 8px 22px rgb(29 91 255 / .5),0 0 18px rgb(0 210 255 / .45)' }}>
                 <span className="grid place-items-center [&_svg]:h-[32px] [&_svg]:w-[32px]">{AIcon.scan}</span>
