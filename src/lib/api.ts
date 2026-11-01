@@ -67,7 +67,7 @@ export const api = {
   >('saveRefData'),
   /** Ask to run a booth when nobody has your email address. Grants nothing — an admin decides. */
   claimBoothSeat: call<{ boothId: string; name: string }, { ok: true; boothId: string; boothName: string }>('claimBoothSeat'),
-  importProjectList: call<{ rows: Array<{ boothNo: string; nameEn: string; nameTh?: string; team: string[]; hostUnit?: string; location?: string }> }, { ok: true; created: number; updated: number; members: number }>('importProjectList'),
+  importProjectList: call<{ rows: Array<{ boothNo: string; nameEn: string; nameTh?: string; team: string[]; hostUnit?: string; location?: string }> }, { ok: true; created: number; updated: number; members: number; released: number }>('importProjectList'),
   resetTeamSeat: call<{ boothId: string; name: string }, { ok: true }>('resetTeamSeat'),
   requestBoothAccess: call<{ boothId?: string; newBoothName?: string; note?: string }, { ok: true; status: 'pending' }>('requestBoothAccess'),
   decideStaffRequest: call<{ uid: string; approve: boolean; boothId?: string; decisionNote?: string }, { ok: true; approved: boolean; boothId?: string; boothName?: string; createdBooth?: string | null }>('decideStaffRequest'),

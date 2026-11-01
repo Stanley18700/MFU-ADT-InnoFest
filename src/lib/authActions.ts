@@ -101,8 +101,8 @@ export async function signUpWithEmail(name: string, email: string, password: str
   return cred
 }
 
-export async function sendVerification(user: User): Promise<void> {
-  await sendEmailVerification(user, continueTo('/mission'))
+export async function sendVerification(user: User, next = '/mission'): Promise<void> {
+  await sendEmailVerification(user, continueTo(next))
 }
 
 export async function sendReset(email: string): Promise<void> {

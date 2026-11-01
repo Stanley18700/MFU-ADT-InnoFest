@@ -16,6 +16,24 @@
     <meta name="apple-mobile-web-app-title" content="InnoFest" />
     <link rel="apple-touch-icon" href="/brand/icon-180.png" />
     <title>ADT InnoFest 2026 · Recover the Future</title>
+    <script>
+      /*
+       * LINE opens links in its own browser, and Google refuses to sign anyone in from inside it
+       * ("disallowed_useragent") — so an exhibitor tapping the link in the LINE group, or a visitor
+       * scanning the poster with LINE's scanner, could never get past "Continue with Google".
+       * LINE's own switch, openExternalBrowser=1, hands the page to Chrome / Safari instead.
+       * Once only: if the parameter is already there and we are still inside LINE, stay put.
+       */
+      (function () {
+        try {
+          if (!/\bLine\/\d/i.test(navigator.userAgent)) return;
+          var u = new URL(location.href);
+          if (u.searchParams.has('openExternalBrowser')) return;
+          u.searchParams.set('openExternalBrowser', '1');
+          location.replace(u.toString());
+        } catch (e) { /* stay in LINE; email sign-in still works there */ }
+      })();
+    </script>
     <meta name="description" content="Scan booths, recover project files, unlock rewards · 11 Nov 2026, Indoor Stadium MFU" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://adt-innofest.web.app/" />

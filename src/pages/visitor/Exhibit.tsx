@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
 import { useBooths, useEvent } from '../../lib/data'
 import { api, errorMessage, friendlyError } from '../../lib/api'
-import { authError, signInWithGoogle } from '../../lib/authActions'
+import { authError, isInAppWebView, signInWithGoogle } from '../../lib/authActions'
 import { Notice, Spinner } from '../../components/ui'
 import { AGround, AHeader, AIcon, Eyebrow, GhostBtn, PrimaryBtn } from '../../components/agency'
 import { useLocale } from '../../lib/locale'
@@ -98,10 +98,15 @@ export default function Exhibit() {
       {head(t('ex.title'), t('ex.lead'))}
       {stepList(0)}
       {(err || redirectError) && <div className="mt-4"><Notice tone="red">{err || redirectError}</Notice></div>}
+      {/* Google will not sign anyone in from inside an app's own browser (Facebook, Instagram…).
+          Say so, and leave email as the way in, rather than a button that cannot work here. */}
+      {isInAppWebView() && <div className="mt-4"><Notice tone="amber">{t('ex.webview')}</Notice></div>}
       <div className="mt-6 flex flex-col gap-3">
-        <button type="button" onClick={google} disabled={busy} className="a-btn a-btn-primary a-cut">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-white">{AIcon.google}</span>{t('ex.google')}
-        </button>
+        {!isInAppWebView() && (
+          <button type="button" onClick={google} disabled={busy} className="a-btn a-btn-primary a-cut">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-white">{AIcon.google}</span>{t('ex.google')}
+          </button>
+        )}
         <GhostBtn to="/signin" state={{ from: '/exhibit' }}>{t('ex.email')}</GhostBtn>
         <Link to="/signup" state={{ from: '/exhibit' }} className="a-link mt-1 text-center text-sm">{t('ex.newEmail')}</Link>
       </div>

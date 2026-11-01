@@ -55,19 +55,29 @@ export default function Exhibitors() {
   const [msg, setMsg] = useState<{ tone: 'green' | 'red'; text: string } | null>(null)
   const [q, setQ] = useState('')
 
-  const parsed = useMemo(() => parseSheet(text).map(toRow), [text])
-  const good = parsed.filter((r) => r.boothNo && r.nameEn)
+  const parsed = useMemo(() => {
+    // The same booth key the server uses, so "A-01" and "A1" are caught as the same booth here.
+    const key = (b: string) => b.normalize('NFKC').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/(\d+)/g, (d) => String(Number(d)))
+    const seen = new Set<string>()
+    return parseSheet(text).map(toRow).map((r) => {
+      const k = key(r.boothNo)
+      const dup = !!k && seen.has(k)
+      if (k) seen.add(k)
+      return { ...r, dup, ok: !!k && !!r.nameEn && !dup }
+    })
+  }, [text])
+  const good = parsed.filter((r) => r.ok).map(({ dup: _d, ok: _o, ...r }) => r)
   const bad = parsed.length - good.length
 
   async function load() {
     setBusy(true); setMsg(null)
     try {
-      let created = 0, updated = 0, members = 0
+      let created = 0, updated = 0, members = 0, released = 0
       for (let i = 0; i < good.length; i += 40) {
         const r = await api.importProjectList({ rows: good.slice(i, i + 40) })
-        created += r.created; updated += r.updated; members += r.members
+        created += r.created; updated += r.updated; members += r.members; released += r.released
       }
-      setMsg({ tone: 'green', text: t('exa.done', { created, updated, members }) }); setText('')
+      setMsg({ tone: 'green', text: t('exa.done', { created, updated, members }) + (released ? ' ' + t('exa.released', { n: released }) : '') }); setText('')
     } catch (e) { setMsg({ tone: 'red', text: errorMessage(e) }) } finally { setBusy(false) }
   }
 
@@ -124,8 +134,8 @@ export default function Exhibitors() {
               <table className="w-full text-left text-xs">
                 <tbody>
                   {parsed.slice(0, 50).map((r, i) => (
-                    <tr key={i} className={`border-b border-[var(--a-line)] align-top ${!r.boothNo || !r.nameEn ? 'bg-red-50' : ''}`}>
-                      <td className="px-2 py-1.5 font-mono font-semibold">{r.boothNo || '—'}</td>
+                    <tr key={i} className={`border-b border-[var(--a-line)] align-top ${!r.ok ? 'bg-red-50' : ''}`}>
+                      <td className="px-2 py-1.5 font-mono font-semibold">{r.boothNo || '—'}{r.dup && <div className="font-sans font-normal text-danger-text">{t('exa.dup')}</div>}</td>
                       <td className="px-2 py-1.5">{r.nameEn || '—'}{r.nameTh && <div className="text-ink-soft">{r.nameTh}</div>}</td>
                       <td className="px-2 py-1.5">{r.team.join(' · ') || <span className="text-danger-text">no team</span>}</td>
                     </tr>

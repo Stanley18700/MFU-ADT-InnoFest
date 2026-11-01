@@ -45,7 +45,7 @@ export default function VerifyEmail() {
   async function resend() {
     setBusy(true); setErr(null); setNote(null)
     try {
-      await sendVerification(auth.currentUser!)
+      await sendVerification(auth.currentUser!, from === '/exhibit' ? '/exhibit' : '/mission')
       setNote('Sent. Give it a minute, then check your spam folder too.')
       start()
     } catch (e) { setErr(authError(e)) } finally { setBusy(false) }

@@ -20,6 +20,22 @@ import { db, auth, FieldValue, requireAuth, requireRole, str, audit, getActiveEv
 import { BoothDoc, BoothRosterDoc, RosterMember, UserDoc, normPersonName, rosterKeys } from './shared/model'
 import { createBoothDoc } from './admin'
 
+/**
+ * Take a booth away from an account that registered for it: back to a visitor if they had joined
+ * as one before, otherwise to no role at all (the app then offers them registration again). Only
+ * if the account still holds THIS booth — an admin may have moved it since.
+ */
+async function releaseAccount(uid: string, boothId: string) {
+  const u = await auth.getUser(uid).catch(() => null)
+  if (u?.customClaims?.role !== 'organizer' || u.customClaims.boothId !== boothId) return
+  const uref = db.doc(`users/${uid}`)
+  const wasVisitor = !!((await uref.get()).data() as UserDoc | undefined)?.passportNo
+  await auth.setCustomUserClaims(uid, wasVisitor ? { role: 'visitor' } : {})
+  await uref.set({ role: wasVisitor ? 'visitor' : FieldValue.delete(), boothId: null }, { merge: true })
+  const b = await db.doc(`booths/${boothId}`).get()
+  if ((b.data() as BoothDoc | undefined)?.organizerUid === uid) await b.ref.set({ organizerUid: null }, { merge: true })
+}
+
 /** An exhibitor claims their place on a booth's team. */
 export const claimBoothSeat = onCall(async (req) => {
   const uid = requireAuth(req)
@@ -53,6 +69,10 @@ export const claimBoothSeat = onCall(async (req) => {
     if (booth.eventId !== ev.id || !booth.active) throw new HttpsError('failed-precondition', 'That booth is not open for registration.')
     if (!rosterSnap.exists) throw new HttpsError('failed-precondition', 'This project has no team list yet. Ask the organizers at the agency desk.')
     const roster = rosterSnap.data() as BoothRosterDoc
+    // One account, one name: an account already on this team is simply let back in, and cannot
+    // also take a teammate's place (which would then lock that teammate out).
+    const mine = roster.members.find((m) => m.uid === uid)
+    if (mine) return { member: mine.name, boothName: booth.nameEn }
     const i = roster.members.findIndex((m) => m.keys.includes(key))
     if (i < 0) {
       throw new HttpsError('not-found', 'That name is not on this project’s team list. Type it exactly as on the official list, in English or Thai.')
@@ -103,7 +123,7 @@ export const importProjectList = onCall({ timeoutSeconds: 300 }, async (req) => 
   if (rows.length > 400) throw new HttpsError('invalid-argument', 'At most 400 projects at a time')
   const ev = await getActiveEvent(true)
 
-  let created = 0, updated = 0, members = 0
+  let created = 0, updated = 0, members = 0, released = 0
   for (const [n, r] of rows.entries()) {
     const boothNo = str(r?.boothNo, `row ${n + 1} booth number`, { max: 24 })
     const nameEn = str(r?.nameEn, `row ${n + 1} project name`, { max: 120 })
@@ -111,8 +131,10 @@ export const importProjectList = onCall({ timeoutSeconds: 300 }, async (req) => 
     const hostUnit = str(r?.hostUnit, 'hostUnit', { required: false, max: 120 })
     const location = str(r?.location, 'location', { required: false, max: 80 })
     const team = (Array.isArray(r?.team) ? r.team : []).map((x) => String(x ?? '').trim()).filter(Boolean).slice(0, 12)
-    const id = `b-${boothNo.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
-    if (id === 'b-') throw new HttpsError('invalid-argument', `Row ${n + 1}: booth number needs a letter or digit`)
+    // "A-01", "A01", "a 01" and "A-1" are one booth: letters, then the number without leading zeros.
+    const compact = boothNo.normalize('NFKC').toLowerCase().replace(/[^a-z0-9]/g, '')
+    const id = `b-${compact.replace(/(\d+)/g, (d) => String(Number(d)))}`
+    if (!compact) throw new HttpsError('invalid-argument', `Row ${n + 1}: booth number needs a letter or digit`)
 
     const ref = db.doc(`booths/${id}`)
     const snap = await ref.get()
@@ -138,9 +160,12 @@ export const importProjectList = onCall({ timeoutSeconds: 300 }, async (req) => 
     })
     await rosterRef.set({ boothId: id, members: next, updatedAt: FieldValue.serverTimestamp() })
     members += next.length
+    // Someone the corrected list no longer names loses the booth too.
+    const keptUids = new Set(next.map((m) => m.uid).filter(Boolean))
+    for (const p of prev) if (p.uid && !keptUids.has(p.uid)) { await releaseAccount(p.uid, id); released++ }
   }
-  await audit(actor, 'importProjectList', 'event', ev.id, null, { projects: rows.length, created, updated, members })
-  return { ok: true as const, created, updated, members }
+  await audit(actor, 'importProjectList', 'event', ev.id, null, { projects: rows.length, created, updated, members, released })
+  return { ok: true as const, created, updated, members, released }
 })
 
 /**
@@ -164,19 +189,7 @@ export const resetTeamSeat = onCall(async (req) => {
     tx.set(ref, { members }, { merge: true })
     return was
   })
-  if (freed) {
-    const u = await auth.getUser(freed).catch(() => null)
-    if (u?.customClaims?.role === 'organizer' && u.customClaims.boothId === boothId) {
-      // Back to a visitor if they had joined as one before, otherwise to no role at all (the app
-      // then offers them registration again).
-      const uref = db.doc(`users/${freed}`)
-      const wasVisitor = !!((await uref.get()).data() as UserDoc | undefined)?.passportNo
-      await auth.setCustomUserClaims(freed, wasVisitor ? { role: 'visitor' } : {})
-      await uref.set({ role: wasVisitor ? 'visitor' : FieldValue.delete(), boothId: null }, { merge: true })
-      const b = await db.doc(`booths/${boothId}`).get()
-      if ((b.data() as BoothDoc | undefined)?.organizerUid === freed) await b.ref.set({ organizerUid: null }, { merge: true })
-    }
-  }
+  if (freed) await releaseAccount(freed, boothId)
   await audit(actor, 'resetTeamSeat', 'booth', boothId, { name, uid: freed }, null)
   return { ok: true as const }
 })
