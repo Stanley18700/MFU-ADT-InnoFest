@@ -34,15 +34,15 @@ export function HandlerAvatar({ size = 44, live = true, className = '' }: { size
         </radialGradient>
       </defs>
       {/* shoulders and cloak */}
-      <path d="M4 64c2-11 11-17 28-17s26 6 28 17z" fill="#0A1433" />
+      <path d="M4 64c2-11 11-17 28-17s26 6 28 17z" fill="#0A1433" stroke="#0A1433" strokeWidth="2" />
       <path d="M22 47l10 10 10-10" fill="none" stroke="#00D2FF" strokeWidth="1.2" opacity=".55" />
       {/* hood */}
-      <path d="M32 5C18.5 5 11 17 11 30.5c0 9.5 4 17 9.5 21.5h23C49 47.5 53 40 53 30.5 53 17 45.5 5 32 5z" fill="url(#hd-hood)" />
-      <path d="M32 5C18.5 5 11 17 11 30.5c0 9.5 4 17 9.5 21.5" fill="none" stroke="#00D2FF" strokeWidth="1.1" opacity=".8" />
+      <path d="M32 5C18.5 5 11 17 11 30.5c0 9.5 4 17 9.5 21.5h23C49 47.5 53 40 53 30.5 53 17 45.5 5 32 5z" fill="url(#hd-hood)" stroke="#0A1433" strokeWidth="2.2" strokeLinejoin="round" />
+      <path d="M32 7.5C20 7.5 13.5 18 13.5 30.5c0 8.5 3.4 15.2 8 19.3" fill="none" stroke="#00D2FF" strokeWidth="1.4" opacity=".95" />
       {/* the faceless void */}
-      <path d="M32 14c-8.6 0-13.6 8-13.6 17.2 0 7.6 3.6 13.6 8.2 16.8h10.8c4.6-3.2 8.2-9.2 8.2-16.8C45.6 22 40.6 14 32 14z" fill="url(#hd-void)" />
+      <path d="M32 14c-8.6 0-13.6 8-13.6 17.2 0 7.6 3.6 13.6 8.2 16.8h10.8c4.6-3.2 8.2-9.2 8.2-16.8C45.6 22 40.6 14 32 14z" fill="url(#hd-void)" stroke="#2E7BFF" strokeWidth="1" />
       <g className="hd-scan" opacity=".9">
-        <rect x="19" y="30" width="26" height="1.3" fill="#00D2FF" opacity=".75" />
+        <rect x="19" y="30" width="26" height="1.6" fill="#00D2FF" />
       </g>
       <path d="M24 39h16M26 42.5h12" stroke="#1D5BFF" strokeWidth=".8" opacity=".45" />
     </svg>

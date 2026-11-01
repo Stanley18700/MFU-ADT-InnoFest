@@ -6,9 +6,9 @@
  */
 export const handlerEn = {
   'h.name': 'HANDLER // 0',
-  'h.channel': 'SECURE CHANNEL · 2036 → 2026',
+  'h.channel': 'SECURE LINK · 2036',
   'h.receiving': 'Receiving…',
-  'h.tapNext': 'TAP TO RECEIVE',
+  'h.tapNext': 'TAP FOR NEXT',
   'h.skip': 'SKIP',
   'h.replay': 'Replay briefing · ฟังบรีฟอีกครั้ง',
 
@@ -42,9 +42,9 @@ export const handlerEn = {
 
 export const handlerTh: Record<keyof typeof handlerEn, string> = {
   'h.name': 'HANDLER // 0',
-  'h.channel': 'ช่องสัญญาณลับ · 2036 → 2026',
+  'h.channel': 'ช่องสัญญาณลับ · 2036',
   'h.receiving': 'กำลังรับสัญญาณ…',
-  'h.tapNext': 'แตะเพื่อรับข้อความ',
+  'h.tapNext': 'แตะเพื่อดูต่อ',
   'h.skip': 'ข้าม',
   'h.replay': 'Replay briefing · ฟังบรีฟอีกครั้ง',
 

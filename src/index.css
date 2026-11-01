@@ -1140,7 +1140,7 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 @keyframes hd-scan { 0%, 100% { transform: translateY(-12px); opacity: .2; } 50% { transform: translateY(12px); opacity: .95; } }
 
 /* A transmission line: the signal is mono and cyan; the decoding tail is noise in the brand blue. */
-.hd-signal { font-family: var(--font-mono, 'IBM Plex Mono', monospace); letter-spacing: .08em; color: #0A86DA; word-break: break-all; }
+.hd-signal { font-family: var(--font-mono, 'IBM Plex Mono', monospace); letter-spacing: .08em; color: #1450E6; font-weight: 600; word-break: break-all; }
 .hd-tx .hd-signal { font-size: 12px; }
 .a-fill-id .hd-signal, .hd-dark .hd-signal { color: #7FE7FF; }
 .hd-noise { font-family: var(--font-mono, 'IBM Plex Mono', monospace); color: #1D5BFF; opacity: .75; }
@@ -1170,9 +1170,45 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 .hd-typing span:nth-child(2) { animation-delay: .15s; }
 .hd-typing span:nth-child(3) { animation-delay: .3s; }
 @keyframes hd-typing { 0%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
-.hd-hint { animation: a-flicker 3s infinite; }
+.hd-hint { animation: hd-soft 2.4s ease-in-out infinite; }
+@keyframes hd-soft { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
 
 @media (prefers-reduced-motion: reduce) {
   .hd-live .hd-av-base, .hd-live .hd-av-c, .hd-live .hd-av-m, .hd-live .hd-scan,
   .hd-tx, .hd-msg, .hd-halo::before, .hd-typing span, .hd-hint, .hd-dot { animation: none !important; }
 }
+
+/* The briefing as a floating glass panel, built for a bright indoor stadium: light frosted glass
+ * that is nearly opaque (so the app behind never competes with the words), dark ink text, deep
+ * blues rather than pale cyan, and message text a size up. Contrast stays above 7:1 for body text. */
+.hd-scrim { background: rgb(10 19 64 / .34); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.hd-glass {
+  position: relative; isolation: isolate; color: #0A1433;
+  background:
+    linear-gradient(rgb(29 91 255 / .05) 1px, transparent 1px) 0 0 / 100% 22px,
+    linear-gradient(165deg, rgb(255 255 255 / .94) 0%, rgb(240 245 255 / .92) 55%, rgb(228 238 255 / .94) 100%);
+  backdrop-filter: blur(26px) saturate(150%); -webkit-backdrop-filter: blur(26px) saturate(150%);
+  border: 1.5px solid rgb(29 91 255 / .55);
+  box-shadow: 0 26px 64px rgb(10 19 64 / .32), 0 0 0 4px rgb(29 91 255 / .10), inset 0 1px 0 #fff;
+}
+.hd-glass::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background: radial-gradient(ellipse at 15% -10%, rgb(0 174 238 / .16), transparent 55%), radial-gradient(ellipse at 110% 110%, rgb(46 60 255 / .14), transparent 60%);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hd-glass { background: #F4F7FF; }
+}
+.hd-glass .hd-signal { color: #1450E6; font-weight: 600; }
+.hd-glass .hd-noise { color: #1D5BFF; opacity: 1; }
+.hd-glass .hd-typing span { background: #1D5BFF; }
+.hd-glass .hd-dot { background: #1D5BFF; box-shadow: 0 0 0 3px rgb(29 91 255 / .18); }
+.hd-glass .hd-halo::before { background: radial-gradient(circle, rgb(29 91 255 / .22), transparent 65%); }
+/* A message: a solid pale-blue card with a strong blue spine, so it reads as a block in glare. */
+.hd-bubble-lt { background: #E9F0FF; border-left: 3px solid #1D5BFF; border-radius: 4px 14px 14px 14px; }
+.hd-pop { animation: hd-materialize .5s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes hd-materialize {
+  0% { opacity: 0; transform: translateY(18px) scale(.96); filter: blur(6px); }
+  60% { opacity: 1; filter: blur(0); }
+  100% { transform: none; filter: none; }
+}
+@media (prefers-reduced-motion: reduce) { .hd-pop { animation: none; } }
