@@ -24,7 +24,7 @@ export function BoothCard({ booth, origin, period = 20 }: { booth: BoothDoc; ori
       <p className="text-sm">Rewards may change during the event. Check the live booth screen for current points. Points are set when your stamp is earned.</p>
       <QR value={`${origin}/scan`} size={220} />
       <ol className="max-w-[130mm] text-left text-base leading-relaxed">
-        <li><b>1.</b> Scan this code to open your passport scanner, or go to <b>{host}/scan</b>.</li>
+        <li><b>1.</b> Scan this code to open the mission scanner, or go to <b>{host}/scan</b>.</li>
         <li className="mt-2"><b>2.</b> Point it at the live screen on this table, or type the 6-character code shown under it. The code changes every {period} seconds.</li>
       </ol>
       <footer className="mt-auto w-full border-t border-[#0A1433]/20 pt-3 text-xs text-[#4A5875]">

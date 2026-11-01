@@ -105,7 +105,7 @@ export function Stamp({ booth, collected, size = 148, tilt = 0, animate = false,
           <>
             <text x="28" y="44" style={display} fontSize="30" letterSpacing="1.5">VISA</text>
             <text x="106" y="43" lang="th" style={{ fontFamily: 'Mitr, var(--font-sans)', fill: inkSoft }} fontSize="17">วีซ่า</text>
-            <text x="28" y="60" style={label} fontSize="8">{markTop} · PASSPORT</text>
+            <text x="28" y="60" style={label} fontSize="8">{markTop} · FILE</text>
             <text x={VB_W - 28} y="33" textAnchor="end" style={label} fontSize="8">VISA NO. / N° DU VISA</text>
             <text x={VB_W - 28} y="52" textAnchor="end" style={{ ...mono, fill: collected ? accent : inkSoft }} fontSize="15" letterSpacing="1">{num}</text>
             <line x1="28" y1="72" x2={VB_W - 28} y2="72" stroke={line} strokeWidth="1" opacity=".6" />

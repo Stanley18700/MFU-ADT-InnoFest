@@ -294,7 +294,7 @@ export function TabBar({ tabs, scanTo }: { tabs: Array<{ to: string; label: stri
     )}
     {/* A floor under the labels. With no safe-area inset — Chrome's device mode, most Android
         gesture bars — the descenders sat on the very last pixel of the screen. */}
-    <nav className="border-t rule bg-white/94 backdrop-blur-[14px]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }} aria-label="Passport pages">
+    <nav className="border-t rule bg-white/94 backdrop-blur-[14px]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }} aria-label="Mission pages">
       {/*
         * Columns come from the tab count, not a class: Tailwind scans source text for complete
         * class names, so `grid-cols-${n}` would never be compiled.

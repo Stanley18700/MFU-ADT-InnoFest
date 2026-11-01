@@ -71,7 +71,7 @@ function RequireUser({ children }: { children?: React.ReactNode }) {
   const { ready, user, emailVerified } = useAuth()
   const loc = useLocation()
   const here = loc.pathname + loc.search
-  if (!ready) return <Spinner label="Opening your passport…" page />
+  if (!ready) return <Spinner label="Opening your mission…" page />
   if (!user) return <Navigate to="/signin" state={{ from: here }} replace />
   if (!emailVerified) return <Navigate to="/verify-email" state={{ from: here }} replace />
   return children ? <>{children}</> : <Outlet />
@@ -81,7 +81,7 @@ function Guard({ roles, children }: { roles: Role[]; children?: React.ReactNode 
   const { ready, user, emailVerified, role } = useAuth()
   const loc = useLocation()
   const here = loc.pathname + loc.search
-  if (!ready) return <Spinner label="Opening your passport…" page />
+  if (!ready) return <Spinner label="Opening your mission…" page />
   if (!user) return <Navigate to="/signin" state={{ from: here }} replace />
   if (!emailVerified) return <Navigate to="/verify-email" state={{ from: here }} replace />
   if (!role || !roles.includes(role)) {
@@ -126,14 +126,19 @@ export default function App() {
         </Route>
 
         <Route element={<Guard roles={['visitor', 'admin']} />}>
-          <Route path="/passport" element={<PassportLayout />}>
+          <Route path="/mission" element={<PassportLayout />}>
             <Route index element={<Cover />} />
-            <Route path="stamps" element={<Stamps />} />
-            <Route path="prize" element={<Prize />} />
+            <Route path="files" element={<Stamps />} />
+            <Route path="rewards" element={<Prize />} />
             {/* The Profile tab. Same component as /account, inside the shell so the bar stays put —
                 a tab that navigates out of its own tab bar is the thing this replaces. */}
-            <Route path="account" element={<Account variant="passport" />} />
+            <Route path="profile" element={<Account variant="passport" />} />
           </Route>
+          {/* The old addresses, from links shared before the rename. */}
+          <Route path="/passport" element={<Navigate to="/mission" replace />} />
+          <Route path="/passport/stamps" element={<Navigate to="/mission/files" replace />} />
+          <Route path="/passport/prize" element={<Navigate to="/mission/rewards" replace />} />
+          <Route path="/passport/account" element={<Navigate to="/mission/profile" replace />} />
           <Route path="/scan" element={<Scan />} />
           {/* Offered after a stamp; the stamp and points are already saved by then. */}
           <Route path="/survey/:boothId" element={<Survey />} />

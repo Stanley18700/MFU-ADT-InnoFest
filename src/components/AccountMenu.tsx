@@ -23,7 +23,7 @@ function initials(name: string | null | undefined, email: string | null | undefi
  * arrow keys for no gain. `<summary>` is already announced as a button with its expanded state.
  *
  * The visitor does not use this — their shell IS the tab bar, so Profile is a tab and this page's
- * job is done by `/passport/account`.
+ * job is done by `/mission/profile`.
  */
 export function AccountMenu({ dark = false, up = false, rail }: { dark?: boolean; up?: boolean; rail?: 'full' | 'icon' }) {
   const { user, profile, role } = useAuth()
@@ -88,7 +88,7 @@ export function AccountMenu({ dark = false, up = false, rail }: { dark?: boolean
         <div className="my-1 border-t rule" />
 
         {/* An admin has a passport of their own to test the visitor side with; nobody else does. */}
-        {role === 'admin' && <Link to="/passport" className="menu-item" onClick={close}>{t('nav.myPassport')}</Link>}
+        {role === 'admin' && <Link to="/mission" className="menu-item" onClick={close}>{t('nav.myPassport')}</Link>}
         <Link to="/account" state={{ from: loc.pathname + loc.search }} className="menu-item" onClick={close}>
           {t('nav.accountSettings')}
         </Link>

@@ -66,7 +66,7 @@ export default function Redeem() {
     setBusy(true); setMsg(null)
     try {
       const r = await api.lookupRedemption(c)
-      if (r.status === 'invalid') setMsg({ tone: 'amber', text: 'Code expired or not recognised — ask the visitor to show a fresh code, and check the passport number.' })
+      if (r.status === 'invalid') setMsg({ tone: 'amber', text: 'Code expired or not recognised — ask the visitor to show a fresh code, and check the agent ID.' })
       else { setLookup(r); setCred(c); setStale(false); setFreshCode('') }
     } catch (e) { setMsg({ tone: 'red', text: friendlyError(e) }) } finally { setBusy(false) }
   }
@@ -289,12 +289,12 @@ export default function Redeem() {
         {/* Capped and centred: the desk column is as wide as the display now, and a viewfinder
             stretched to 1600px is neither easier to aim at nor pleasant to stand in front of. */}
         <Scanner onResult={(t) => void onCred({ payload: t })} paused={busy || !!lookup || !!done} className="mx-auto mt-4 aspect-[4/3] w-full max-w-2xl"
-          fallback="Type the visitor's passport number and 8-character code below instead." />
+          fallback="Type the visitor's agent ID and 8-character code below instead." />
         {busy && <Spinner label="Looking up…" />}
         <form onSubmit={submitManual} className="glass mt-4 p-4">
           <div className="stamp-text text-ink-soft">Or type what the visitor reads out</div>
           <div className="mt-2 grid gap-2 [&>*]:min-w-0 sm:grid-cols-[1fr_1fr_auto]">
-            <label className="block text-xs text-ink-soft">Passport number
+            <label className="block text-xs text-ink-soft">Agent ID
               <input className="field mt-1 bg-white/90 font-mono text-base uppercase" value={passport} onChange={(e) => setPassport(e.target.value.toUpperCase())}
                 placeholder={`${prefix}-0042`} autoCapitalize="characters" autoComplete="off" inputMode="text" />
             </label>
@@ -304,7 +304,7 @@ export default function Redeem() {
             </label>
             <button className="btn-gold self-end" disabled={busy || !(PAYLOAD_RE.test(code) || (passport.trim() && code.replace(/\s+/g, '').length === 8))}>Look up</button>
           </div>
-          <p className="mt-2 text-xs text-ink-soft">Both are on the visitor's Prize page. Just the digits work for the passport number ("42" means {prefix}-0042).</p>
+          <p className="mt-2 text-xs text-ink-soft">Both are on the visitor's Rewards tab. Just the digits work for the agent ID ("42" means {prefix}-0042).</p>
         </form>
         {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
         {recent.length > 0 && (

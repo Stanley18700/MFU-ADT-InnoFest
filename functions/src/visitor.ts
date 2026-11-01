@@ -70,7 +70,7 @@ export const join = onCall(async (req) => {
   if (!(await rateLimitShared(`join_${ipPrefix}`, 5000, 3600))) {
     throw new HttpsError(
       'resource-exhausted',
-      'Too many new passports from this network in the last hour. Ask a member of staff — they can register you on a phone.',
+      'Too many new sign-ups from this network in the last hour. Ask a member of staff — they can register you on a phone.',
     )
   }
 
@@ -84,7 +84,7 @@ export const join = onCall(async (req) => {
   // only fires when a stale document from a previous account still holds the address.
   const dup = await db.collection('users').where('contact', '==', contact).limit(1).get()
   if (!dup.empty && dup.docs[0].id !== uid) {
-    throw new HttpsError('already-exists', 'This email already has a passport. Sign in with it instead.')
+    throw new HttpsError('already-exists', 'This email is already enlisted. Sign in with it instead.')
   }
 
   /*
@@ -110,7 +110,7 @@ export const join = onCall(async (req) => {
     console.error('passport counter exhausted its retries', e)
     throw new HttpsError(
       'unavailable',
-      'Too many people are registering at once. Tap Register again in a moment — your passport has not been created yet.',
+      'Too many people are registering at once. Tap Register again in a moment — your agent profile has not been created yet.',
     )
   })
 
@@ -358,7 +358,7 @@ export const syncAccount = onCall(async (req) => {
   if (email) {
     const dup = await db.collection('users').where('contact', '==', email).limit(1).get()
     if (!dup.empty && dup.docs[0].id !== uid) {
-      throw new HttpsError('already-exists', 'Another passport already uses that email address')
+      throw new HttpsError('already-exists', 'Another agent already uses that email address')
     }
   }
   await ref.set({

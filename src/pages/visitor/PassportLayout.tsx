@@ -8,10 +8,10 @@ import { useLocale } from '../../lib/locale'
 import type { StringKey } from '../../lib/strings'
 
 const TITLES: Array<[string, StringKey]> = [
-  ['/passport/stamps', 'a.title.files'],
-  ['/passport/prize', 'a.title.rewards'],
-  ['/passport/account', 'a.title.profile'],
-  ['/passport', 'a.title.cover'],
+  ['/mission/files', 'a.title.files'],
+  ['/mission/rewards', 'a.title.rewards'],
+  ['/mission/profile', 'a.title.profile'],
+  ['/mission', 'a.title.cover'],
 ]
 
 export default function PassportLayout() {
@@ -54,10 +54,10 @@ export default function PassportLayout() {
         {/* First-time explanation; reopened by the cover's "How it works". */}
         <VisitorWelcome />
         <ATabBar scanTo="/scan" scanLabel={t('a.scan.label')} tabs={[
-          { to: '/passport', label: t('v.tab.cover'), icon: AIcon.cover, end: true },
-          { to: '/passport/stamps', label: t('v.tab.stamps'), icon: AIcon.files },
-          { to: '/passport/prize', label: t('v.tab.prize'), icon: AIcon.rewards },
-          { to: '/passport/account', label: t('v.tab.profile'), icon: AIcon.profile },
+          { to: '/mission', label: t('v.tab.cover'), icon: AIcon.cover, end: true },
+          { to: '/mission/files', label: t('v.tab.stamps'), icon: AIcon.files },
+          { to: '/mission/rewards', label: t('v.tab.prize'), icon: AIcon.rewards },
+          { to: '/mission/profile', label: t('v.tab.profile'), icon: AIcon.profile },
         ]} />
       </div>
     </AGround>

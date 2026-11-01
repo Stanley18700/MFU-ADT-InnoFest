@@ -132,10 +132,10 @@ export default function Action() {
       title: 'Email confirmed',
       // The link is often opened in the mail app's own browser, where nobody is signed in.
       lead: auth.currentUser
-        ? <><b className="text-ink">{email}</b> is yours. Your passport is open.</>
+        ? <><b className="text-ink">{email}</b> is yours. Your mission is open.</>
         : <><b className="text-ink">{email}</b> is confirmed. Sign in here, or go back to the tab where you signed up — it has already moved on.</>,
       cta: auth.currentUser
-        ? <button className="btn-gold py-3.5" onClick={goOn}>Open my passport</button>
+        ? <button className="btn-gold py-3.5" onClick={goOn}>Open my mission</button>
         : <Link to="/signin" state={{ email }} className="btn-gold py-3.5">Sign in</Link>,
     },
     verifyAndChangeEmail: {

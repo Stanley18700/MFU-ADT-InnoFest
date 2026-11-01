@@ -69,7 +69,7 @@ export default function Cover() {
       {nextBooth ? (
         <div className="mt-1">
           <NextTarget
-            to="/passport/stamps" title={pick(nextBooth.nameEn, nextBooth.nameTh)}
+            to="/mission/files" title={pick(nextBooth.nameEn, nextBooth.nameTh)}
             meta={[nextBooth.shortName, nextBooth.location].filter(Boolean).join(' · ')}
             labels={{ tag: t('a.next.tag'), eyebrow: t('a.next.eyebrow') }}
           />

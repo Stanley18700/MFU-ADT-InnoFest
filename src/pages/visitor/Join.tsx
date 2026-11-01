@@ -85,7 +85,7 @@ export default function Join() {
   const ethnicValue = ethnicOther || (f.ethnicGroup && !inEthnicList) ? OTHER_ETHNIC : f.ethnicGroup
 
   if (!ready) return <Spinner page />
-  if (role === 'visitor') return <Navigate to={from ?? '/passport'} replace />
+  if (role === 'visitor') return <Navigate to={from ?? '/mission'} replace />
   if (role === 'organizer' || role === 'admin') return <Navigate to="/" replace />
 
   async function submit(e: FormEvent) {
@@ -107,7 +107,7 @@ export default function Join() {
       // §4.1 — give the passport a way home. Non-fatal: registration must not fail because
       // the credential could not be linked, and `join` has already succeeded by this point.
       await refreshClaims()
-      nav(from ?? '/passport', { replace: true })
+      nav(from ?? '/mission', { replace: true })
     } catch (e) {
       setErr(errorMessage(e))
     } finally { setBusy(false) }

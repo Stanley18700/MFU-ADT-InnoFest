@@ -49,7 +49,7 @@ export default function Survey() {
   const gatingGift = festival && fs.gate
   const { t, pick } = useLocale()
   const { data: booth } = useBooth(festival ? null : boothId)
-  const home = festival ? '/passport/prize' : '/scan'
+  const home = festival ? '/mission/rewards' : '/scan'
   const { answers, setAnswers } = useAnswers()
   const [offer, setOffer] = useState<SurveyOffer | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -101,7 +101,7 @@ export default function Survey() {
             <span className="a-mono text-sm text-[var(--a-muted)]" aria-live="off">{t('v.survey.holdBack', { s: holdLeft })}</span>
             <ALang />
           </header>
-        : <AHeader lead="close" to={festival ? '/passport/prize' : '/passport/stamps'}
+        : <AHeader lead="close" to={festival ? '/mission/rewards' : '/mission/files'}
             title={festival ? t('v.survey.title') : booth ? pick(booth.nameEn, booth.nameTh) : t('v.survey.booth')} />}
       <div className="flex-1 px-4 pb-8">{children}</div>
     </main></AGround>
@@ -131,7 +131,7 @@ export default function Survey() {
         {/* For someone already past the threshold: the gift QR is now waiting on the Prize tab. */}
         {festival && <p className="text-sm text-ink-soft">{t('v.survey.qrReady')}</p>}
         <PrimaryBtn to={home} className="w-full">{festival ? t('v.survey.backPrize') : t('v.survey.scanAnother')}</PrimaryBtn>
-        <Link to="/passport/stamps" className="a-link text-sm">{t('v.survey.myStamps')}</Link>
+        <Link to="/mission/files" className="a-link text-sm">{t('v.survey.myStamps')}</Link>
       </div>,
     )
   }

@@ -97,12 +97,12 @@ export async function signInWithEmail(email: string, password: string): Promise<
 export async function signUpWithEmail(name: string, email: string, password: string): Promise<UserCredential> {
   const cred = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
   if (name.trim()) await updateProfile(cred.user, { displayName: name.trim() })
-  await sendEmailVerification(cred.user, continueTo('/passport'))
+  await sendEmailVerification(cred.user, continueTo('/mission'))
   return cred
 }
 
 export async function sendVerification(user: User): Promise<void> {
-  await sendEmailVerification(user, continueTo('/passport'))
+  await sendEmailVerification(user, continueTo('/mission'))
 }
 
 export async function sendReset(email: string): Promise<void> {

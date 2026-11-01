@@ -14,12 +14,12 @@ type Kind = 'exhibitor' | 'admin'
 const COPY: Record<Kind, { title: string; lead: string; send: string }> = {
   exhibitor: {
     title: 'Become an exhibitor',
-    lead: 'Run a booth that stamps visitors’ digital passports. Tell us about your booth and we will get back to you by email.',
+    lead: 'Run a booth that visitors scan to recover your project file. Tell us about your booth and we will get back to you by email.',
     send: 'Send request',
   },
   admin: {
     title: 'Become an admin',
-    lead: 'Run your own event on the InterFest Passport: booths, stamps, prizes and live stats. Tell us about your event and we will get back to you by email.',
+    lead: 'Run your own event on this app: booths, stamps, prizes and live stats. Tell us about your event and we will get back to you by email.',
     send: 'Send request',
   },
 }
@@ -59,7 +59,7 @@ export default function Apply({ kind }: { kind: Kind }) {
   if (done) {
     return (
       <AuthShell eventLine={false} title="Request sent" lead={`Thank you, ${f.name.trim()}. We will reply to ${email}.`}>
-        <a href="/" className="btn-primary mt-5 block py-3 text-center">Back to the passport</a>
+        <a href="/" className="btn-primary mt-5 block py-3 text-center">Back to the mission</a>
       </AuthShell>
     )
   }

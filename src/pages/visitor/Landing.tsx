@@ -12,7 +12,7 @@ export default function Landing() {
   const event = useEvent()
   const { t, pick } = useLocale()
   if (!ready) return <Spinner label={t('v.loading')} page />
-  if (role === 'visitor') return <Navigate to="/passport" replace />
+  if (role === 'visitor') return <Navigate to="/mission" replace />
   if (role === 'organizer') return <Navigate to="/booth" replace />
   if (role === 'admin') return <Navigate to="/admin" replace />
   // Signed in but stopped halfway: finish confirming the address, or finish the form.

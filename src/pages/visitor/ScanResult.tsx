@@ -30,7 +30,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
   const head = (eyebrow: string) => (
     <header className="flex h-16 items-center justify-between gap-2 px-4">
       <div className="flex min-w-0 items-center gap-1">
-        <Link to="/passport" aria-label={t('v.close')} className="-ml-3 flex h-11 w-11 shrink-0 items-center justify-center text-ink focus-visible:outline-[3px] focus-visible:outline-[#00B4EE]">{AIcon.close}</Link>
+        <Link to="/mission" aria-label={t('v.close')} className="-ml-3 flex h-11 w-11 shrink-0 items-center justify-center text-ink focus-visible:outline-[3px] focus-visible:outline-[#00B4EE]">{AIcon.close}</Link>
         <Eyebrow pulse>{eyebrow}</Eyebrow>
       </div>
       <ALang />
@@ -75,7 +75,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
           {/* Asked only once the stamp is safely in the passport, and never in the way of it. */}
           <RatingCard boothId={result.boothId} onDone={() => setDone(true)} />
           <div className="mt-3 flex flex-col gap-3">
-            <PrimaryBtn to="/passport/stamps" disabled={!done}>{t('v.res.myStamps')}</PrimaryBtn>
+            <PrimaryBtn to="/mission/files" disabled={!done}>{t('v.res.myStamps')}</PrimaryBtn>
             <GhostBtn onClick={onRetry} disabled={!done} icon={AIcon.scan}>{t('v.res.scanAnother')}</GhostBtn>
           </div>
         </div>
@@ -104,7 +104,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
           <p className="m-0 text-sm text-[#33415F]">{t('v.res.alreadyNote', { booth: booth ? pick(booth.nameEn, booth.nameTh) : '' })}</p>
           <div className="mt-4 flex flex-col gap-3">
             <PrimaryBtn onClick={onRetry} icon={AIcon.scan}>{t('v.res.scanAnother')}</PrimaryBtn>
-            <GhostBtn to="/passport/stamps">{t('v.res.whatsLeft')}</GhostBtn>
+            <GhostBtn to="/mission/files">{t('v.res.whatsLeft')}</GhostBtn>
           </div>
         </div>
       </div>

@@ -42,7 +42,7 @@ export default function ScanLanding() {
   return (
     <><FestivalBackdrop hills={false} /><main className="relative mx-auto min-h-full max-w-md p-4 text-ink">
       <header className="flex items-center justify-between gap-2 px-1 py-3">
-        <BackLink to="/passport">{t('v.back.passport')}</BackLink>
+        <BackLink to="/mission">{t('v.back.passport')}</BackLink>
         <div className="stamp-text text-ink">{t('v.scan.checkin')}</div>
         <span className="w-16" />
       </header>

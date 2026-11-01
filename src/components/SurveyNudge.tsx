@@ -64,7 +64,7 @@ export function SurveyNudge() {
   const day = dayOf(new Date(now))
   const afternoon = event.days.includes(day) && minuteOfDay(new Date(now)) >= NUDGE_AT_MINUTE
   // The Prize page is already making the case in full; a second sheet on top of it is noise.
-  const onPrize = loc.pathname.startsWith('/passport/prize')
+  const onPrize = loc.pathname.startsWith('/mission/rewards')
 
   useEffect(() => {
     if (open || onPrize || !uid || fs.loading || !fs.live || fs.taken || stamps < 1) return
@@ -138,7 +138,7 @@ export function SurveyBanner({ className = '' }: { className?: string }) {
   if (fs.loading || !fs.live || !profile || (profile.stampCount ?? 0) < 1) return null
   if (fs.taken) {
     return (
-      <Link to="/passport/prize" className={`a-cut a-solid a-fill-tint flex min-h-14 items-center gap-3 px-3.5 py-2.5 text-ink no-underline ${className}`}>
+      <Link to="/mission/rewards" className={`a-cut a-solid a-fill-tint flex min-h-14 items-center gap-3 px-3.5 py-2.5 text-ink no-underline ${className}`}>
         <span aria-hidden className="text-[#1450E6]">{BannerIcon.pass}</span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold">{t('v.cover.passBanner')}</span>

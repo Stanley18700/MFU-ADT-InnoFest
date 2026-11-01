@@ -60,7 +60,7 @@ export default function VerifyEmail() {
     <AuthShell
       back={null}
       title="Confirm your email"
-      lead={<>We sent a link to <b className="text-ink">{user.email}</b>. Tap it and your passport opens.</>}
+      lead={<>We sent a link to <b className="text-ink">{user.email}</b>. Tap it and your mission begins.</>}
     >
       <div className="mt-6 flex flex-col gap-4">
         <div className="flex items-center gap-3 rounded-[20px] bg-sky-100 px-4 py-3 text-sm text-ink-soft">
