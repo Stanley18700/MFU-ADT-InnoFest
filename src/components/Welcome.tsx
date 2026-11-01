@@ -115,11 +115,11 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
         className="hd-glass hd-pop flex h-[min(600px,80dvh)] w-full max-w-[400px] flex-col overflow-hidden rounded-[22px]">
         {/* Header: the figure, who it is, and the language toggle — the one control a reader who
             cannot yet follow this screen needs most. */}
-        <div className="flex items-center gap-3 border-0 border-b border-solid border-[rgb(29_91_255/.18)] px-4 pb-3 pt-3.5">
+        <div className="flex items-center gap-3 border-0 border-b border-solid border-[rgb(127_231_255/.22)] px-4 pb-3 pt-3.5">
           <span className="hd-halo"><HandlerAvatar size={52} /></span>
           <div className="min-w-0 flex-1">
-            <div className="a-mono flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold tracking-[.12em] text-[#1450E6] overflow-hidden"><span className="hd-dot" aria-hidden />{t('h.channel')}</div>
-            <div className="a-hd mt-0.5 whitespace-nowrap text-[19px] font-bold tracking-wide text-[#0A1433]">{t('h.name')}</div>
+            <div className="a-mono flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold tracking-[.12em] text-[#7FE7FF] overflow-hidden"><span className="hd-dot" aria-hidden />{t('h.channel')}</div>
+            <div className="a-hd mt-0.5 whitespace-nowrap text-[19px] font-bold tracking-wide text-white">{t('h.name')}</div>
           </div>
           <ALang />
         </div>
@@ -132,8 +132,8 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
               return (
                 <li key={i} className="hd-msg flex items-end gap-2">
                   <span className={`shrink-0 ${newest ? '' : 'opacity-0'}`}><HandlerAvatar size={28} live={newest} /></span>
-                  <div className="hd-bubble-lt min-w-0 flex-1 px-3.5 py-2.5 text-[16px] font-medium leading-relaxed text-[#0A1433]">
-                    <div className="a-mono mb-1 text-[10px] font-semibold tracking-[.14em] text-[#1450E6]">TX-{String(i + 1).padStart(2, '0')} · 2036</div>
+                  <div className="hd-bubble-dk min-w-0 flex-1 px-3.5 py-2.5 text-[16px] font-medium leading-relaxed text-white">
+                    <div className="a-mono mb-1 text-[10px] font-semibold tracking-[.14em] text-[#7FE7FF]">TX-{String(i + 1).padStart(2, '0')} · 2036</div>
                     <Decode text={line} remember={false} instant={!newest || rush} onDone={newest ? () => setReady(true) : undefined} />
                   </div>
                 </li>
@@ -147,28 +147,28 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
             )}
           </ol>
           {finished && (
-            <div className="hd-msg mt-3 text-right a-mono text-[11px] font-semibold tracking-[.14em] text-[#1450E6]">— {t('h.name')}</div>
+            <div className="hd-msg mt-3 text-right a-mono text-[11px] font-semibold tracking-[.14em] text-[#7FE7FF]">— {t('h.name')}</div>
           )}
           <div ref={end} />
         </div>
 
         {/* Footer: tap hint + skip while the story plays; the two mission buttons once it ends. */}
-        <div className="border-0 border-t border-solid border-[rgb(29_91_255/.18)] bg-white/70 px-4 pb-4 pt-3">
+        <div className="border-0 border-t border-solid border-[rgb(127_231_255/.22)] bg-[rgb(6_11_38/.55)] px-4 pb-4 pt-3">
           {finished ? (
             <div className="hd-msg flex flex-col gap-3">
               <PrimaryBtn onClick={onClose}>{t('v.welcome.start')}</PrimaryBtn>
               <GhostBtn to="/scan" onClick={onClose} icon={AIcon.scan}>{t('v.welcome.scanNow')}</GhostBtn>
-              <p className="m-0 text-center text-[11.5px] text-[#4A5A7D]">{t('v.welcome.free')}</p>
+              <p className="m-0 text-center text-[12px] text-[#C3D0EE]">{t('v.welcome.free')}</p>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
               <button type="button" onClick={advance}
-                className="hd-hint a-mono min-h-11 min-w-0 flex-1 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap border-0 bg-transparent p-0 text-left text-[11.5px] font-semibold tracking-[.06em] text-[#1450E6]">
+                className="hd-hint a-mono min-h-11 min-w-0 flex-1 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap border-0 bg-transparent p-0 text-left text-[11.5px] font-semibold tracking-[.06em] text-[#7FE7FF]">
                 ▸ {t('h.tapNext')}
               </button>
-              <span className="a-mono shrink-0 text-[11.5px] font-semibold text-[#4A5A7D]">{count}/{script.length}</span>
+              <span className="a-mono shrink-0 text-[11.5px] font-semibold text-[#B8C6E8]">{count}/{script.length}</span>
               <button type="button" onClick={skip}
-                className="a-mono min-h-11 shrink-0 cursor-pointer border-[1.5px] border-solid border-[#1D5BFF] bg-white px-3.5 text-[12px] font-semibold tracking-[.1em] text-[#0A1433]">
+                className="a-mono min-h-11 shrink-0 cursor-pointer border-[1.5px] border-solid border-[#7FE7FF] bg-transparent px-3.5 text-[12px] font-semibold tracking-[.1em] text-white">
                 {t('h.skip')} ⏭
               </button>
             </div>
