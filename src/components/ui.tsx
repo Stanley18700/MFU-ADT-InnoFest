@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { BootBar, SegLoader } from './game'
 import { Link, NavLink } from 'react-router-dom'
 import { downloadCsv, type CsvRow } from '../lib/csv'
 import { useDataErrors } from '../lib/data'
@@ -37,15 +38,14 @@ export function Spinner({ label = 'Loading…', page = false }: { label?: string
             <img src="/brand/logo-innofest.webp" alt="" aria-hidden className="block w-full" />
             <span aria-hidden className="a-scanline" />
           </div>
-          <div className="mt-6 flex items-center gap-2"><span aria-hidden className="a-dot a-pulse" /><span className="a-label">{label}</span></div>
-          <div aria-hidden className="relative mt-4 h-1 w-full overflow-hidden bg-[#E3EAF7]"><span className="absolute inset-y-0 left-0 w-2/3 animate-pulse" style={{ background: 'var(--a-neon-bar)' }} /></div>
+          <div className="mt-6 w-full"><BootBar label={label} /></div>
         </div>
       </div>
     )
   }
   return (
     <div className="flex items-center justify-center gap-3 p-8 text-ink-soft" role="status">
-      <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/15 border-t-[#1D5BFF]" />
+      <SegLoader segments={4} />
       <span className="text-sm">{label}</span>
     </div>
   )

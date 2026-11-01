@@ -183,7 +183,7 @@ export default function Exhibit() {
           </div>
         )}
         {err && <Notice tone="red">{err}</Notice>}
-        {chosen && <PrimaryBtn type="submit" disabled={busy || !name.trim()}>{busy ? t('ex.checking') : t('ex.submit')}</PrimaryBtn>}
+        {chosen && <PrimaryBtn type="submit" disabled={busy || !name.trim()} loading={busy}>{busy ? t('ex.checking') : t('ex.submit')}</PrimaryBtn>}
         <p className="m-0 text-center text-xs text-[var(--a-muted)]">{t('ex.help')}</p>
       </form>
     )}

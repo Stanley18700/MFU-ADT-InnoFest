@@ -176,7 +176,7 @@ export default function Survey() {
       )}
 
       <div className="mt-5 flex flex-col gap-2">
-        <PrimaryBtn onClick={() => void submit()} disabled={busy}>
+        <PrimaryBtn onClick={() => void submit()} disabled={busy} loading={busy}>
           {busy ? t('v.survey.sending') : t('v.survey.submit')}
         </PrimaryBtn>
         <button className="a-link min-h-11 cursor-pointer border-0 bg-transparent text-sm disabled:no-underline disabled:opacity-60"

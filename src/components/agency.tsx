@@ -9,8 +9,9 @@
  *  - brackets = tap (primary button, Scan, the next-target card) and nothing else
  *  - glitch only moves, once, and never under reduced motion
  */
-import type { ReactNode } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { SegLoader, haptic, reducedMotion, useCountUp } from './game'
 import { LOCALES, useLocale } from '../lib/locale'
 import { useSlidingPill } from '../lib/useSlidingPill'
 
@@ -161,14 +162,45 @@ export function Eyebrow({ children, pulse = false, className = '' }: { children:
 
 type BtnProps = { children: ReactNode; to?: string; state?: unknown; onClick?: () => void; type?: 'button' | 'submit'; disabled?: boolean; className?: string; icon?: ReactNode }
 
-/** The one primary action on a screen: neon, cut, glowing, bracketed. */
-export function PrimaryBtn({ children, to, state, onClick, type = 'button', disabled, className = '', icon = AIcon.arrow }: BtnProps) {
-  const inner = <>{children}{icon}</>
+/**
+ * The one primary action on a screen: neon, cut, glowing, bracketed — and it plays like a game
+ * button. Pressing pulls the brackets in onto the button; letting go "locks on" (a quick blink and,
+ * on Android, a tiny buzz). A link waits the length of that blink before it goes, so the lock is
+ * seen. `loading` keeps the brackets pulsing on target and runs a charge sweep across the button,
+ * with segments where the arrow was, until the work is done.
+ */
+export function PrimaryBtn({ children, to, state, onClick, type = 'button', disabled, className = '', icon = AIcon.arrow, loading = false }: BtnProps & { loading?: boolean }) {
+  const nav = useNavigate()
+  const [phase, setPhase] = useState<'idle' | 'press' | 'lock'>('idle')
+  const timer = useRef<number>(0)
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+  const off = disabled && !loading
+  const press = () => { if (!off && !loading) setPhase('press') }
+  const release = () => setPhase((p) => (p === 'press' ? 'idle' : p))
+  const lock = () => {
+    haptic(12)
+    setPhase('lock')
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => setPhase('idle'), 340)
+  }
+  const inner = <>
+    {loading && <span aria-hidden className="g-charge" />}
+    <span className="relative">{children}</span>
+    {loading ? <SegLoader segments={4} tone="white" className="relative" /> : icon}
+  </>
+  const wrap = `a-brk ${off ? '' : 'a-glow'} ${phase === 'press' ? 'is-press' : ''} ${phase === 'lock' ? 'is-lock' : ''} ${loading ? 'is-loading' : ''} ${className}`
+  const handlers = { onPointerDown: press, onPointerUp: release, onPointerLeave: release, onPointerCancel: release }
   return (
-    <div className={`a-brk ${disabled ? '' : 'a-glow'} ${className}`}>
+    <div className={wrap}>
       {to && !disabled
-        ? <Link to={to} state={state} onClick={onClick} className="a-btn a-btn-primary a-cut">{inner}</Link>
-        : <button type={type} onClick={onClick} disabled={disabled} className="a-btn a-btn-primary a-cut">{inner}</button>}
+        ? <Link to={to} state={state} {...handlers} className="a-btn a-btn-primary a-cut"
+            onClick={(e) => {
+              // Plain clicks wait for the lock-on blink; a modified click (new tab) goes at once.
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0 || reducedMotion()) { onClick?.(); return }
+              e.preventDefault(); lock(); onClick?.()
+              window.setTimeout(() => nav(to, { state }), 170)
+            }}>{inner}</Link>
+        : <button type={type} {...handlers} onClick={() => { lock(); onClick?.() }} disabled={disabled} aria-busy={loading || undefined} className="a-btn a-btn-primary a-cut">{inner}</button>}
     </div>
   )
 }
@@ -211,7 +243,10 @@ export function FilesProgress({ points, total, thresholds, labels }: {
   points: number; total: number; thresholds: Array<{ at: number; label: string }>
   labels: { title: string; toGo: string | null; unlocked: (label: string) => string }
 }) {
-  const pct = total ? Math.min(100, (points / total) * 100) : 0
+  // Counts up like a score from wherever it last stood this session (037 → 038 after a scan),
+  // and the bar fills with it.
+  const shown = useCountUp(points, { key: 'files-progress' })
+  const pct = total ? Math.min(100, (shown / total) * 100) : 0
   const lit = thresholds.filter((t) => points >= t.at)
   const last = lit[lit.length - 1]
   return (
@@ -220,10 +255,10 @@ export function FilesProgress({ points, total, thresholds, labels }: {
         <span className="a-label text-[var(--a-muted)]">{labels.title}</span>
         {labels.toGo && <span className="text-right text-xs text-[var(--a-muted)]">{labels.toGo}</span>}
       </div>
-      <div className="mt-0.5"><span className="a-mono a-neon-text text-[40px] font-semibold leading-[42px]">{pad3(points)}</span><span className="a-mono text-xl text-[var(--a-muted)]">/{total}</span></div>
+      <div className="mt-0.5"><span className="a-mono a-neon-text text-[40px] font-semibold leading-[42px]" aria-label={String(points)}>{pad3(shown)}</span><span className="a-mono text-xl text-[var(--a-muted)]">/{total}</span></div>
       <div className="a-bar mr-[7px] mt-2" role="progressbar" aria-valuenow={points} aria-valuemin={0} aria-valuemax={total} aria-label={labels.title}>
-        <span className="fill" style={{ width: `${pct}%` }} />
-        {thresholds.map((t) => <span key={t.at} className={`a-marker ${points >= t.at ? '' : 'off'}`} style={{ left: `${(t.at / total) * 100}%` }} />)}
+        <span className="fill !transition-none" style={{ width: `${pct}%` }} />
+        {thresholds.map((t) => <span key={t.at} className={`a-marker ${shown >= t.at ? '' : 'off'}`} style={{ left: `${(t.at / total) * 100}%` }} />)}
       </div>
       <div className="relative mt-2 h-7">
         {thresholds.map((t) => {

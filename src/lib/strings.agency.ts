@@ -58,6 +58,8 @@ export const agencyEn = {
   'a.landing.venue': 'VENUE',
   'a.landing.venueName': 'Indoor Stadium, Mae Fah Luang University',
   'a.landing.foot': 'LINK STABLE · 2036 ⇄ 2026',
+  'g.rankUp': 'RANK UP ▲',
+  'g.decrypting': 'DECRYPTING',
 }
 export const agencyTh: Record<keyof typeof agencyEn, string> = {
   'a.title.cover': 'บัตรเจ้าหน้าที่',
@@ -113,4 +115,6 @@ export const agencyTh: Record<keyof typeof agencyEn, string> = {
   'a.landing.venue': 'สถานที่',
   'a.landing.venueName': 'อาคารกีฬาในร่ม มหาวิทยาลัยแม่ฟ้าหลวง',
   'a.landing.foot': 'สัญญาณเสถียร · 2036 ⇄ 2026',
+  'g.rankUp': 'เลื่อนระดับ ▲',
+  'g.decrypting': 'กำลังถอดรหัส',
 }

@@ -1296,3 +1296,91 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 }
 .hd-card .hd-signal { color: #1450E6; font-weight: 600; }
 .hd-card .hd-noise { color: #1D5BFF; opacity: 1; }
+
+/* ================================================================ GAME FEEL
+ * Brackets that react: they pull in while pressed, blink "locked on" when released, and pulse on
+ * target while the button is working. Segment loaders, a boot bar, a charge sweep. All of it
+ * stops under reduced motion (bottom of this block). */
+.a-brk::after { transition: inset .22s cubic-bezier(.3, 1.7, .5, 1), filter .2s; }
+.a-brk.is-press::after { inset: 0px; transition-duration: .08s; transition-timing-function: ease-out; filter: drop-shadow(0 0 6px rgb(0 220 255 / .95)); }
+.a-brk.is-press .a-btn { transform: scale(.97); }
+/* Everything else wearing brackets (the next-target card, the Scan button in the tab bar, the
+ * survey button) gets the same pull-in while pressed, with no script. */
+.a-brk:active::after, .a-brk:has(:active)::after { inset: 0px; transition-duration: .08s; filter: drop-shadow(0 0 6px rgb(0 220 255 / .95)); }
+.a-brk-wide:active::after, .a-brk-wide:has(:active)::after { inset: -2px; }
+.a-brk.is-lock::after { animation: g-lock .34s steps(1) both; }
+@keyframes g-lock {
+  0% { inset: -1px; opacity: 1; filter: drop-shadow(0 0 8px #00E5FF); }
+  25% { inset: -1px; opacity: .25; }
+  50% { inset: -2px; opacity: 1; }
+  75% { inset: -4px; opacity: .4; }
+  100% { inset: -6px; opacity: 1; }
+}
+/* Working: the brackets breathe in and out on the button, faster and brighter than at rest. */
+.a-brk.is-loading::after { animation: g-seek 1s cubic-bezier(.5, 0, .5, 1) infinite; }
+@keyframes g-seek {
+  0%, 100% { inset: -1px; filter: drop-shadow(0 0 7px rgb(0 220 255 / 1)); }
+  50% { inset: -7px; filter: drop-shadow(0 0 3px rgb(0 200 255 / .6)); }
+}
+.a-brk.is-loading .a-btn[disabled] { opacity: 1; cursor: progress; }
+/* The charge sweep: a bright band crossing the button, clipped to its cut shape. */
+.g-charge {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+.g-charge::before {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 45%; left: -50%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / .38), transparent);
+  animation: g-sweep 1.05s ease-in-out infinite;
+}
+@keyframes g-sweep { to { left: 110%; } }
+
+/* Segments lighting in turn. */
+.g-segs { display: inline-flex; align-items: center; gap: 3px; }
+.g-segs i { display: block; width: 6px; height: 12px; background: #1D5BFF; opacity: .18; transform: skewX(-14deg); animation: g-seg .9s ease-in-out infinite; }
+.g-segs-white i { background: #fff; }
+@keyframes g-seg { 0%, 100% { opacity: .18; } 30% { opacity: 1; box-shadow: 0 0 6px rgb(0 210 255 / .9); } 60% { opacity: .35; } }
+
+/* The boot bar: segmented track, neon fill with a moving glint. */
+.g-boot { position: relative; height: 8px; background: repeating-linear-gradient(90deg, #E3EAF7 0 10px, transparent 10px 12px); }
+.g-boot > span {
+  position: absolute; inset: 0 auto 0 0; display: block; transition: width .25s ease-out;
+  background: repeating-linear-gradient(90deg, #1D5BFF 0 10px, transparent 10px 12px);
+  filter: drop-shadow(0 0 4px rgb(0 200 255 / .7));
+}
+
+/* Progress that fills like an XP bar. */
+.a-bar .fill { transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+
+/* RANK UP: a gold banner that slams in and shines once. */
+.g-rankup { animation: g-slam .55s cubic-bezier(.2, 1.6, .4, 1) both; }
+/* The shine is its own layer: the banner's ::before/::after already draw its cut gold shape. */
+.g-shine {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+}
+.g-shine::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / .75) 50%, transparent 70%);
+  transform: translateX(-120%); animation: g-shine .9s .45s ease-out both;
+}
+@keyframes g-slam { 0% { transform: scale(1.6); opacity: 0; filter: blur(4px); } 60% { transform: scale(.96); opacity: 1; filter: none; } 100% { transform: none; } }
+@keyframes g-shine { to { transform: translateX(120%); } }
+
+/* "+1" rising off the points tile. */
+.g-float { position: absolute; left: 50%; top: 0; pointer-events: none; font-family: var(--font-mono); font-weight: 700; color: #B07800; animation: g-float 1.1s .25s ease-out both; }
+@keyframes g-float { 0% { opacity: 0; transform: translate(-50%, 0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -34px); } }
+
+/* Decrypting: the lens dims and a scrambled readout runs over it while the code is checked. */
+.g-decrypt {
+  position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; text-align: center;
+  background: rgb(6 11 38 / .62); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  animation: hd-in .2s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a-brk::after, .a-brk.is-lock::after, .a-brk.is-loading::after, .g-charge::before, .g-segs i,
+  .g-rankup, .g-shine::after, .g-float, .a-bar .fill, .g-boot > span, .g-decrypt { animation: none !important; transition: none !important; }
+  .g-segs i { opacity: .7; }
+  .g-float { display: none; }
+}

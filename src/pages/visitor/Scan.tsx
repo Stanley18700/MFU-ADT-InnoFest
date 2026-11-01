@@ -1,4 +1,5 @@
 import { useCallback, useState, type FormEvent } from 'react'
+import { DecryptOverlay, SegLoader } from '../../components/game'
 import { Transmission } from '../../components/handler'
 import { Link } from 'react-router-dom'
 import { Scanner } from '../../components/Scanner'
@@ -57,9 +58,10 @@ export default function Scan() {
               <ALang />
             </header>
             <Scanner onResult={(t) => void submit(t)} paused={busy} className="aspect-square max-h-[56dvh] w-full" />
+            {busy && <DecryptOverlay label={t('g.decrypting')} />}
           </div>
           <div className="relative -mt-4 flex flex-1 flex-col gap-3 bg-white px-4 pb-8 pt-5" style={{ clipPath: 'polygon(18px 0,100% 0,100% 100%,0 100%,0 18px)' }}>
-            {busy && <div className="flex items-center gap-2"><span aria-hidden className="a-dot a-pulse" /><span className="a-label">{t('v.scan.checking')}</span></div>}
+            {busy && <div className="flex items-center gap-2"><SegLoader segments={4} /><span className="a-label">{t('v.scan.checking')}</span></div>}
             {/*
               * Ahead of the error, because it explains it. A stamp is recorded by the server, so
               * scanning offline cannot work — and without this the visitor reads a network

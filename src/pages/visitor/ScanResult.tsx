@@ -9,7 +9,8 @@ import { useBooths, useDoc, useTiers } from '../../lib/data'
 import { RATING_COMMENT_MAX } from '../../../shared/model'
 import { useLocale } from '../../lib/locale'
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
-import { AIcon, ALang, ErrorPanel, Eyebrow, GhostBtn, GoldTag, InkTag, PrimaryBtn, pad3 } from '../../components/agency'
+import { AIcon, ALang, ErrorPanel, Eyebrow, GhostBtn, GoldTag, InkTag, PrimaryBtn, pad3, rankOf } from '../../components/agency'
+import { haptic, useCountUp } from '../../components/game'
 import { Notice } from '../../components/ui'
 import type { ScanResult } from '../../../shared/model'
 
@@ -54,17 +55,9 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
             <div className="a-hd a-flicker mt-2 text-[22px] font-bold leading-tight text-ink">{name}</div>
             {booth?.hostUnit && <div className="mt-1 text-sm text-[#33415F]">{booth.hostUnit}</div>}
           </div>
-          <div className="flex items-stretch gap-3">
-            <span className="a-cut a-solid a-fill-gold a-pop a-hd grid w-[62px] shrink-0 place-items-center text-2xl font-bold">+{result.pointsAwarded}</span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="a-label text-[var(--a-muted)]">{t('a.res.newTotal')}</span>
-                <span><span className="a-mono a-neon-text text-[28px] font-semibold">{pad3(result.points)}</span>{top > 0 && <span className="a-mono text-base text-[var(--a-muted)]">/{top}</span>}</span>
-              </div>
-              {top > 0 && <div className="a-bar mt-1 h-[6px]"><span className="fill" style={{ width: `${Math.min(100, (result.points / top) * 100)}%` }} /></div>}
-              <div className="mt-1 text-xs text-[var(--a-muted)]">{t('v.res.summary', { booth: name, points: result.points, stamps: result.stampCount })}</div>
-            </div>
-          </div>
+          <ScoreGain awarded={result.pointsAwarded} points={result.points} top={top}
+            thresholds={tiers.map((x) => x.thresholdPoints)}
+            summary={t('v.res.summary', { booth: name, points: result.points, stamps: result.stampCount })} />
           {result.unlockedTierIds.length > 0 && (
             <div className="a-cut a-edge-neon a-fill-foil flex items-center gap-3 px-3.5 py-3">
               <GoldTag pop>{AIcon.check}{t('a.res.unlockedTag')}</GoldTag>
@@ -299,10 +292,49 @@ function RatingSheet({
           />
         </label>
 
-        <PrimaryBtn className="mt-5" onClick={() => void send()} disabled={busy || stars === 0}>
+        <PrimaryBtn className="mt-5" onClick={() => void send()} disabled={busy || stars === 0} loading={busy}>
           {busy ? t('v.rate.sending') : stars === 0 ? t('v.rate.pick') : t('v.rate.send')}
         </PrimaryBtn>
       </div>
     </div>
+  )
+}
+
+/**
+ * The score moment after a recovery, played like a game: "+1" rises off the gold tile, the new
+ * total counts up from the old one and the bar fills with it, the phone buzzes once — and if this
+ * scan moved the agent up a rank, a RANK UP banner slams in.
+ */
+function ScoreGain({ awarded, points, top, thresholds, summary }: { awarded: number; points: number; top: number; thresholds: number[]; summary: string }) {
+  const { t } = useLocale()
+  const before = Math.max(0, points - awarded)
+  const shown = useCountUp(points, { from: before, ms: 900 })
+  const r0 = rankOf(before, thresholds), r1 = rankOf(points, thresholds)
+  const rankName = (k: typeof r1.key) => t(k === 'senior' ? 'a.rank.senior' : k === 'field' ? 'a.rank.field' : 'a.rank.recruit')
+  useEffect(() => { haptic(r1.index > r0.index ? [30, 60, 30, 60, 60] : [20, 50, 20]) }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <>
+      <div className="flex items-stretch gap-3">
+        <span className="relative">
+          <span className="a-cut a-solid a-fill-gold a-pop a-hd grid h-full w-[62px] place-items-center text-2xl font-bold">+{awarded}</span>
+          <span aria-hidden className="g-float text-lg">+{awarded}</span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="a-label text-[var(--a-muted)]">{t('a.res.newTotal')}</span>
+            <span><span className="a-mono a-neon-text text-[28px] font-semibold" aria-label={String(points)}>{pad3(shown)}</span>{top > 0 && <span className="a-mono text-base text-[var(--a-muted)]">/{top}</span>}</span>
+          </div>
+          {top > 0 && <div className="a-bar mt-1 h-[6px]"><span className="fill !transition-none" style={{ width: `${Math.min(100, (shown / top) * 100)}%` }} /></div>}
+          <div className="mt-1 text-xs text-[var(--a-muted)]">{summary}</div>
+        </div>
+      </div>
+      {r1.index > r0.index && (
+        <div role="status" className="g-rankup a-cut a-solid a-fill-gold flex items-center justify-between gap-3 px-4 py-3">
+          <span aria-hidden className="g-shine" />
+          <span className="a-mono text-[13px] font-bold tracking-[.18em]">{t('g.rankUp')}</span>
+          <span className="a-hd text-lg font-bold">{rankName(r1.key)}</span>
+        </div>
+      )}
+    </>
   )
 }

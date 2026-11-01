@@ -309,7 +309,7 @@ export default function Join() {
         </label>
 
         {err && <Notice tone="red">{err}</Notice>}
-        <PrimaryBtn type="submit" disabled={busy}>{busy ? t('v.join.creating') : t('v.join.create')}</PrimaryBtn>
+        <PrimaryBtn type="submit" disabled={busy} loading={busy}>{busy ? t('v.join.creating') : t('v.join.create')}</PrimaryBtn>
       </form>
       {/* The one screen a booth host who is not on anyone list reliably lands on: the guard sends
           every roleless account here. Without this they would have to be told the URL. */}
