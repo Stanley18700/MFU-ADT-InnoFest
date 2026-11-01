@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Transmission } from '../../components/handler'
 import { useAuth } from '../../lib/auth'
 import { ms, useMyUnlocks, useTiers } from '../../lib/data'
 import { EVENT_SURVEY_ID, minuteToHHMM } from '../../../shared/model'
@@ -75,6 +76,9 @@ export default function Prize() {
         <span className="a-mono text-sm text-[var(--a-muted)]"><b className="text-[17px] font-semibold text-[#1450E6]">{pad3(points)}</b>{top ? `/${top}` : ''} · {rankName}</span>
       </div>
 
+      {anyUnlockedUnredeemed
+        ? <Transmission text={t('h.rewards.ready')} />
+        : tiers.length > 0 && points < (tiers[0]?.thresholdPoints ?? 0) && <Transmission text={t('h.rewards.locked', { n: tiers[0].thresholdPoints })} />}
       <FeedbackCard gate={anyUnlockedUnredeemed && fs.gate} />
       {anyUnlockedUnredeemed && !gated && (
         /* One code for every unlocked reward: the desk sees which tiers are waiting when it scans. */

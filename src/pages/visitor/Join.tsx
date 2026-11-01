@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Transmission } from '../../components/handler'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
 import { api, errorMessage } from '../../lib/api'
@@ -121,6 +122,7 @@ export default function Join() {
       <Eyebrow>{t('a.join.eyebrow')}</Eyebrow>
       <h1 className="a-hd mb-0 mt-2 text-[28px] font-bold leading-[1.15]">{t('v.join.title')}</h1>
       <p className="mb-0 mt-1.5 text-sm text-[#33415F]">{t('v.join.lead')}</p>
+      <Transmission className="mt-4" text={t('h.join')} />
 
       {/* The account email is the contact; it is already confirmed, so it is shown, not asked for. */}
       <div className="a-cut a-solid a-fill-tint mt-4 flex items-center justify-between gap-3 px-3.5 py-3">

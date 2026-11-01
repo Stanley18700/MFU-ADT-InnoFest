@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Transmission } from '../../components/handler'
 import { useAuth } from '../../lib/auth'
 import { ms, useBooths, useEvent, useMyScans } from '../../lib/data'
 import { AIcon, FileTile, GhostBtn, InkTag, LockedTag, PrimaryBtn, pad3 } from '../../components/agency'
@@ -72,6 +73,9 @@ export default function Stamps() {
         <span className="a-bar h-[5px] flex-1"><span className="fill" style={{ width: `${rows.length ? (collected.length / rows.length) * 100 : 0}%` }} /></span>
         <span className="text-xs text-[var(--a-muted)]">{t('a.files.recoveredLabel')}</span>
       </div>
+      <Transmission className="mt-4" text={
+        collected.length === 0 ? t('h.files.none') : remaining.length === 0 ? t('h.files.all') : t('h.files.some')
+      } />
 
       {/* Recovered first: a collection should open on what you have, not on its to-do list. */}
       <section className="mt-6">

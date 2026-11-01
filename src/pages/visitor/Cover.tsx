@@ -4,6 +4,7 @@ import { Spinner } from '../../components/ui'
 import { AgentCard, FilesProgress, NextTarget, rankOf } from '../../components/agency'
 import { SurveyBanner } from '../../components/SurveyNudge'
 import { HowItWorksLink } from '../../components/Welcome'
+import { Transmission } from '../../components/handler'
 import { dayOf } from '../../../shared/model'
 import { useRewardBooths } from '../../lib/points'
 import { useLocale } from '../../lib/locale'
@@ -60,8 +61,13 @@ export default function Cover() {
           unlocked: (name) => t('a.prog.unlocked', { name }),
         }}
       />
+      <Transmission text={
+        !next ? t('h.cover.top')
+          : points === 0 ? t('h.cover.start')
+          : t('h.cover.go')
+      } />
       {nextBooth ? (
-        <div className="mt-2">
+        <div className="mt-1">
           <NextTarget
             to="/passport/stamps" title={pick(nextBooth.nameEn, nextBooth.nameTh)}
             meta={[nextBooth.shortName, nextBooth.location].filter(Boolean).join(' · ')}

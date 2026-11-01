@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Transmission } from '../../components/handler'
 import { Link } from 'react-router-dom'
 import { doc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
@@ -70,6 +71,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
               <span className="text-sm font-medium">{t('v.res.unlocked')}</span>
             </div>
           )}
+          <Transmission tone="ink" text={result.unlockedTierIds.length > 0 ? t('h.res.unlocked') : t('h.res.ok')} />
           {/* Asked only once the stamp is safely in the passport, and never in the way of it. */}
           <RatingCard boothId={result.boothId} onDone={() => setDone(true)} />
           <div className="mt-3 flex flex-col gap-3">
@@ -98,6 +100,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
               </div>
             </div>
           )}
+          <Transmission text={t('h.res.already')} />
           <p className="m-0 text-sm text-[#33415F]">{t('v.res.alreadyNote', { booth: booth ? pick(booth.nameEn, booth.nameTh) : '' })}</p>
           <div className="mt-4 flex flex-col gap-3">
             <PrimaryBtn onClick={onRetry} icon={AIcon.scan}>{t('v.res.scanAnother')}</PrimaryBtn>
@@ -118,6 +121,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
       {head(t('v.scan.title'))}
       <div className="flex flex-col gap-4 px-4 pb-8">
         {map.red ? <ErrorPanel>{map.text}</ErrorPanel> : <Notice tone="amber">{map.text}</Notice>}
+        {result.status !== 'not_registered' && <Transmission text={t('h.res.error')} />}
         {result.status === 'not_registered'
           ? <PrimaryBtn to="/join">{t('v.res.createPassport')}</PrimaryBtn>
           : <PrimaryBtn onClick={onRetry}>{t('v.res.tryAgain')}</PrimaryBtn>}

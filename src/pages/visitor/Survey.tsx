@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Transmission } from '../../components/handler'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api, errorMessage, type SurveyOffer } from '../../lib/api'
 import { useBooth } from '../../lib/data'
@@ -151,6 +152,7 @@ export default function Survey() {
   return shell(
     <div className="page-in">
       {offer.headerImageUrl && <img src={offer.headerImageUrl} alt="" className="mb-4 max-h-40 w-full rounded-xl object-cover" />}
+      {festival && <Transmission className="mb-4" text={t('h.survey')} />}
       <Eyebrow>{t('a.survey.eyebrow')}</Eyebrow>
       <h1 className="a-hd mb-0 mt-1.5 text-[26px] font-bold leading-tight">{offer.title}</h1>
       {offer.description && <p className="mb-0 mt-1 text-sm text-[#33415F]">{offer.description}</p>}

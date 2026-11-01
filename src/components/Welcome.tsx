@@ -1,10 +1,11 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useTiers } from '../lib/data'
 import { useLocale } from '../lib/locale'
 import { useBodyScrollLock } from '../lib/useBodyScrollLock'
-import { AIcon, ALang, Eyebrow, GhostBtn, PrimaryBtn } from './agency'
+import { AIcon, ALang, GhostBtn, PrimaryBtn } from './agency'
+import { Decode, HandlerAvatar } from './handler'
 
 /**
  * What the app is for, said once, in the reader's language.
@@ -44,7 +45,6 @@ export function openWelcome() {
 }
 
 export function VisitorWelcome() {
-  const { t } = useLocale()
   const { user, profile } = useAuth()
   const tiers = useTiers().filter((x) => x.active).sort((a, b) => a.thresholdPoints - b.thresholdPoints)
   const [open, setOpen] = useState(false)
@@ -69,45 +69,110 @@ export function VisitorWelcome() {
   if (!visible) return null
   const threshold = tiers[0]?.thresholdPoints ?? 100
   const close = () => { if (uid) remember(`mfu-welcome:${uid}`); setOpen(false); window.dispatchEvent(new Event(CLOSED_EVENT)) }
+  return <Briefing threshold={threshold} onClose={close} />
+}
 
-  const steps: Array<[ReactNode, string, string]> = [
-    [AIcon.pin, t('v.welcome.s1Title'), t('v.welcome.s1Text')],
-    [AIcon.scan, t('v.welcome.s2Title'), t('v.welcome.s2Text')],
-    [AIcon.star(false, 24), t('v.welcome.s3Title'), t('v.welcome.s3Text')],
-    [AIcon.rewards, t('v.welcome.s4Title', { n: threshold }), t('v.welcome.s4Text', { n: threshold })],
+/**
+ * The briefing, told by HANDLER // 0: one message at a time, each arriving as signal and then
+ * decoding into the reader's language. A tap finishes the message on screen, or — once it is
+ * readable — brings the next. Skip shows the whole conversation at once. The two buttons the old
+ * sheet had (start, scan) arrive after the last message, unchanged.
+ */
+function Briefing({ threshold, onClose }: { threshold: number; onClose: () => void }) {
+  const { t } = useLocale()
+  const script = [
+    t('h.b1'), t('h.b2'), t('h.b3'), t('h.b4'), t('h.b5'), t('h.b6', { n: threshold }), t('h.b7'),
   ]
+  const [count, setCount] = useState(1)       // messages on screen
+  const [ready, setReady] = useState(false)   // the newest one is fully decoded
+  const [rush, setRush] = useState(false)     // settle the newest one now
+  const [gap, setGap] = useState(false)       // the "typing" beat before the next one
+  const end = useRef<HTMLDivElement>(null)
+  const finished = count >= script.length && ready
+
+  useEffect(() => { end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }) }, [count, ready, gap])
+
+  // Escape closes, as it does every other overlay in the app.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const advance = () => {
+    if (gap) return
+    if (!ready) { setRush(true); return }
+    if (count >= script.length) return
+    // A short "typing" beat, then the next message starts as signal.
+    setGap(true)
+    setTimeout(() => { setGap(false); setReady(false); setRush(false); setCount((n) => n + 1) }, 380)
+  }
+  const skip = () => { setGap(false); setCount(script.length); setReady(true); setRush(true) }
 
   return (
-    <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-[rgb(10_19_64/.5)] p-3 sm:items-center" onClick={close}>
-      <div role="dialog" aria-label={t('v.welcome.title')}
-        className="a-cut a-cut-xl a-edge-neon sheet-in max-h-[90vh] w-full max-w-md overflow-y-auto px-5 pb-5 pt-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <Eyebrow pulse>{t('v.welcome.eyebrow')}</Eyebrow>
-            <h2 className="a-hd mb-0 mt-1.5 text-[24px] font-bold leading-tight">{t('v.welcome.title')}</h2>
+    <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-[rgb(4_8_28/.72)] sm:items-center sm:p-3">
+      <div role="dialog" aria-modal="true" aria-label={t('h.channel')}
+        className="hd-brief hd-dark sheet-in flex h-[100dvh] w-full max-w-md flex-col sm:h-[min(760px,92vh)] sm:[clip-path:polygon(18px_0,100%_0,100%_calc(100%-18px),calc(100%-18px)_100%,0_100%,0_18px)]">
+        {/* Header: the figure, who it is, and the language toggle — the one control a reader who
+            cannot yet follow this screen needs most. */}
+        <div className="flex items-center gap-3 border-0 border-b border-solid border-[rgb(127_231_255/.18)] px-4 pb-3 pt-[max(14px,env(safe-area-inset-top))]">
+          <span className="hd-halo"><HandlerAvatar size={52} /></span>
+          <div className="min-w-0 flex-1">
+            <div className="a-mono flex items-center gap-1.5 text-[10.5px] tracking-[.16em] text-[#7FE7FF]"><span className="hd-dot" aria-hidden />{t('h.channel')}</div>
+            <div className="a-hd mt-0.5 text-[20px] font-bold tracking-wide text-white">{t('h.name')}</div>
           </div>
-          {/* The one place the toggle must be: a reader who cannot follow this sheet cannot
-              find the toggle behind it either. */}
           <ALang />
         </div>
-        <p className="mb-0 mt-2 text-sm text-[#33415F]">{t('v.welcome.lead')}</p>
-        {/* Four steps on a rail: a numbered sequence is what this is, so the numbers are real. */}
-        <ol className="relative mt-4 flex list-none flex-col gap-2.5 p-0">
-          <span aria-hidden className="absolute bottom-6 left-[21px] top-6 w-0.5" style={{ background: 'linear-gradient(#1D5BFF,#00D2FF)' }} />
-          {steps.map(([icon, title, text], i) => (
-            <li key={i} className="relative flex gap-3">
-              <span className="a-cut a-cut-s a-solid a-fill-neon grid h-11 w-11 shrink-0 place-items-center text-white [&_svg]:h-6 [&_svg]:w-6" aria-hidden>{icon}</span>
-              <span className="a-cut a-solid a-fill-tint block min-w-0 flex-1 px-3 py-2.5">
-                <span className="a-hd block text-[16px] font-bold leading-tight"><span className="a-mono mr-1.5 text-xs text-[#1450E6]">{String(i + 1).padStart(2, '0')}</span>{title}</span>
-                <span className="mt-0.5 block text-[13px] leading-snug text-[#33415F]">{text}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-        <p className="mb-0 mt-4 text-xs text-[var(--a-muted)]">{t('v.welcome.free')}</p>
-        <div className="mt-4 flex flex-col gap-3">
-          <PrimaryBtn onClick={close}>{t('v.welcome.start')}</PrimaryBtn>
-          <GhostBtn to="/scan" onClick={close} icon={AIcon.scan}>{t('v.welcome.scanNow')}</GhostBtn>
+
+        {/* The conversation. The whole area is one big "next" button. */}
+        <div className="flex-1 cursor-pointer overflow-y-auto px-4 py-4" onClick={advance} aria-live="polite">
+          <ol className="m-0 flex list-none flex-col gap-3 p-0">
+            {script.slice(0, count).map((line, i) => {
+              const newest = i === count - 1
+              return (
+                <li key={i} className="hd-msg flex items-end gap-2">
+                  <span className={`shrink-0 ${newest ? '' : 'opacity-0'}`}><HandlerAvatar size={28} live={newest} /></span>
+                  <div className="a-cut hd-bubble a-solid min-w-0 flex-1 px-3.5 py-2.5 text-[15px] leading-relaxed text-[#EAF1FF]"
+                    style={{ ['--fill' as string]: 'linear-gradient(120deg, rgb(29 91 255 / .28), rgb(0 210 255 / .12))' }}>
+                    <div className="a-mono mb-1 text-[10px] tracking-[.14em] text-[#7FE7FF]/80">TX-{String(i + 1).padStart(2, '0')} · 2036</div>
+                    <Decode text={line} remember={false} instant={!newest || rush} onDone={newest ? () => setReady(true) : undefined} />
+                  </div>
+                </li>
+              )
+            })}
+            {gap && (
+              <li className="hd-msg flex items-center gap-2">
+                <HandlerAvatar size={28} />
+                <span className="hd-typing px-2 py-2" aria-label={t('h.receiving')}><span /><span /><span /></span>
+              </li>
+            )}
+          </ol>
+          {finished && (
+            <div className="hd-msg mt-3 text-right a-mono text-[11px] tracking-[.14em] text-[#7FE7FF]">— {t('h.name')}</div>
+          )}
+          <div ref={end} />
+        </div>
+
+        {/* Footer: tap hint + skip while the story plays; the two mission buttons once it ends. */}
+        <div className="border-0 border-t border-solid border-[rgb(127_231_255/.18)] bg-[rgb(6_11_38/.85)] px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3">
+          {finished ? (
+            <div className="hd-msg flex flex-col gap-3">
+              <PrimaryBtn onClick={onClose}>{t('v.welcome.start')}</PrimaryBtn>
+              <GhostBtn to="/scan" onClick={onClose} icon={AIcon.scan}>{t('v.welcome.scanNow')}</GhostBtn>
+              <p className="m-0 text-center text-[11.5px] text-[#9FB2D9]">{t('v.welcome.free')}</p>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <button type="button" onClick={advance}
+                className="hd-hint a-mono min-h-11 flex-1 cursor-pointer border-0 bg-transparent text-left text-[12px] tracking-[.12em] text-[#7FE7FF]">
+                ▸ {t('h.tapNext')} <span className="whitespace-nowrap opacity-60">{count}/{script.length}</span>
+              </button>
+              <button type="button" onClick={skip}
+                className="a-mono min-h-11 cursor-pointer border border-solid border-[rgb(127_231_255/.35)] bg-transparent px-4 text-[12px] tracking-[.12em] text-[#CFE6FF]">
+                {t('h.skip')} ⏭
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -119,7 +184,7 @@ export function HowItWorksLink({ className = '' }: { className?: string }) {
   const { t } = useLocale()
   return (
     <button type="button" className={`a-link min-h-11 cursor-pointer border-0 bg-transparent text-sm ${className}`} onClick={openWelcome}>
-      {t('v.welcome.howItWorks')}
+      {t('h.replay')}
     </button>
   )
 }

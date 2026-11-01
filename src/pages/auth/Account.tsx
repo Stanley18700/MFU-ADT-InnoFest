@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Transmission } from '../../components/handler'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth, useSignOut } from '../../lib/auth'
 import { addPassword, authError, changeEmail, changePassword, hasGoogle, hasPassword, reauthenticate, sendVerification } from '../../lib/authActions'
@@ -55,6 +56,7 @@ export default function Account({ variant = 'page' }: { variant?: 'page' | 'pass
           role={role}
           email={user.email}
         />
+        {inPassport && <Transmission className="mt-3" text={t('h.profile')} />}
 
         {/*
           * One sheet of rows, not four cards each holding one grey pill. Nothing was being grouped

@@ -1104,3 +1104,75 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 .landing-campus {
   filter: saturate(.9) brightness(1.02) drop-shadow(0 10px 20px rgb(0 174 238 / .16));
 }
+
+/* ---------------------------------------------------------------- HANDLER // 0
+ * The hooded figure: a base drawing plus a cyan and a magenta ghost that split off in short
+ * bursts every few seconds, and a scan line that drifts down the empty face. */
+.hd-av { position: relative; display: inline-block; flex-shrink: 0; }
+.hd-av > span { position: absolute; inset: 0; display: block; }
+.hd-av svg { display: block; width: 100%; height: 100%; }
+.hd-av-c, .hd-av-m { opacity: 0; pointer-events: none; }
+.hd-av-c { filter: drop-shadow(0 0 0 #00E5FF) hue-rotate(-20deg) saturate(2); mix-blend-mode: screen; }
+.hd-av-m { filter: hue-rotate(90deg) saturate(2.4); mix-blend-mode: multiply; }
+.hd-live .hd-av-base { animation: hd-shake 4.6s steps(1) infinite; }
+.hd-live .hd-av-c { animation: hd-ghost-c 4.6s steps(1) infinite; }
+.hd-live .hd-av-m { animation: hd-ghost-m 4.6s steps(1) infinite; }
+.hd-live .hd-scan { animation: hd-scan 2.8s ease-in-out infinite; }
+@keyframes hd-shake {
+  0%, 84%, 100% { transform: none; clip-path: inset(0); }
+  86% { transform: translateX(-2px); clip-path: inset(10% 0 55% 0); }
+  88% { transform: translateX(2px); clip-path: inset(48% 0 18% 0); }
+  90% { transform: translateX(-1px); clip-path: inset(0 0 72% 0); }
+  92% { transform: none; clip-path: inset(0); }
+  95% { transform: translateX(1px); clip-path: inset(60% 0 0 0); }
+}
+@keyframes hd-ghost-c {
+  0%, 84%, 97%, 100% { opacity: 0; transform: none; }
+  86% { opacity: .75; transform: translate(3px, -1px); clip-path: inset(14% 0 50% 0); }
+  89% { opacity: .6; transform: translate(-3px, 1px); clip-path: inset(52% 0 12% 0); }
+  95% { opacity: .5; transform: translate(2px, 0); clip-path: inset(30% 0 40% 0); }
+}
+@keyframes hd-ghost-m {
+  0%, 85%, 96%, 100% { opacity: 0; transform: none; }
+  87% { opacity: .55; transform: translate(-3px, 1px); clip-path: inset(40% 0 30% 0); }
+  91% { opacity: .5; transform: translate(3px, 0); clip-path: inset(4% 0 70% 0); }
+}
+@keyframes hd-scan { 0%, 100% { transform: translateY(-12px); opacity: .2; } 50% { transform: translateY(12px); opacity: .95; } }
+
+/* A transmission line: the signal is mono and cyan; the decoding tail is noise in the brand blue. */
+.hd-signal { font-family: var(--font-mono, 'IBM Plex Mono', monospace); letter-spacing: .08em; color: #0A86DA; word-break: break-all; }
+.hd-tx .hd-signal { font-size: 12px; }
+.a-fill-id .hd-signal, .hd-dark .hd-signal { color: #7FE7FF; }
+.hd-noise { font-family: var(--font-mono, 'IBM Plex Mono', monospace); color: #1D5BFF; opacity: .75; }
+.a-fill-id .hd-noise, .hd-dark .hd-noise { color: #7FE7FF; }
+.hd-dot { width: 6px; height: 6px; border-radius: 50%; background: #00D2FF; box-shadow: 0 0 6px #00D2FF; animation: a-flicker 2.4s infinite; }
+.hd-tx { animation: hd-in .42s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes hd-in { from { opacity: 0; transform: translateY(6px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+
+/* The briefing: a dark channel, messages stacked like a secure chat. */
+.hd-brief {
+  background:
+    linear-gradient(rgb(0 210 255 / .06) 1px, transparent 1px) 0 0 / 100% 22px,
+    radial-gradient(ellipse at 50% -10%, rgb(29 91 255 / .45), transparent 60%),
+    linear-gradient(180deg, #0A1340 0%, #060B26 100%);
+  color: #EAF1FF;
+}
+.hd-msg { animation: hd-in .38s cubic-bezier(.2,.8,.2,1) both; }
+.hd-bubble { --cut: 10px; }
+.hd-halo { position: relative; }
+.hd-halo::before {
+  content: ''; position: absolute; inset: -10px; border-radius: 50%;
+  background: radial-gradient(circle, rgb(0 210 255 / .35), transparent 65%);
+  animation: hd-breathe 3.2s ease-in-out infinite;
+}
+@keyframes hd-breathe { 0%, 100% { opacity: .5; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.06); } }
+.hd-typing span { display: inline-block; width: 5px; height: 5px; margin-right: 4px; border-radius: 50%; background: #7FE7FF; animation: hd-typing 1s infinite; }
+.hd-typing span:nth-child(2) { animation-delay: .15s; }
+.hd-typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes hd-typing { 0%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+.hd-hint { animation: a-flicker 3s infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hd-live .hd-av-base, .hd-live .hd-av-c, .hd-live .hd-av-m, .hd-live .hd-scan,
+  .hd-tx, .hd-msg, .hd-halo::before, .hd-typing span, .hd-hint, .hd-dot { animation: none !important; }
+}

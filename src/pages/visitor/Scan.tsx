@@ -1,4 +1,5 @@
 import { useCallback, useState, type FormEvent } from 'react'
+import { Transmission } from '../../components/handler'
 import { Link } from 'react-router-dom'
 import { Scanner } from '../../components/Scanner'
 import { api, errorMessage } from '../../lib/api'
@@ -65,7 +66,7 @@ export default function Scan() {
               * failure as a broken QR code and tries the booth's sign again and again.
               */}
             {!online && <Notice tone="amber">{t('v.scan.offline')}</Notice>}
-            {err && <ErrorPanel>{err}</ErrorPanel>}
+            {err ? <ErrorPanel>{err}</ErrorPanel> : !busy && <Transmission text={t('h.scan')} />}
             <form onSubmit={onManual}>
               <label className="a-hd block text-lg font-bold" htmlFor="manual">{t('v.scan.manualLabel')}</label>
               <div className="mt-3 flex gap-2.5">
