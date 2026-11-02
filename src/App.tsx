@@ -64,6 +64,7 @@ const BoothCards = lazy(() => import('./pages/admin/BoothCards'))
 const Setup = lazy(() => import('./pages/admin/Setup'))
 const Applications = lazy(() => import('./pages/admin/Applications'))
 const Exhibitors = lazy(() => import('./pages/admin/Exhibitors'))
+const Mfu333 = lazy(() => import('./pages/admin/Mfu333'))
 
 /**
  * Everything past this point needs a real, confirmed account — anonymous sign-in is gone (§4.1),
@@ -177,6 +178,7 @@ export default function App() {
             <Route path="audit" element={<Audit />} />
             <Route path="applications" element={<Applications />} />
             <Route path="exhibitors" element={<Exhibitors />} />
+            <Route path="mfu333" element={<Mfu333 />} />
           </Route>
         </Route>
 

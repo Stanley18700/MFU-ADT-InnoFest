@@ -6,8 +6,7 @@ import {
 } from './lib'
 import { computeToken, constantTimeEqual, counterFor, normaliseManualCode, parsePayload, DEFAULT_PERIOD_SECONDS, ParsedToken } from './shared/token'
 import {
-  BoothDoc, PrizeTierDoc, ScanResult, UserDoc, VisitorType, dayOf, passportNo,
-} from './shared/model'
+  BoothDoc, PrizeTierDoc, ScanResult, UserDoc, VisitorType, dayOf, passportNo, isMfuStudent, isStudentIdValid } from './shared/model'
 
 const VISITOR_TYPES: VisitorType[] = ['student', 'staff', 'alumni', 'guest']
 
@@ -37,6 +36,10 @@ export const join = onCall(async (req) => {
   if (!/^[A-Z]{2}$/.test(countryCode)) throw new HttpsError('invalid-argument', 'Bad countryCode')
   const contact = email
   if (d.consent !== true) throw new HttpsError('invalid-argument', 'Consent is required')
+  // MFU333 credit is recorded against the student ID, so an MFU student must give a real one.
+  if (isMfuStudent({ visitorType, institution }) && !isStudentIdValid(studentId)) {
+    throw new HttpsError('invalid-argument', 'Your MFU student ID must be 10 digits')
+  }
 
   // Sensitive field (PDPA s.26): stored only with its own separate consent.
   const ethnicConsent = d.ethnicConsent === true
@@ -404,4 +407,20 @@ export const requestErasure = onCall(async (req) => {
   }
   await audit(uid, 'requestErasure', 'user', uid, null, null)
   return { ok: true as const, existing: false, requestedAt: Date.now() }
+})
+
+/**
+ * An MFU student adds or corrects their student ID after joining — so a student who skipped it,
+ * or typed it wrong, can still claim MFU333 at the desk. Only for MFU students; 10 digits.
+ */
+export const setStudentId = onCall(async (req) => {
+  const uid = requireAuth(req)
+  if (req.auth!.token.role !== 'visitor') throw new HttpsError('permission-denied', 'Only visitors have a student ID here')
+  const studentId = str(req.data?.studentId, 'studentId', { max: 20 }).replace(/\s+/g, '')
+  if (!isStudentIdValid(studentId)) throw new HttpsError('invalid-argument', 'Your MFU student ID must be 10 digits')
+  const ref = db.doc(`users/${uid}`)
+  const u = (await ref.get()).data() as UserDoc | undefined
+  if (!u || !isMfuStudent(u)) throw new HttpsError('failed-precondition', 'MFU333 is only for Mae Fah Luang University students')
+  await ref.set({ studentId }, { merge: true })
+  return { ok: true as const, studentId }
 })

@@ -66,6 +66,7 @@ export const api = {
     { ok: true; count?: number; countries?: number }
   >('saveRefData'),
   /** Ask to run a booth when nobody has your email address. Grants nothing — an admin decides. */
+  setStudentId: call<{ studentId: string }, { ok: true; studentId: string }>('setStudentId'),
   claimBoothSeat: call<{ boothId: string; name: string }, { ok: true; boothId: string; boothName: string }>('claimBoothSeat'),
   importProjectList: call<{ rows: Array<{ boothNo: string; nameEn: string; nameTh?: string; team: string[]; hostUnit?: string; location?: string }> }, { ok: true; created: number; updated: number; members: number; released: number }>('importProjectList'),
   resetTeamSeat: call<{ boothId: string; name: string }, { ok: true }>('resetTeamSeat'),
@@ -239,12 +240,13 @@ export type ConfirmResult =
   | { status: 'already'; redeemedAt: number; redeemedBy: string | null; redeemedByName: string | null }
   | { status: 'desk_closed'; nextOpensAt: NextOpening | null }
   | { status: 'out_of_stock'; note: string; nextOpensAt: NextOpening | null }
+  | { status: 'not_eligible'; mfuStudent: boolean }
 
 export type LookupResult =
   | { status: 'invalid' }
   | {
       status: 'ok'
-      visitor: { uid: string; displayName: string; passportNo?: string; points: number; stampCount: number }
+      visitor: { uid: string; displayName: string; passportNo?: string; points: number; stampCount: number; mfuStudent?: boolean; studentId?: string | null }
       /**
        * Mutually exclusive, though both keys are always sent: the server fills `nextOpensAt`
        * only when nothing is open, so a non-null `session` always comes with a null
@@ -262,6 +264,8 @@ export type LookupResult =
         sessionRemaining: number | null
         stockPerSession: number | null
         outOfStockNote: string; unlocked: boolean; redeemedAt: number | null; redeemedBy: string | null; redeemedByName: string | null
+        /** False for MFU333 when the visitor is not an MFU student with a valid ID. */
+        eligible?: boolean; mfuOnly?: boolean
       }>
     }
 

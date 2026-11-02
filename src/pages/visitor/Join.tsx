@@ -8,7 +8,7 @@ import { COUNTRIES, PINNED_COUNTRIES, countryName } from '../../lib/countries'
 import { DataErrors, Notice, Spinner } from '../../components/ui'
 import { AGround, AHeader, Eyebrow, PrimaryBtn } from '../../components/agency'
 import { Select } from '../../components/Select'
-import type { VisitorType } from '../../../shared/model'
+import { isMfuStudent, isStudentIdValid, type VisitorType } from '../../../shared/model'
 import { useLocale } from '../../lib/locale'
 import type { StringKey } from '../../lib/strings'
 
@@ -53,6 +53,8 @@ export default function Join() {
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((s) => ({ ...s, [k]: v }))
 
   useEffect(() => { if (f.institution !== 'MFU' && f.school) set('school', '') }, [f.institution]) // eslint-disable-line react-hooks/exhaustive-deps
+  // MFU333 credit is for MFU students only, recorded against their student ID.
+  const mfuStudent = isMfuStudent(f)
 
   /*
    * Nine countries and a way out, rather than a wheel of 256.
@@ -94,6 +96,7 @@ export default function Join() {
     if (!f.consent) { setErr(t('v.join.consentRequired')); return }
     // `Select` is a disclosure, not a form control, so the browser no longer checks this one.
     if (f.institution === 'MFU' && !f.school) { setErr(t('v.join.schoolRequired')); return }
+    if (mfuStudent && !isStudentIdValid(f.studentId)) { setErr(t('m.idBad')); return }
     setBusy(true)
     try {
       await api.join({
@@ -155,10 +158,21 @@ export default function Join() {
         </fieldset>
 
         {f.visitorType !== 'guest' && (
-          <label className="block">
-            <span className="a-lbl">{t('v.join.id')} <span className="font-normal text-[var(--a-muted)]">{t('v.join.optional')}</span></span>
-            <input className="a-field" maxLength={40} inputMode="numeric" value={f.studentId} onChange={(e) => set('studentId', e.target.value)} />
-          </label>
+          mfuStudent ? (
+            /* An MFU student's ID is what MFU333 credit is recorded against, so it is required and
+               checked here: 10 digits. Everyone else keeps it optional. */
+            <label className="block">
+              <span className="a-lbl">{t('m.idLabel')}</span>
+              <input className="a-field a-mono tracking-[.12em]" required maxLength={10} inputMode="numeric" pattern="[0-9]{10}" autoComplete="off"
+                value={f.studentId} onChange={(e) => set('studentId', e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="6731500000" />
+              <span className="mt-1 block text-xs text-[var(--a-muted)]">{t('m.idHint')}</span>
+            </label>
+          ) : (
+            <label className="block">
+              <span className="a-lbl">{t('v.join.id')} <span className="font-normal text-[var(--a-muted)]">{t('v.join.optional')}</span></span>
+              <input className="a-field" maxLength={40} inputMode="numeric" value={f.studentId} onChange={(e) => set('studentId', e.target.value)} />
+            </label>
+          )
         )}
 
         {/*

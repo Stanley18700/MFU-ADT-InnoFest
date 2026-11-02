@@ -33,7 +33,9 @@ export const fxBooths = Array.from({ length: 100 }, (_, i) => {
 })
 const stamped = fxBooths.slice(0, FX.points).map((b) => b.id)
 export const fxUser = {
-  id: 'fx-user', role: 'visitor', displayName: 'Pimchanok K.', visitorType: 'student', studentId: '6731503077',
+  id: 'fx-user', role: 'visitor', displayName: 'Pimchanok K.',
+  // ?inst=CMU makes a non-MFU visitor; ?sid= sets (or, empty, clears) the student ID.
+  visitorType: 'student', institution: qs.get('inst') ?? 'MFU', studentId: qs.has('sid') ? qs.get('sid') : '6731503077',
   passportNo: 'ADT-IF-0001', stampCount: stamped.length, points: stamped.length, stampedBoothIds: stamped, daysAttended: ['2026-11-11'],
   createdAt: null,
 }

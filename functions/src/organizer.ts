@@ -4,8 +4,7 @@ import { db, FieldValue, requireRole, str, audit, getActiveEvent } from './lib'
 import { resolveRedemption } from './visitor'
 import {
   ActiveSession, BoothDoc, DEFAULT_PRIZE_SESSIONS, EventDoc, PrizeTierDoc, TierUnlockDoc, UserDoc,
-  currentPrizeSession, minuteToHHMM, nextPrizeSession, sessionStockRemaining,
-} from './shared/model'
+  currentPrizeSession, minuteToHHMM, nextPrizeSession, sessionStockRemaining, isMfuOnlyTier, isMfuStudent, tierEligible } from './shared/model'
 import { DEFAULT_PERIOD_SECONDS } from './shared/token'
 
 /**
@@ -72,7 +71,11 @@ export const lookupRedemption = onCall(async (req) => {
   const names = await staffNames(unlocks.docs.map((x) => (x.data() as TierUnlockDoc).redeemedBy).filter((x): x is string => !!x))
   return {
     status: 'ok' as const,
-    visitor: { uid: v.uid, displayName: u.displayName, passportNo: u.passportNo, points: u.points, stampCount: u.stampCount },
+    visitor: {
+      uid: v.uid, displayName: u.displayName, passportNo: u.passportNo, points: u.points, stampCount: u.stampCount,
+      // Shown at the desk for MFU333: the credit is recorded against it.
+      mfuStudent: isMfuStudent(u), studentId: isMfuStudent(u) ? (u.studentId ?? null) : null,
+    },
     session: window.session,
     nextOpensAt: window.nextOpensAt,
     tiers: tiers.docs.map((t) => {
@@ -88,6 +91,9 @@ export const lookupRedemption = onCall(async (req) => {
         outOfStockNote: tier.outOfStockNoteEn ?? '',
         // A voided redemption reopens the tier (§6.7): the visitor still qualifies and can collect again.
         unlocked: !!un,
+        // MFU333 is for MFU students with a valid ID; anyone else sees it as not theirs to collect.
+        eligible: tierEligible(tier, t.id, u),
+        mfuOnly: isMfuOnlyTier(tier, t.id),
         redeemedAt: un?.redeemedAt ? (un.redeemedAt as { toMillis(): number }).toMillis() : null,
         redeemedBy: un?.redeemedBy ?? null,
         redeemedByName: un?.redeemedBy ? names.get(un.redeemedBy) ?? null : null,
@@ -108,10 +114,22 @@ export const confirmRedemption = onCall(async (req) => {
   const event = (await getActiveEvent()) as EventDoc
   const window = prizeWindow(event)
 
+  const userRef = db.doc(`users/${v.uid}`)
   const result = await db.runTransaction(async (tx) => {
-    const [un, tier] = await Promise.all([tx.get(unlockRef), tx.get(tierRef)])
+    const [un, tier, userSnap] = await Promise.all([tx.get(unlockRef), tx.get(tierRef), tx.get(userRef)])
     if (!un.exists) throw new HttpsError('failed-precondition', 'Visitor has not unlocked this tier')
     const u = un.data() as TierUnlockDoc
+    const visitor = (userSnap.data() ?? {}) as UserDoc
+    // MFU333 only for MFU students with a 10-digit ID — enforced here, not just hidden in the app.
+    if (!tierEligible((tier.data() ?? {}) as PrizeTierDoc, tierId, visitor)) {
+      return { status: 'not_eligible' as const, mfuStudent: isMfuStudent(visitor) }
+    }
+    // What the MFU333 credit list records: who, as they were at the moment of hand-over.
+    const snapshot = {
+      studentIdAtRedeem: isMfuStudent(visitor) ? (visitor.studentId ?? null) : null,
+      nameAtRedeem: visitor.displayName ?? null, passportNoAtRedeem: visitor.passportNo ?? null,
+      pointsAtRedeem: typeof visitor.points === 'number' ? visitor.points : null,
+    }
     if (u.redeemedAt && !u.voidedAt) {
       return { status: 'already' as const, redeemedAt: (u.redeemedAt as { toMillis(): number }).toMillis(), redeemedBy: u.redeemedBy ?? null }
     }
@@ -141,6 +159,7 @@ export const confirmRedemption = onCall(async (req) => {
         // session happens to be open when someone notices the mistake.
         redeemedSessionKey: key,
         voidedAt: null, voidedBy: null, voidReason: null,
+        ...snapshot,
       })
       tx.create(db.collection('stockAdjustments').doc(), {
         tierId, delta: -1, reason: `redeemed by ${v.uid} (${key})`, actorUid: actor, kind: 'redeem',
@@ -152,7 +171,7 @@ export const confirmRedemption = onCall(async (req) => {
     // Tiers with no per-session stock keep the original single-pool behaviour.
     if (t.stockRemaining <= 0) return { status: 'out_of_stock' as const, note: t.outOfStockNoteEn ?? '', nextOpensAt: null }
     tx.update(tierRef, { stockRemaining: FieldValue.increment(-1) })
-    tx.update(unlockRef, { redeemedAt: FieldValue.serverTimestamp(), redeemedBy: actor, redeemedSessionKey: null, voidedAt: null, voidedBy: null, voidReason: null })
+    tx.update(unlockRef, { redeemedAt: FieldValue.serverTimestamp(), redeemedBy: actor, redeemedSessionKey: null, voidedAt: null, voidedBy: null, voidReason: null, ...snapshot })
     tx.create(db.collection('stockAdjustments').doc(), {
       tierId, delta: -1, reason: `redeemed by ${v.uid}`, actorUid: actor, kind: 'redeem', createdAt: FieldValue.serverTimestamp(),
     })

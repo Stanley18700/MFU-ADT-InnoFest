@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { Transmission } from '../../components/handler'
 import { useAuth } from '../../lib/auth'
 import { ms, useMyUnlocks, useTiers } from '../../lib/data'
-import { EVENT_SURVEY_ID, minuteToHHMM } from '../../../shared/model'
+import { EVENT_SURVEY_ID, isMfuOnlyTier, isMfuStudent, isStudentIdValid, minuteToHHMM, tierEligible } from '../../../shared/model'
 import { prizeStock, usePrizeSession } from '../../lib/prizeSession'
 import { useFestivalSurvey } from '../../lib/festivalSurvey'
-import { api } from '../../lib/api'
+import { api, errorMessage } from '../../lib/api'
 import { setServerTime } from '../../lib/serverClock'
 import { QR } from '../../components/QR'
 import { BoardingPass } from '../../components/BoardingPass'
@@ -46,10 +46,19 @@ function useRedemptionCode(enabled: boolean) {
 export default function Prize() {
   const { t } = useLocale()
   const { profile } = useAuth()
-  const tiers = useTiers().filter((t) => t.active).sort((a, b) => a.thresholdPoints - b.thresholdPoints)
+  const allTiers = useTiers().filter((t) => t.active).sort((a, b) => a.thresholdPoints - b.thresholdPoints)
+  /*
+   * MFU333 is activity credit for Mae Fah Luang students, recorded against their student ID. A
+   * visitor who is not an MFU student never sees it; an MFU student without a valid ID sees it
+   * with a box to add the ID; only an eligible visitor's unlock brings up the reward QR for it.
+   */
+  const mfu = profile ? isMfuStudent(profile) : false
+  const idOk = isStudentIdValid(profile?.studentId)
+  const tiers = allTiers.filter((x) => mfu || !isMfuOnlyTier(x, x.id))
+  const claimable = (tierId: string) => { const tr = allTiers.find((x) => x.id === tierId); return !tr || tierEligible(tr, tierId, profile ?? {}) }
   const unlocks = useMyUnlocks(profile?.id)
   const { active: activeSession, next: nextSession } = usePrizeSession()
-  const anyUnlockedUnredeemed = unlocks.some((u) => !u.redeemedAt && !u.voidedAt) || unlocks.some((u) => !!u.voidedAt)
+  const anyUnlockedUnredeemed = unlocks.some((u) => claimable(u.tierId) && ((!u.redeemedAt && !u.voidedAt) || !!u.voidedAt))
   /*
    * The festival survey comes before the gift (organisers' decision, 15 Sep): while it is
    * gating the gift (see `gateGift`) and this visitor has not answered, the QR is withheld and the survey card takes
@@ -65,9 +74,10 @@ export default function Prize() {
   // The first tier still out of reach is the one this page is actually about.
   const nextId = tiers.find((t) => points < t.thresholdPoints && !unlocks.some((u) => u.tierId === t.id && !u.voidedAt))?.id
 
-  const rank = rankOf(points, tiers.map((x) => x.thresholdPoints))
+  // Ranks are the same for everyone, so they count every reward's threshold, MFU333 included.
+  const rank = rankOf(points, allTiers.map((x) => x.thresholdPoints))
   const rankName = t(rank.key === 'senior' ? 'a.rank.senior' : rank.key === 'field' ? 'a.rank.field' : 'a.rank.recruit')
-  const top = tiers[tiers.length - 1]?.thresholdPoints ?? 0
+  const top = allTiers[allTiers.length - 1]?.thresholdPoints ?? 0
 
   return (
     <main className="flex flex-col gap-3 px-4 pt-1">
@@ -79,6 +89,7 @@ export default function Prize() {
       {anyUnlockedUnredeemed
         ? <Transmission text={t('h.rewards.ready')} />
         : tiers.length > 0 && points < (tiers[0]?.thresholdPoints ?? 0) && <Transmission text={t('h.rewards.locked', { n: tiers[0].thresholdPoints })} />}
+      {mfu && (idOk ? <StudentIdLine id={profile.studentId ?? ''} /> : <StudentIdCard />)}
       <FeedbackCard gate={anyUnlockedUnredeemed && fs.gate} />
       {anyUnlockedUnredeemed && !gated && (
         /* One code for every unlocked reward: the desk sees which tiers are waiting when it scans. */
@@ -268,5 +279,49 @@ function FeedbackCard({ gate }: { gate: boolean }) {
       </p>
       <PrimaryBtn to={`/survey/${EVENT_SURVEY_ID}`} className="mt-4">{t('v.prize.feedbackCta')}</PrimaryBtn>
     </section>
+  )
+}
+
+/** An MFU student's ID as MFU333 will record it, with a way to correct a typo. */
+function StudentIdLine({ id }: { id: string }) {
+  const { t } = useLocale()
+  const [edit, setEdit] = useState(false)
+  if (edit) return <StudentIdCard />
+  return (
+    <div className="a-cut a-solid a-fill-tint flex items-center justify-between gap-3 px-3.5 py-2.5">
+      <span className="a-label text-[var(--a-muted)]">{t('m.yourId')}</span>
+      <span className="flex items-center gap-3">
+        <span className="a-mono text-sm font-semibold tracking-[.1em] text-ink">{id}</span>
+        <button type="button" className="a-link cursor-pointer border-0 bg-transparent p-0 text-sm" onClick={() => setEdit(true)}>{t('ex.change')}</button>
+      </span>
+    </div>
+  )
+}
+
+/** For an MFU student who joined without a valid ID: add it here to collect MFU333. */
+function StudentIdCard() {
+  const { t } = useLocale()
+  const [id, setId] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [ok, setOk] = useState(false)
+  async function save(e: React.FormEvent) {
+    e.preventDefault()
+    if (!isStudentIdValid(id)) { setErr(t('m.idBad')); return }
+    setBusy(true); setErr(null)
+    try { await api.setStudentId({ studentId: id }); setOk(true) } catch (e) { setErr(errorMessage(e)) } finally { setBusy(false) }
+  }
+  if (ok) return <div className="a-cut a-solid a-fill-ok px-4 py-3 text-sm font-medium text-ink">{t('m.saved')}</div>
+  return (
+    <form onSubmit={save} className="a-cut a-edge-neon px-4 py-3.5">
+      <div className="a-hd text-[17px] font-bold leading-tight">{t('m.addTitle')}</div>
+      <p className="mb-0 mt-1 text-[13px] leading-snug text-[#33415F]">{t('m.addLead')}</p>
+      <div className="mt-3 flex gap-2">
+        <input aria-label={t('m.idLabel')} className="a-field a-mono min-w-0 flex-1 tracking-[.12em]" inputMode="numeric" maxLength={10} autoComplete="off"
+          value={id} onChange={(e) => setId(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="6731500000" />
+        <button className="a-btn a-btn-primary a-cut !h-12 !w-auto shrink-0 px-4 !text-[15px]" disabled={busy || id.length !== 10}>{t('m.addSave')}</button>
+      </div>
+      {err && <p className="mb-0 mt-2 text-xs text-danger-text">{err}</p>}
+    </form>
   )
 }

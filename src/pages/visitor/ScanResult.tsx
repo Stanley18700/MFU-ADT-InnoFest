@@ -6,7 +6,7 @@ import { db } from '../../lib/firebase'
 import { useAuth } from '../../lib/auth'
 import { api } from '../../lib/api'
 import { useBooths, useDoc, useTiers } from '../../lib/data'
-import { RATING_COMMENT_MAX } from '../../../shared/model'
+import { RATING_COMMENT_MAX, tierEligible } from '../../../shared/model'
 import { useLocale } from '../../lib/locale'
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
 import { AIcon, ALang, ErrorPanel, Eyebrow, GhostBtn, GoldTag, InkTag, PrimaryBtn, pad3, rankOf } from '../../components/agency'
@@ -18,6 +18,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
   const { t, pick } = useLocale()
   const booths = useBooths()
   const tiers = useTiers().filter((x) => x.active)
+  const { profile } = useAuth()
   const booth = 'boothId' in result ? booths.find((b) => b.id === result.boothId) : undefined
   /*
    * Held here, not inside the card, because it is what releases the two buttons below: the
@@ -40,6 +41,8 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
 
   if (result.status === 'success') {
     const name = booth ? pick(booth.nameEn, booth.nameTh) : ''
+    // Only rewards this visitor can actually collect count as "unlocked" (MFU333 is MFU students only).
+    const claimableUnlocked = result.unlockedTierIds.filter((id) => { const tr = tiers.find((x) => x.id === id); return !tr || tierEligible(tr, id, profile ?? {}) }).length
     return (
       <div className="page-in flex flex-col">
         {head(t('a.res.eyebrow'))}
@@ -58,13 +61,13 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
           <ScoreGain awarded={result.pointsAwarded} points={result.points} top={top}
             thresholds={tiers.map((x) => x.thresholdPoints)}
             summary={t('v.res.summary', { booth: name, points: result.points, stamps: result.stampCount })} />
-          {result.unlockedTierIds.length > 0 && (
+          {claimableUnlocked > 0 && (
             <div className="a-cut a-edge-neon a-fill-foil flex items-center gap-3 px-3.5 py-3">
               <GoldTag pop>{AIcon.check}{t('a.res.unlockedTag')}</GoldTag>
               <span className="text-sm font-medium">{t('v.res.unlocked')}</span>
             </div>
           )}
-          <Transmission tone="ink" text={result.unlockedTierIds.length > 0 ? t('h.res.unlocked') : t('h.res.ok')} />
+          <Transmission tone="ink" text={claimableUnlocked > 0 ? t('h.res.unlocked') : t('h.res.ok')} />
           {/* Asked only once the stamp is safely in the passport, and never in the way of it. */}
           <RatingCard boothId={result.boothId} onDone={() => setDone(true)} />
           <div className="mt-3 flex flex-col gap-3">

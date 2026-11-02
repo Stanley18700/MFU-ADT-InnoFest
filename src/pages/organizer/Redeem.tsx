@@ -100,6 +100,10 @@ export default function Redeem() {
         if (l && l.status === 'ok') setLookup(l)
       } else if (r.status === 'already') {
         setMsg({ tone: 'amber', text: `Already handed over at ${clock(r.redeemedAt)}${r.redeemedByName ? ` by ${r.redeemedByName}` : ''}.` })
+      } else if (r.status === 'not_eligible') {
+        setMsg({ tone: 'amber', text: r.mfuStudent
+          ? 'MFU333 needs their 10-digit MFU student ID. They can add it on the Rewards tab of the app, then show the new code.'
+          : 'MFU333 is for Mae Fah Luang University students only. They can still collect the prize at 100 points.' })
       } else if (r.status === 'desk_closed') {
         // A shut window is not an empty one, and staff must not tell a visitor they missed out
         // when they only have to come back. This used to fall through the branch below and
@@ -238,6 +242,13 @@ export default function Redeem() {
           <div className="stamp-text text-ink-soft">Visitor</div>
           <div className="text-2xl font-bold">{lookup.visitor.displayName}</div>
           <div className="text-sm text-ink-soft">{[lookup.visitor.passportNo, `${lookup.visitor.points} points`, `${lookup.visitor.stampCount} stamps`].filter(Boolean).join(' · ')}</div>
+          {/* MFU333 credit is recorded against this — read it out, or check it against their card. */}
+          {lookup.visitor.mfuStudent && (
+            <div className="mt-2 inline-flex items-baseline gap-2 rounded-xl bg-sky-50 px-3 py-1.5">
+              <span className="stamp-text text-ink-soft">MFU student ID</span>
+              <span className="fig text-xl tracking-wider">{lookup.visitor.studentId || '— missing'}</span>
+            </div>
+          )}
           <ul className="mt-4 flex flex-col gap-2">
             {lookup.tiers.map((t) => (
               <li key={t.id} className={`flex items-center gap-3 rounded-2xl p-3 ${t.unlocked ? 'bg-white' : 'bg-ink/5 opacity-70'}`}>
@@ -247,6 +258,12 @@ export default function Redeem() {
                   {t.redeemedAt && <div className="text-xs text-success-text">Handed over {clock(t.redeemedAt)}{t.redeemedByName ? ` by ${t.redeemedByName}` : ''}</div>}
                 </div>
                 {t.redeemedAt ? <span className="shrink-0 rounded-full bg-success/15 px-3 py-1 text-xs font-semibold text-success-text">Done</span>
+                  : t.eligible === false ? (
+                    // MFU333 is for MFU students with a valid ID. Not a stock or points problem.
+                    <span className="max-w-[55%] shrink-0 text-right text-xs text-ink-soft">
+                      {lookup.visitor.mfuStudent ? 'Needs a 10-digit student ID — they can add it in the app (Rewards tab)' : 'MFU students only'}
+                    </span>
+                  )
                   : t.unlocked ? (
                     <button
                       // Capped: an armed "Confirm Gold — festival tote" otherwise pushed the tier's

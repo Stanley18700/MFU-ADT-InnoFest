@@ -5,7 +5,7 @@ import { AgentCard, FilesProgress, NextTarget, rankOf } from '../../components/a
 import { SurveyBanner } from '../../components/SurveyNudge'
 import { HowItWorksLink } from '../../components/Welcome'
 import { Transmission } from '../../components/handler'
-import { dayOf } from '../../../shared/model'
+import { dayOf, isMfuOnlyTier, isMfuStudent } from '../../../shared/model'
 import { useRewardBooths } from '../../lib/points'
 import { useLocale } from '../../lib/locale'
 
@@ -54,7 +54,8 @@ export default function Cover() {
       />
       <FilesProgress
         points={points} total={total}
-        thresholds={sorted.map((x) => ({ at: x.thresholdPoints, label: x.name }))}
+        // MFU333 is marked only for MFU students; ranks still count every threshold.
+        thresholds={sorted.filter((x) => isMfuStudent(profile) || !isMfuOnlyTier(x, x.id)).map((x) => ({ at: x.thresholdPoints, label: x.name }))}
         labels={{
           title: t('a.prog.title'),
           toGo: next && nextRank ? t('a.prog.toGo', { n: next.thresholdPoints - points, rank: rankName(nextRank.key) }) : t('a.prog.allDone'),

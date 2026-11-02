@@ -223,6 +223,8 @@ export interface PrizeTierDoc {
   grantsDrawEntry: boolean
   active: boolean
   sortOrder: number
+  /** Only MFU students with a valid student ID can claim it (MFU333 activity credit). */
+  mfuStudentsOnly?: boolean
 }
 
 export interface TierUnlockDoc {
@@ -233,6 +235,11 @@ export interface TierUnlockDoc {
   stampCountAtUnlock: number
   redeemedAt?: unknown
   redeemedBy?: string | null
+  /** Snapshotted at hand-over, so the credit list survives later profile edits. */
+  studentIdAtRedeem?: string | null
+  nameAtRedeem?: string | null
+  passportNoAtRedeem?: string | null
+  pointsAtRedeem?: number | null
   /** Which prize session the gift came out of, so a void returns it to that session's stock. */
   redeemedSessionKey?: string | null
   redemptionNote?: string | null
@@ -836,4 +843,19 @@ export function normPersonName(raw: string): string {
 /** The spellings one roster line allows: "English name / ชื่อไทย" gives both. */
 export function rosterKeys(line: string): string[] {
   return [...new Set(line.split(/[/|]/).map(normPersonName).filter((k) => k.length >= 2))]
+}
+
+
+// ---------- MFU333: MFU students only ----------
+
+/** An MFU student ID: exactly 10 digits. */
+export const isStudentIdValid = (s?: string | null) => /^\d{10}$/.test((s ?? '').trim())
+/** A visitor who registered as a student of Mae Fah Luang University. */
+export const isMfuStudent = (u: { visitorType?: string | null; institution?: string | null }) =>
+  u.visitorType === 'student' && u.institution === 'MFU'
+/** MFU333 (activity credit) is only for MFU students. The live tier predates the flag, so its id counts too. */
+export const isMfuOnlyTier = (t: { mfuStudentsOnly?: boolean }, id: string) => t.mfuStudentsOnly ?? id === 'mfu333'
+/** Can this visitor claim this tier? Everyone can, except MFU-only tiers need an MFU student with a valid ID. */
+export function tierEligible(t: { mfuStudentsOnly?: boolean }, id: string, u: { visitorType?: string | null; institution?: string | null; studentId?: string | null }) {
+  return !isMfuOnlyTier(t, id) || (isMfuStudent(u) && isStudentIdValid(u.studentId))
 }
