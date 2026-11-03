@@ -62,11 +62,22 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
       stop()
       if (!navigator.mediaDevices?.getUserMedia) { setStage('nocam'); return }
       try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1440 }, height: { ideal: 1800 } }, audio: false })
+        // Some in-app browsers never answer the permission prompt; after 10 s, offer the fallback.
+        const s = await Promise.race([
+          navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1440 }, height: { ideal: 1800 } }, audio: false }),
+          new Promise<never>((_, rej) => window.setTimeout(() => rej(new Error('camera timeout')), 10_000)),
+        ])
         if (cancelled) { s.getTracks().forEach((x) => x.stop()); return }
         stream.current = s
-        if (video.current) { video.current.srcObject = s; await video.current.play().catch(() => null) }
-        setStage('live')
+        const v = video.current
+        if (v) {
+          v.srcObject = s
+          await v.play().catch(() => null)
+          // iOS reports "playing" before the first frame has a size; the shutter must wait for it.
+          for (let i = 0; i < 40 && !v.videoWidth; i++) await new Promise((r) => window.setTimeout(r, 75))
+          if (!v.videoWidth) throw new Error('no video frames')
+        }
+        if (!cancelled) setStage('live')
       } catch { if (!cancelled) setStage('nocam') }
     }
     void start()
@@ -79,7 +90,7 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
   async function finish(c: HTMLCanvasElement) {
     const blob = await toJpeg(c)
     setShot({ url: URL.createObjectURL(blob), blob })
-    setStage('shot'); stop()
+    setNote(null); setStage('shot'); stop()
   }
   async function snap() {
     const v = video.current, f = frameCanvas.current
@@ -93,6 +104,8 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => { void finish(composePhoto(img, img.naturalWidth, img.naturalHeight, f, false)); URL.revokeObjectURL(url) }
+    // e.g. a HEIC picture in a browser that can't decode it.
+    img.onerror = () => { URL.revokeObjectURL(url); setNote(t('p.badPhoto')) }
     img.src = url
   }
   async function share() {
@@ -123,13 +136,15 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
       </div>
 
       {/* The 4:5 picture, as big as the screen allows. */}
-      <div className="relative mx-auto w-full max-w-[min(100vw,calc((100dvh-210px)*0.8))] flex-1">
-        <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ aspectRatio: `${PHOTO_W} / ${PHOTO_H}` }}>
+      <div className="pb-body flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-3">
+      <div className="pb-photo shrink-0">
+        {/* 4:5 by padding, not aspect-ratio, so iOS 14 and older draw it too. */}
+        <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ paddingBottom: `${(PHOTO_H / PHOTO_W) * 100}%` }}>
           {stage === 'shot' && shot ? (
             <img src={shot.url} alt={t('p.alt')} className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <>
-              <video ref={video} playsInline muted className="absolute inset-0 h-full w-full object-cover" style={{ transform: facing === 'user' ? 'scaleX(-1)' : undefined }} />
+              <video ref={video} playsInline muted autoPlay className="absolute inset-0 h-full w-full object-cover" style={{ transform: facing === 'user' ? 'scaleX(-1)' : undefined }} />
               {frameUrl && <img src={frameUrl} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />}
               {stage === 'starting' && <div className="absolute inset-0 grid place-items-center text-sm text-white/80">{t('p.starting')}</div>}
               {stage === 'nocam' && (
@@ -141,7 +156,7 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-md px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3">
+      <div className="pb-controls mx-auto w-full max-w-md px-1 pb-[max(16px,env(safe-area-inset-bottom))] pt-3">
         {stage === 'shot' ? (
           <div className="flex flex-col gap-3">
             {canShare
@@ -176,6 +191,8 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
             </button>
           </div>
         )}
+        {stage !== 'shot' && note && <p className="mb-0 mt-3 text-center text-xs text-[#FFC93C]">{note}</p>}
+      </div>
       </div>
     </div>
   )

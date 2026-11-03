@@ -1450,3 +1450,14 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   animation: hd-autobar linear both;
 }
 @keyframes hd-autobar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Agent photo booth: the 4:5 picture as large as the screen allows, with the controls below it;
+ * vh first for browsers without dvh (iOS < 15.4). Sideways on a phone, picture and controls
+ * sit side by side so neither shrinks to nothing. */
+.pb-photo { width: min(calc(100vw - 24px), calc((100vh - 250px) * 0.8)); width: min(calc(100vw - 24px), calc((100dvh - 250px) * 0.8)); }
+.pb-controls { flex-shrink: 0; }
+@media (orientation: landscape) and (max-height: 600px) {
+  .pb-body { flex-direction: row; gap: 20px; }
+  .pb-photo { width: min(55vw, calc((100vh - 80px) * 0.8)); width: min(55vw, calc((100dvh - 80px) * 0.8)); }
+  .pb-controls { width: auto; max-width: 300px; margin: 0; padding-top: 0; }
+}
