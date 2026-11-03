@@ -7,8 +7,7 @@ import {
 } from './lib'
 import {
   ACCENTS, BoothDoc, DEFAULT_PRIZE_SESSIONS, EVENT_SURVEY_ID, InviteDoc, PrizeTierDoc, Role, UserDoc, VisitorType, Zone,
-  currentPrizeSession, dayOf, minuteToHHMM, nextPrizeSession, passportNo,
-} from './shared/model'
+  currentPrizeSession, dayOf, minuteToHHMM, nextPrizeSession, passportNo, isMfuStudent, isStudentIdValid } from './shared/model'
 import { APP_ORIGIN, EMAILJS_PRIVATE_KEY, mailConfigured, sendInvite } from './mailer'
 import { recomputeRanks } from './triggers'
 
@@ -69,6 +68,10 @@ export const createUser = onCall(async (req) => {
   const institution = str(d.institution, 'institution', { required: false, max: 120 }) || 'MFU'
   const school = str(d.school, 'school', { required: false, max: 120 })
   const studentId = str(d.studentId, 'studentId', { required: false, max: 40 })
+  // Same rule as self sign-up: an MFU student's ID is what MFU333 credit is recorded against.
+  if (role === 'visitor' && isMfuStudent({ visitorType, institution }) && !isStudentIdValid(studentId)) {
+    throw new HttpsError('invalid-argument', 'An MFU student needs a 10-digit student ID')
+  }
 
   // One address = one account (§4.1), the same rule `join` applies.
   const dup = await db.collection('users').where('contact', '==', contact).limit(1).get()
