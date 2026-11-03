@@ -1461,3 +1461,16 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   .pb-photo { width: min(55vw, calc((100vh - 80px) * 0.8)); width: min(55vw, calc((100dvh - 80px) * 0.8)); }
   .pb-controls { width: auto; max-width: 300px; margin: 0; padding-top: 0; }
 }
+
+/* HANDLER // 0 notification: a dark glass card that drops in from the top with a small bounce. */
+.hn-drop {
+  background: linear-gradient(150deg, rgb(29 91 255 / .92), rgb(10 19 64 / .96) 60%);
+  border: 1px solid rgb(127 231 255 / .45);
+  box-shadow: 0 14px 34px rgb(10 19 64 / .45), 0 0 22px rgb(0 210 255 / .25);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  animation: hn-in .55s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+.hn-out { animation: hn-away .26s ease-in both; }
+@keyframes hn-in { from { transform: translateY(-130%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes hn-away { to { transform: translateY(-130%); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hn-drop, .hn-out { animation: none; } }

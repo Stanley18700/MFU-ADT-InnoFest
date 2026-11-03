@@ -62,10 +62,14 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
             thresholds={tiers.map((x) => x.thresholdPoints)}
             summary={t('v.res.summary', { booth: name, points: result.points, stamps: result.stampCount })} />
           {claimableUnlocked > 0 && (
-            <div className="a-cut a-edge-neon a-fill-foil flex items-center gap-3 px-3.5 py-3">
-              <GoldTag pop>{AIcon.check}{t('a.res.unlockedTag')}</GoldTag>
-              <span className="text-sm font-medium">{t('v.res.unlocked')}</span>
-            </div>
+            /* The whole card is the way to the reward: brackets and an arrow say so. */
+            <Link to="/mission/rewards" className="a-brk a-glow block text-ink no-underline focus-visible:outline-[3px] focus-visible:outline-offset-4 focus-visible:outline-[#00B4EE]">
+              <div className="a-cut a-edge-neon a-fill-foil flex items-center gap-3 px-3.5 py-3">
+                <GoldTag pop>{AIcon.check}{t('a.res.unlockedTag')}</GoldTag>
+                <span className="min-w-0 flex-1 text-sm font-medium">{t('v.res.unlockedTap')}</span>
+                <span aria-hidden className="a-cut a-cut-s a-solid a-fill-neon grid h-10 w-10 shrink-0 place-items-center text-white">{AIcon.arrow}</span>
+              </div>
+            </Link>
           )}
           <Transmission tone="ink" text={claimableUnlocked > 0 ? t('h.res.unlocked') : t('h.res.ok')} />
           {/* Asked only once the stamp is safely in the passport, and never in the way of it. */}

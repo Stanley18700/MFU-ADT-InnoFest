@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { InAppBanner } from './components/InAppBanner'
+import { HandlerNotifier } from './components/HandlerNotify'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { Spinner } from './components/ui'
@@ -102,6 +103,7 @@ export default function App() {
     // visitor never waits on it.
     <Suspense fallback={<Spinner label="Opening…" page />}>
       <InAppBanner />
+      <HandlerNotifier />
       <Routes>
         <Route path="/" element={<Landing />} />
 
