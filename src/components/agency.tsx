@@ -77,6 +77,9 @@ export const AIcon = {
   pin: I(<><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></>, 18),
   clock: I(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>, 18),
   calendar: I(<><rect x="3" y="5" width="18" height="16" rx="1" /><path d="M3 10h18M8 3v4M16 3v4" /></>, 18),
+  camera: I(<><path d="M4 8h3l1.6-2.4A1 1 0 0 1 9.4 5h5.2a1 1 0 0 1 .8.6L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /><circle cx="12" cy="13.5" r="3.6" /></>, 22),
+  share: I(<><path d="M12 15V4M8 8l4-4 4 4" /><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" /></>, 22),
+  download: I(<><path d="M12 4v11M8 11l4 4 4-4" /><path d="M5 19h14" /></>, 22),
   antenna: I(<><path d="M12 13v8M9 21h6" /><circle cx="12" cy="11" r="2" /><path d="M7.8 6.8a6 6 0 0 0 0 8.4M16.2 6.8a6 6 0 0 1 0 8.4" /></>, 18),
   star: (on: boolean, size = 13) => (
     <svg aria-hidden width={size} height={size} viewBox="0 0 24 24" fill={on ? '#1D5BFF' : 'none'} stroke={on ? '#1D5BFF' : '#7F90B6'} strokeWidth="2" strokeLinejoin="round"><path d="M12 2.8l2.8 6.4 6.9.6-5.2 4.6 1.6 6.8L12 17.6l-6.1 3.6 1.6-6.8-5.2-4.6 6.9-.6z" /></svg>

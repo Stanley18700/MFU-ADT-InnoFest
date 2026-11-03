@@ -338,6 +338,10 @@ function ScoreGain({ awarded, points, top, thresholds, summary }: { awarded: num
           <span className="a-hd text-lg font-bold">{rankName(r1.key)}</span>
         </div>
       )}
+      {/* Crossing the first reward (50) unlocks the agent photo: one tap straight into the camera. */}
+      {thresholds.length > 0 && before < Math.min(...thresholds) && points >= Math.min(...thresholds) && (
+        <PrimaryBtn to="/mission/rewards?photo=1" icon={AIcon.camera}>{t('p.cta')}</PrimaryBtn>
+      )}
     </>
   )
 }

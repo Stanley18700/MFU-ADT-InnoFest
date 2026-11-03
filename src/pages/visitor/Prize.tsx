@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { AgentPhotoCard } from '../../components/AgentPhoto'
 import { Transmission } from '../../components/handler'
 import { useAuth } from '../../lib/auth'
 import { ms, useMyUnlocks, useTiers } from '../../lib/data'
@@ -65,6 +67,8 @@ export default function Prize() {
    * its place. `loading` keeps the QR from flashing for the half-second before the two survey
    * documents arrive. Points are never touched by this — only the moment of hand-over is.
    */
+  // ?photo=1 (from the scan result's "take your agent photo") opens the camera straight away.
+  const wantPhoto = new URLSearchParams(useLocation().search).get('photo') === '1'
   const fs = useFestivalSurvey()
   const gated = anyUnlockedUnredeemed && (fs.loading || (fs.gate && !fs.taken))
   const code = useRedemptionCode(anyUnlockedUnredeemed && !gated)
@@ -77,6 +81,7 @@ export default function Prize() {
   // Ranks are the same for everyone, so they count every reward's threshold, MFU333 included.
   const rank = rankOf(points, allTiers.map((x) => x.thresholdPoints))
   const rankName = t(rank.key === 'senior' ? 'a.rank.senior' : rank.key === 'field' ? 'a.rank.field' : 'a.rank.recruit')
+  const frame = { name: profile.displayName, agentId: profile.passportNo ?? '', points, rank: rankName, place: '11 NOV 2026 · INDOOR STADIUM · MFU', tag: '#ADTInnoFest2026 · RECOVER THE FUTURE' }
   const top = allTiers[allTiers.length - 1]?.thresholdPoints ?? 0
 
   return (
@@ -88,7 +93,9 @@ export default function Prize() {
 
       {anyUnlockedUnredeemed
         ? <Transmission text={t('h.rewards.ready')} />
-        : tiers.length > 0 && points < (tiers[0]?.thresholdPoints ?? 0) && <Transmission text={t('h.rewards.locked', { n: tiers[0].thresholdPoints })} />}
+        : allTiers.length > 0 && points < (allTiers[0]?.thresholdPoints ?? 0) && <Transmission text={t('h.rewards.locked', { n: allTiers[0].thresholdPoints })} />}
+      {/* The 50-point reward for everyone: an agent photo in the InnoFest frame. */}
+      <AgentPhotoCard points={points} at={allTiers[0]?.thresholdPoints ?? 50} autoOpen={wantPhoto} frame={frame} />
       {mfu && (idOk ? <StudentIdLine id={profile.studentId ?? ''} /> : <StudentIdCard />)}
       <FeedbackCard gate={anyUnlockedUnredeemed && fs.gate} />
       {anyUnlockedUnredeemed && !gated && (
