@@ -103,7 +103,7 @@ function eventFromData(d: Record<string, unknown>, existing?: EventDoc): Omit<Ev
     startsAt: Timestamp.fromMillis(startMs),
     endsAt: Timestamp.fromMillis(endMs),
     days,
-    qrPeriodSeconds: typeof d.qrPeriodSeconds === 'number' ? num(d.qrPeriodSeconds, 'qrPeriodSeconds', { min: 10, max: 120 }) : existing?.qrPeriodSeconds ?? 20,
+    qrPeriodSeconds: typeof d.qrPeriodSeconds === 'number' ? num(d.qrPeriodSeconds, 'qrPeriodSeconds', { min: 10, max: 600 }) : existing?.qrPeriodSeconds ?? 20,
     passportPrefix: (str(d.passportPrefix, 'passportPrefix', { required: false, max: 12 }) || existing?.passportPrefix || DEFAULT_PASSPORT_PREFIX)
       .toUpperCase().replace(/[^A-Z0-9-]/g, ''),
     zonePoints,

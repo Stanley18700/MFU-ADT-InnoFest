@@ -306,7 +306,13 @@ export const submitSurveyResponse = onCall(async (req) => {
    * loses a race the points are rolled back with it, and a reload re-reads `rewardIndex` rather
    * than spinning again.
    */
-  const rewardIndex = boothId === EVENT_SURVEY_ID
+  /*
+   * ADT InnoFest (organisers, 2 Nov 2026): the survey is mandatory but pays NO points — points
+   * come from booths only. So no wheel: every answer earns the mission certificate, which the
+   * client shows when `rewardIndex` is null. (Kept as a constant so the wheel can come back.)
+   */
+  const SURVEY_PAYS_POINTS = false
+  const rewardIndex = boothId === EVENT_SURVEY_ID && SURVEY_PAYS_POINTS
     ? Math.floor(Math.random() * SURVEY_REWARDS.length)
     : null
   const reward = rewardIndex === null ? null : SURVEY_REWARDS[rewardIndex]

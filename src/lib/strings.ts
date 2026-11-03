@@ -313,8 +313,8 @@ const staffEn = {
   // The gift offer — the one moment that leads with what the visitor gets, for the majority who
   // will never reach the gift threshold and have no other reason to answer.
   'v.nudge.giftEyebrow': 'A gift for you · ของขวัญสำหรับคุณ',
-  'v.nudge.giftTitle': 'Spin the wheel, on us',
-  'v.nudge.gift': 'Answer the festival survey and spin for bonus points or your own boarding pass. {q} questions, about two minutes.',
+  'v.nudge.giftTitle': 'Send your field report',
+  'v.nudge.gift': 'Answer the festival survey and get your mission certificate. {q} questions, about two minutes.',
   'v.nudge.giftTake': 'Take it',
   // Shown in place of the way out while the short hold runs. Says what is happening and when it
   // ends, because a dead button with no explanation reads as a broken app.
@@ -710,8 +710,8 @@ const staffTh: Record<keyof typeof staffEn, string> = {
   'v.nudge.answer': 'ตอบเลย',
   'v.nudge.later': 'ไว้ก่อน',
   'v.nudge.giftEyebrow': 'ของขวัญสำหรับคุณ · A gift for you',
-  'v.nudge.giftTitle': 'หมุนวงล้อรับรางวัล ฟรี',
-  'v.nudge.gift': 'ตอบแบบประเมินงาน แล้วหมุนวงล้อรับคะแนนโบนัสหรือ boarding pass ของคุณเอง {q} คำถาม ใช้เวลาประมาณ 2 นาที',
+  'v.nudge.giftTitle': 'ส่งรายงานภาคสนาม',
+  'v.nudge.gift': 'ตอบแบบประเมินงานแล้วรับใบรับรองภารกิจของคุณ {q} คำถาม ใช้เวลาประมาณ 2 นาที',
   'v.nudge.giftTake': 'รับเลย',
   'v.survey.holdBack': '{s} วิ',
   'v.survey.holdSkip': 'ข้ามได้ในอีก {s} วิ',

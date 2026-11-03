@@ -178,7 +178,7 @@ export default function EventAdmin() {
   const dirty = !!form && JSON.stringify(form) !== loaded
   useUnsavedGuard(dirty)
   // An emptied number field used to save as 0 (a QR period of 0 s, a zone worth 0 points).
-  const periodOk = !!form && form.qrPeriodSeconds >= 10 && form.qrPeriodSeconds <= 120
+  const periodOk = !!form && form.qrPeriodSeconds >= 10 && form.qrPeriodSeconds <= 600
   const zonesOk = !!form && ZONES.every((z) => form.zonePoints[z] >= 1 && form.zonePoints[z] <= 100)
   const sessionsOk = !!form && sessionsValid(form.prizeSessions)
 
@@ -222,7 +222,7 @@ export default function EventAdmin() {
         </fieldset>
 
         <label>{t('event.qrPeriod')}
-          <input className={`field mt-1 ${periodOk ? '' : 'border-danger'}`} type="number" min={10} max={120} value={Number.isFinite(form.qrPeriodSeconds) ? form.qrPeriodSeconds : ''}
+          <input className={`field mt-1 ${periodOk ? '' : 'border-danger'}`} type="number" min={10} max={600} value={Number.isFinite(form.qrPeriodSeconds) ? form.qrPeriodSeconds : ''}
             onChange={(e) => setForm({ ...form, qrPeriodSeconds: e.target.value === '' ? NaN : Number(e.target.value) })} />
           {!periodOk && <span className="text-xs text-danger-text">{t('event.qrRange')}</span>}
         </label>
