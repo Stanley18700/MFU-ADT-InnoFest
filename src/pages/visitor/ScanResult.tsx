@@ -5,11 +5,11 @@ import { doc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { useAuth } from '../../lib/auth'
 import { api } from '../../lib/api'
-import { useBooths, useDoc, useTiers } from '../../lib/data'
+import { useBooths, useDoc, useEvent, useTiers } from '../../lib/data'
 import { RATING_COMMENT_MAX, tierEligible } from '../../../shared/model'
 import { useLocale } from '../../lib/locale'
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
-import { AIcon, ALang, ErrorPanel, Eyebrow, GhostBtn, GoldTag, InkTag, PrimaryBtn, pad3, rankOf } from '../../components/agency'
+import { AIcon, ALang, Eyebrow, GhostBtn, GoldTag, InkTag, NextTarget, PrimaryBtn, pad3, rankOf } from '../../components/agency'
 import { haptic, useCountUp } from '../../components/game'
 import { Notice } from '../../components/ui'
 import type { ScanResult } from '../../../shared/model'
@@ -18,6 +18,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
   const { t, pick } = useLocale()
   const booths = useBooths()
   const tiers = useTiers().filter((x) => x.active)
+  const event = useEvent()
   const { profile } = useAuth()
   const booth = 'boothId' in result ? booths.find((b) => b.id === result.boothId) : undefined
   /*
@@ -83,26 +84,41 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
     )
   }
   if (result.status === 'already') {
+    // The way forward from a duplicate: progress so far and the next booth worth walking to.
+    const have = new Set(profile?.stampedBoothIds ?? [])
+    const live = booths.filter((b) => b.active && (!event.id || b.eventId === event.id))
+    const nextBooth = live.filter((b) => !have.has(b.id)).sort((a, b) => (b.points ?? 0) - (a.points ?? 0) || a.sortOrder - b.sortOrder)[0]
     return (
       <div className="page-in flex flex-col">
-        {head(t('a.res.alreadyEyebrow'))}
+        {head(t('g.e.dupEyebrow'))}
         <div className="flex flex-col gap-3 px-4 pb-8">
-          <div className="flex items-center gap-3">
-            <span className="a-cut a-solid a-fill-neon grid h-12 w-12 shrink-0 place-items-center text-white"><svg aria-hidden width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12.5l4.5 4.5L15 8.5M10 16.5l.5.5L20 7.5" /></svg></span>
-            <h1 className="a-hd m-0 text-2xl font-bold leading-tight">{t('v.res.already')}</h1>
-          </div>
+          <GameAlert tone="amber" code={t('g.e.dupCode')} glyph="+0" title={t('v.res.already')}>
+            {t('v.res.alreadyNote', { booth: booth ? pick(booth.nameEn, booth.nameTh) : '' })}
+          </GameAlert>
           {booth && (
-            <div className="a-cut a-edge-soft a-fill-foil pulse-once flex items-center gap-3 px-3.5 py-3">
-              <span className="a-cut a-cut-s a-solid a-fill-neon grid h-10 w-10 shrink-0 place-items-center text-white">{AIcon.file}</span>
-              <div className="min-w-0">
-                <div className="a-hd truncate text-[17px] font-bold">{pick(booth.nameEn, booth.nameTh)}</div>
-                <div className="a-mono text-xs text-[#33415F]">{booth.shortName}</div>
+            <div className="relative">
+              <div className="a-cut a-edge-soft a-fill-foil flex items-center gap-3 py-3 pl-3.5 pr-[112px]">
+                <span className="a-cut a-cut-s a-solid a-fill-neon grid h-10 w-10 shrink-0 place-items-center text-white">{AIcon.file}</span>
+                <div className="min-w-0">
+                  <div className="a-hd truncate text-[17px] font-bold">{pick(booth.nameEn, booth.nameTh)}</div>
+                  <div className="a-mono text-xs text-[#33415F]">{booth.shortName}</div>
+                </div>
               </div>
+              {/* Stamped onto the card: it is already in the archive. */}
+              <span aria-hidden className="g-stamp">{t('g.e.archived')}</span>
             </div>
           )}
+          <div className="a-cut a-solid a-fill-tint flex items-center justify-between gap-3 px-3.5 py-2.5">
+            <span className="a-label text-[var(--a-muted)]">{t('a.prog.title')}</span>
+            <span className="a-mono text-sm text-[var(--a-muted)]"><b className="text-[17px] font-semibold text-[#1450E6]">{pad3(have.size)}</b>/{live.length} · {t('g.e.left', { n: Math.max(0, live.length - have.size) })}</span>
+          </div>
+          {nextBooth && (
+            <NextTarget to="/mission/files" title={pick(nextBooth.nameEn, nextBooth.nameTh)}
+              meta={[nextBooth.shortName, nextBooth.location].filter(Boolean).join(' · ')}
+              labels={{ tag: t('a.next.tag'), eyebrow: t('a.next.eyebrow') }} />
+          )}
           <Transmission text={t('h.res.already')} />
-          <p className="m-0 text-sm text-[#33415F]">{t('v.res.alreadyNote', { booth: booth ? pick(booth.nameEn, booth.nameTh) : '' })}</p>
-          <div className="mt-4 flex flex-col gap-3">
+          <div className="mt-2 flex flex-col gap-3">
             <PrimaryBtn onClick={onRetry} icon={AIcon.scan}>{t('v.res.scanAnother')}</PrimaryBtn>
             <GhostBtn to="/mission/files">{t('v.res.whatsLeft')}</GhostBtn>
           </div>
@@ -111,21 +127,57 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
     )
   }
   const map = {
-    expired: { red: false, text: t('v.res.expired') },
-    invalid: { red: true, text: t('v.res.invalid') },
-    rate_limited: { red: false, text: t('v.res.tooFast') },
-    not_registered: { red: false, text: t('v.res.notRegistered') },
+    expired: { tone: 'amber' as const, code: t('g.e.expCode'), glyph: '00:00', title: t('g.e.expTitle'), text: t('v.res.expired') },
+    invalid: { tone: 'red' as const, code: t('g.e.badCode'), glyph: '#?!', title: t('g.e.badTitle'), text: t('v.res.invalid') },
+    rate_limited: { tone: 'amber' as const, code: t('g.e.fastCode'), glyph: 'WAIT', title: t('g.e.fastTitle'), text: t('v.res.tooFast') },
+    not_registered: { tone: 'blue' as const, code: t('g.e.regCode'), glyph: 'ID?', title: t('g.e.regTitle'), text: t('v.res.notRegistered') },
   }[result.status]
   return (
     <div className="page-in flex flex-col">
       {head(t('v.scan.title'))}
       <div className="flex flex-col gap-4 px-4 pb-8">
-        {map.red ? <ErrorPanel>{map.text}</ErrorPanel> : <Notice tone="amber">{map.text}</Notice>}
+        <GameAlert tone={map.tone} code={map.code} glyph={map.glyph} title={map.title}>{map.text}</GameAlert>
+        {result.status === 'rate_limited' && <Cooldown seconds={5} />}
         {result.status !== 'not_registered' && <Transmission text={t('h.res.error')} />}
         {result.status === 'not_registered'
           ? <PrimaryBtn to="/join">{t('v.res.createPassport')}</PrimaryBtn>
-          : <PrimaryBtn onClick={onRetry}>{t('v.res.tryAgain')}</PrimaryBtn>}
+          : <PrimaryBtn onClick={onRetry} icon={AIcon.scan}>{t('v.res.tryAgain')}</PrimaryBtn>}
       </div>
+    </div>
+  )
+}
+
+/**
+ * A scan that did not count, told like a game: a dark alert panel with hazard stripes that shakes
+ * in, an error code, a big glyph (+0, 00:00, #?!) and the title glitching once. One short error
+ * buzz on Android. Colour says how bad: amber = try again, red = wrong code, blue = sign up first.
+ */
+function GameAlert({ tone, code, glyph, title, children }: { tone: 'amber' | 'red' | 'blue'; code: string; glyph: string; title: string; children: React.ReactNode }) {
+  useEffect(() => { haptic([60, 40, 60]) }, [])
+  return (
+    <section role="alert" className={`g-alert g-alert-${tone}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="a-mono text-[11px] font-semibold tracking-[.16em] g-alert-ink">{code}</span>
+        <span aria-hidden className="g-alert-dot" />
+      </div>
+      <div className="mt-2.5 flex items-center gap-3.5">
+        <span aria-hidden className="g-alert-glyph a-mono">{glyph}</span>
+        <h1 className="g-alert-title a-hd m-0 text-[22px] font-bold leading-tight text-white">{title}</h1>
+      </div>
+      <p className="mb-0 mt-2.5 text-[14px] leading-snug text-[#D6E0F7]">{children}</p>
+    </section>
+  )
+}
+
+/** "Too fast": a short cooldown bar, so waiting reads as the scanner recharging. */
+function Cooldown({ seconds }: { seconds: number }) {
+  const { t } = useLocale()
+  const [left, setLeft] = useState(seconds)
+  useEffect(() => { const id = window.setInterval(() => setLeft((n) => Math.max(0, n - 1)), 1000); return () => window.clearInterval(id) }, [])
+  return (
+    <div className="a-cut a-solid a-fill-tint px-3.5 py-2.5">
+      <div className="flex items-center justify-between"><span className="a-label">{t('g.e.recharge')}</span><span className="a-mono text-sm font-semibold text-[#1450E6]">{left > 0 ? `${left}s` : 'READY'}</span></div>
+      <div className="a-bar mt-1.5 h-[6px]"><span className="fill" style={{ width: `${((seconds - left) / seconds) * 100}%` }} /></div>
     </div>
   )
 }
