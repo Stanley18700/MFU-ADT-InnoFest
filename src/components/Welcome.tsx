@@ -132,7 +132,7 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
         <div className="hd-holo-head flex items-center gap-2 border-0 border-b border-solid border-white/25 py-3 pl-3.5 pr-3 min-[380px]:gap-2.5 min-[380px]:pl-5">
           <span className="hd-halo shrink-0"><HandlerAvatar size={42} /></span>
           <div className="min-w-0 flex-1">
-            <div className="a-mono flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold tracking-[.08em] text-white/90 overflow-hidden"><span className="hd-dot" aria-hidden />{t('h.channel')}</div>
+            <div className="a-mono flex items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold tracking-[.08em] text-white/90 overflow-hidden max-[400px]:text-[9px] max-[400px]:tracking-normal"><span className="hd-dot" aria-hidden />{t('h.channel')}</div>
             <div className="a-hd mt-0.5 whitespace-nowrap text-[clamp(15px,4.6vw,18px)] font-bold text-white">{t('h.name')}</div>
           </div>
           <ALang />
@@ -179,12 +179,12 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
           ) : (
             <div className="flex items-center justify-between gap-3">
               <button type="button" onClick={advance}
-                className="hd-hint a-mono min-h-11 min-w-0 flex-1 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap border-0 bg-transparent p-0 text-left text-[11.5px] font-semibold tracking-[.04em] text-white">
+                className="hd-hint a-mono min-h-11 min-w-0 flex-1 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap border-0 bg-transparent p-0 text-left text-[11.5px] font-semibold tracking-[.04em] text-white max-[400px]:text-[10.5px] max-[400px]:tracking-normal">
                 ▸ {t('h.tapNext')}
               </button>
               <span className="a-mono shrink-0 text-[11.5px] font-semibold text-white/80">{count}/{script.length}</span>
               <button type="button" onClick={skip}
-                className="a-mono min-h-11 shrink-0 cursor-pointer rounded-[10px] border-[1.5px] border-solid border-white/80 bg-white/10 px-3 text-[12px] font-semibold tracking-[.1em] text-white">
+                className="a-mono min-h-11 shrink-0 cursor-pointer rounded-[10px] border-[1.5px] border-solid border-white/80 bg-white/10 px-3 text-[12px] font-semibold tracking-[.1em] text-white max-[400px]:px-2 max-[400px]:tracking-[.04em]">
                 {t('h.skip')} ⏭
               </button>
             </div>

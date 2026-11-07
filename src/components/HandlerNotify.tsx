@@ -53,7 +53,17 @@ export function HandlerNotifier() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, uid, sig])
 
-  const current = queue[0]
+  // Hold the news while the briefing is open (the two would stack on the same spot).
+  const [briefing, setBriefing] = useState(false)
+  useEffect(() => {
+    if (!queue.length) return
+    const check = () => setBriefing(!!document.querySelector('.hd-holo'))
+    check()
+    const id = window.setInterval(check, 600)
+    return () => window.clearInterval(id)
+  }, [queue.length])
+
+  const current = briefing ? undefined : queue[0]
   const timer = useRef(0)
   useEffect(() => {
     if (!current) return

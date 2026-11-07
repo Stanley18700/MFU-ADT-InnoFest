@@ -39,7 +39,8 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
   const [frameUrl, setFrameUrl] = useState<string | null>(null)
   const [stage, setStage] = useState<Stage>('starting')
   const [facing, setFacing] = useState<'user' | 'environment'>('user')
-  const [shot, setShot] = useState<{ url: string; blob: Blob } | null>(null)
+  const [shot, setShot] = useState<{ url: string; blob: Blob; data: string } | null>(null)
+  const [holdHelp, setHoldHelp] = useState(false)
   const [flash, setFlash] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   useBodyScrollLock(true)
@@ -89,7 +90,9 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
 
   async function finish(c: HTMLCanvasElement) {
     const blob = await toJpeg(c)
-    setShot({ url: URL.createObjectURL(blob), blob })
+    // A data: URL, not only a blob: one, so press-and-hold → "Save to Photos" works on iPhone.
+    const data = c.toDataURL('image/jpeg', 0.92)
+    setShot({ url: URL.createObjectURL(blob), blob, data })
     setNote(null); setStage('shot'); stop()
   }
   async function snap() {
@@ -108,23 +111,34 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
     img.onerror = () => { URL.revokeObjectURL(url); setNote(t('p.badPhoto')) }
     img.src = url
   }
-  async function share() {
-    if (!shot) return
+  // Photos only, no caption: on iPhone a caption alongside the file hides "Save Image" in the
+  // share sheet and makes Instagram refuse the picture.
+  function shareFile() {
+    if (!shot) return null
     const file = new File([shot.blob], 'adt-innofest-agent.jpg', { type: 'image/jpeg' })
-    const data = { files: [file], title: 'ADT InnoFest 2026', text: t('p.shareText') }
-    try {
-      if (navigator.canShare?.(data)) { await navigator.share(data); return }
-    } catch (e) { if ((e as { name?: string }).name === 'AbortError') return }
-    save()
+    const data = { files: [file] }
+    return navigator.canShare?.(data) ? data : null
   }
-  function save() {
+  async function share() {
+    const data = shareFile()
+    if (!data) { save(); return }
+    try { await navigator.share(data) } catch (e) { if ((e as { name?: string }).name !== 'AbortError') setHoldHelp(true) }
+  }
+  async function save() {
     if (!shot) return
+    // iPhone and iPad ignore downloads of pictures: the share sheet's "Save Image" puts it in Photos.
+    if (IOS) {
+      const data = shareFile()
+      if (data) { try { await navigator.share(data); return } catch (e) { if ((e as { name?: string }).name === 'AbortError') return } }
+      setHoldHelp(true); return
+    }
+    // Android and desktop: a normal download. In-app browsers that drop it still have press-and-hold.
     const a = document.createElement('a')
     a.href = shot.url; a.download = 'adt-innofest-agent.jpg'
     document.body.appendChild(a); a.click(); a.remove()
     setNote(t('p.saved'))
   }
-  function retake() { if (shot) URL.revokeObjectURL(shot.url); setShot(null); setNote(null); setStage('starting') }
+  function retake() { if (shot) URL.revokeObjectURL(shot.url); setShot(null); setNote(null); setHoldHelp(false); setStage('starting') }
   const canShare = typeof navigator !== 'undefined' && !!navigator.share
 
   return (
@@ -141,7 +155,7 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
         {/* 4:5 by padding, not aspect-ratio, so iOS 14 and older draw it too. */}
         <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ paddingBottom: `${(PHOTO_H / PHOTO_W) * 100}%` }}>
           {stage === 'shot' && shot ? (
-            <img src={shot.url} alt={t('p.alt')} className="absolute inset-0 h-full w-full object-cover" />
+            <img src={shot.data} alt={t('p.alt')} className="absolute inset-0 h-full w-full object-cover" style={{ WebkitTouchCallout: 'default', userSelect: 'auto' }} />
           ) : (
             <>
               <video ref={video} playsInline muted autoPlay className="absolute inset-0 h-full w-full object-cover" style={{ transform: facing === 'user' ? 'scaleX(-1)' : undefined }} />
@@ -161,12 +175,12 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
           <div className="flex flex-col gap-3">
             {canShare
               ? <PrimaryBtn onClick={() => void share()} icon={AIcon.share}>{t('p.share')}</PrimaryBtn>
-              : <PrimaryBtn onClick={save} icon={AIcon.download}>{t('p.save')}</PrimaryBtn>}
+              : <PrimaryBtn onClick={() => void save()} icon={AIcon.download}>{t(IOS ? 'p.saveIos' : 'p.save')}</PrimaryBtn>}
             <div className="flex gap-3">
-              {canShare && <button type="button" onClick={save} className="h-12 flex-1 cursor-pointer rounded-lg border border-solid border-white/40 bg-white/10 text-[15px] font-semibold text-white">{t('p.save')}</button>}
+              {canShare && <button type="button" onClick={() => void save()} className="h-12 flex-1 cursor-pointer rounded-lg border border-solid border-white/40 bg-white/10 text-[15px] font-semibold text-white">{t(IOS ? 'p.saveIos' : 'p.save')}</button>}
               <button type="button" onClick={retake} className="h-12 flex-1 cursor-pointer rounded-lg border border-solid border-white/40 bg-white/10 text-[15px] font-semibold text-white">{t('p.retake')}</button>
             </div>
-            <p className="m-0 text-center text-xs text-white/70">{note ?? t('p.hint')}</p>
+            <p className="m-0 text-center text-xs text-white/70">{note ?? t(IOS ? 'p.hintIos' : 'p.hint')}</p>
           </div>
         ) : (
           <div className="flex items-center justify-between gap-4">
@@ -194,6 +208,17 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
         {stage !== 'shot' && note && <p className="mb-0 mt-3 text-center text-xs text-[#FFC93C]">{note}</p>}
       </div>
       </div>
+      {holdHelp && shot && (
+        <div className="fixed inset-0 z-[75] flex flex-col items-center justify-center gap-4 bg-[#060B26]/95 p-4 text-center" onClick={() => setHoldHelp(false)}>
+          <p className="m-0 max-w-xs text-[15px] font-semibold text-white">{t('p.holdTitle')}</p>
+          <img src={shot.data} alt={t('p.alt')} onClick={(e) => e.stopPropagation()}
+            className="max-h-[70vh] w-auto max-w-full rounded-xl" style={{ WebkitTouchCallout: 'default', userSelect: 'auto' }} />
+          <button type="button" onClick={() => setHoldHelp(false)} className="h-11 cursor-pointer rounded-lg border border-solid border-white/40 bg-white/10 px-6 text-[15px] font-semibold text-white">{t('p.done')}</button>
+        </div>
+      )}
     </div>
   )
 }
+
+/** iPhone, iPad (which says it is a Mac), and every iOS browser — they are all Safari inside. */
+const IOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
