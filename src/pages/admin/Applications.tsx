@@ -15,9 +15,9 @@ export default function Applications() {
         <p className="mt-1 text-sm text-ink-soft">Requests from /apply/exhibitor and /apply/admin. Reply by email, then send an invite from Users &amp; invites.</p>
       </header>
       <div className="mt-5 grid gap-3">
-        {rows.length === 0 && <div className="rounded-2xl bg-white p-5 text-sm text-ink-soft shadow-card">No applications yet.</div>}
+        {rows.length === 0 && <div className="card text-sm text-ink-soft">No applications yet.</div>}
         {rows.map((r) => (
-          <article key={r.id} className="rounded-2xl bg-white p-5 shadow-card">
+          <article key={r.id} className="card">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div className="font-semibold">{r.name} · {r.org}</div>
               <span className="text-xs text-ink-soft">{ts(r.createdAt)}</span>

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { CsvButton, Fig, Flag, fmt } from '../../components/ui'
+import { CsvButton, Flag, fmt } from '../../components/ui'
 import { countryName } from '../../lib/countries'
 import { dayOf } from '../../../shared/model'
 import { useDashboardModel, type DaySel } from './useDashboardModel'
 import { useSlidingPill } from '../../lib/useSlidingPill'
 import { Readiness } from './Readiness'
+import { MissionControl } from './MissionControl'
 import { useLocale } from '../../lib/locale'
 import { useLabels } from '../../lib/labels'
 import type { VisitorType } from '../../../shared/model'
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const today = dayOf(new Date())
   const dayTabs = useSlidingPill()
   const [day, setDay] = useState<DaySel>('all')
+  const [allBooths, setAllBooths] = useState(false)
   const m = useDashboardModel(day)
   const eventDays = m.event.days
   useEffect(() => { setDay(eventDays.includes(today) ? today : 'all') }, [eventDays, today])
@@ -25,13 +27,17 @@ export default function Dashboard() {
 
   return (
     <div className="page-in">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <MissionControl m={m} />
+
+      <Readiness />
+
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="stamp-text text-ink-soft">
             {t('dash.live')} · {t(ev.fromCache ? 'dash.reconnecting' : 'dash.connected')}
             {ev.updatedAt ? ` · ${t('dash.countersAge', { min: Math.round((Date.now() - ev.updatedAt) / 60000) })}` : ''}
           </div>
-          <h1 className="text-2xl font-bold">{t('dash.title')}</h1>
+          <h2 className="m-0 text-xl font-bold">{t('dash.title')}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div ref={dayTabs} className="tab-group flex gap-1" role="tablist" aria-label={t('dash.daySelector')}>
@@ -42,22 +48,14 @@ export default function Dashboard() {
           {/* Opens in a new tab so the live dashboard stays put; the print view has its own Save-as-PDF button. */}
           <Link to={`/admin/print?day=${day}`} target="_blank" rel="noopener" className="btn-ghost text-sm">{t('dash.printPdf')}</Link>
         </div>
-      </header>
+      </div>
 
-      <Readiness />
 
-      <section className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Fig value={fmt(m.scoped.visitors)} label={t('print.visitors')} />
-        <Fig value={fmt(m.scoped.stamps)} label={t('print.stamps')} accent="#1450E6" />
-        <Fig value={fmt(ev.totals.redeemed)} label={t('print.redeemed')} accent="#9A5A0F" />
-        <Fig value={fmt(ev.activeLast15m)} label={t('print.active15')} accent="#4C764F" />
-      </section>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <section className="card">
+      <div className="mt-3 grid gap-4 md:grid-cols-2">
+        <section id="mc-board" className="card scroll-mt-20">
           <div className="flex items-center justify-between"><h2 className="stamp-text text-ink-soft">{t('dash.leaderboard')}</h2><CsvButton name="leaderboard" rows={csv.leaderboard} /></div>
           <ol className="mt-3 flex flex-col gap-2">
-            {board.map((b, i) => (
+            {(allBooths ? board : board.slice(0, 10)).map((b, i) => (
               // The fixed columns only fit from `sm` up. Below that the name takes the row and the
               // bar, the count and the note sit under it, rather than 396px of tracks fighting over 303.
               <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm lg:flex-nowrap">
@@ -72,6 +70,14 @@ export default function Dashboard() {
               </li>
             ))}
           </ol>
+          {board.length > 10 && (
+            <button type="button" onClick={() => setAllBooths((v) => !v)} className="btn-quiet btn-sm mt-3">
+              {allBooths ? t('admin.fsurvey.showFewer') : t('cn.showAll', { n: board.length })}
+            </button>
+          )}
+          {!allBooths && board.length > 10 && lowest.size > 0 && (
+            <p className="mb-0 mt-2 text-xs text-warn-text">{t('dash.needsTraffic')}: {board.filter((b) => lowest.has(b.id)).map((b) => b.shortName || b.nameEn).join(', ')}</p>
+          )}
         </section>
 
         <section className="card">
@@ -95,15 +101,43 @@ export default function Dashboard() {
         <section className="card">
           <div className="flex items-center justify-between"><h2 className="stamp-text text-ink-soft">{t('print.participation')}</h2><CsvButton name="participation" rows={csv.participation} /></div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div><div className="fig text-2xl">{fmt(m.thai)}</div><div className="stamp-text text-ink-soft">{t('print.thai')}</div></div>
-            <div><div className="fig text-2xl">{fmt(m.intl)}</div><div className="stamp-text text-ink-soft">{t('print.international')}</div></div>
             {/* These printed the raw enum key — 'student', 'staff' — before the labels existed. */}
-            {m.visitorTypes.slice(0, 2).map(([k, v]) => <div key={k}><div className="fig text-2xl">{fmt(v)}</div><div className="stamp-text text-ink-soft">{VISITOR_TYPE_LABEL[k as VisitorType] ?? k}</div></div>)}
+            {m.visitorTypes.map(([k, v]) => <div key={k}><div className="fig text-2xl">{fmt(v)}</div><div className="stamp-text text-ink-soft">{VISITOR_TYPE_LABEL[k as VisitorType] ?? k}</div></div>)}
           </div>
           <h3 className="stamp-text mt-5 text-ink-soft">{t('print.funnelTitle')}</h3>
           <Funnel steps={m.funnel.map((f) => [t(f.key), f.value] as [string, number])} />
         </section>
 
+        <section className="card">
+          <div className="flex items-center justify-between">
+            <h2 className="stamp-text text-ink-soft">{t('print.stock')}</h2>
+            <div className="flex items-center gap-3"><CsvButton name="prize-stock" rows={csv.stock} /><Link to="/admin/prizes" className="btn-quiet btn-sm">{t('dash.manage')}</Link></div>
+          </div>
+          <ul className="mt-3 flex flex-col gap-3">
+            {stock.map((t) => (
+              <li key={t.id} className="text-sm">
+                <div className="flex justify-between"><span className="font-medium">{t.name}</span><span className="fig">{fmt(t.remaining)} <span className="text-ink-soft">/ {fmt(t.total)}</span></span></div>
+                <div className="mt-1 h-2 rounded bg-ink/5"><div className="h-full rounded" style={{ width: `${t.pct * 100}%`, background: t.tone }} /></div>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+      </div>
+
+      <details className="mc-more card mt-4">
+        <summary className="flex items-center gap-3">
+          <span aria-hidden className="mc-chev inline-block text-[#1450E6] transition-transform">▸</span>
+          <span className="min-w-0 flex-1">
+            <span className="stamp-text block text-ink-soft">{t('mc.more')}</span>
+            <span className="block text-[13px] text-[var(--a-muted)]">{t('mc.moreSub')}</span>
+          </span>
+        </summary>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div><div className="fig text-2xl">{fmt(m.thai)}</div><div className="stamp-text text-ink-soft">{t('print.thai')}</div></div>
+          <div><div className="fig text-2xl">{fmt(m.intl)}</div><div className="stamp-text text-ink-soft">{t('print.international')}</div></div>
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
         <section className="card">
           <div className="flex items-center justify-between"><h2 className="stamp-text text-ink-soft">{t('dash.countries', { count: countries.length })}</h2><CsvButton name="countries" rows={csv.countries} /></div>
           <ul className="mt-3 flex flex-col gap-1.5 text-sm">
@@ -133,21 +167,6 @@ export default function Dashboard() {
 
         <section className="card">
           <div className="flex items-center justify-between">
-            <h2 className="stamp-text text-ink-soft">{t('print.stock')}</h2>
-            <div className="flex items-center gap-3"><CsvButton name="prize-stock" rows={csv.stock} /><Link to="/admin/prizes" className="btn-quiet btn-sm">{t('dash.manage')}</Link></div>
-          </div>
-          <ul className="mt-3 flex flex-col gap-3">
-            {stock.map((t) => (
-              <li key={t.id} className="text-sm">
-                <div className="flex justify-between"><span className="font-medium">{t.name}</span><span className="fig">{fmt(t.remaining)} <span className="text-ink-soft">/ {fmt(t.total)}</span></span></div>
-                <div className="mt-1 h-2 rounded bg-ink/5"><div className="h-full rounded" style={{ width: `${t.pct * 100}%`, background: t.tone }} /></div>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="card">
-          <div className="flex items-center justify-between">
             <h2 className="stamp-text text-ink-soft">{t('dash.ethnic')}</h2>
             {/* §4.1: an export that touches the sensitive field asks first, even though it is already aggregated and folded. */}
             {m.ethnicVisible && <CsvButton name="ethnic-groups-aggregate" rows={csv.ethnic} confirm={t('dash.ethnicConfirm')} />}
@@ -161,7 +180,8 @@ export default function Dashboard() {
             </>
           )}
         </section>
-      </div>
+        </div>
+      </details>
     </div>
   )
 }

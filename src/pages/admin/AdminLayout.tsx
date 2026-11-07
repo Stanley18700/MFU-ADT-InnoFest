@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEvent } from '../../lib/data'
 import { AccountMenu } from '../../components/AccountMenu'
 import { DataErrors, Icon } from '../../components/ui'
 import { useSlidingPill } from '../../lib/useSlidingPill'
 import { useLocale } from '../../lib/locale'
 import type { StringKey } from '../../lib/strings'
-import { UniversityMark } from '../auth/parts'
+import { QuickSearch, SearchIcon, type SearchPage } from './QuickSearch'
+import { AdminHandler } from './AdminHandler'
 
 /**
  * Keys, not words: this table is module-level, evaluated once at import, so a translated label
@@ -15,91 +16,66 @@ import { UniversityMark } from '../auth/parts'
 type Item = { to: string; label: StringKey; icon: ReactNode; end?: boolean; away?: boolean }
 
 /**
- * Four groups in the order an admin needs them: what you look at during the event, what you set up
- * before it, what you consult afterwards — and, last, the two screens that legitimately leave the
- * console. Ten equal items gave no hint where to start.
- *
- * "Screens" exists because the hall display and the prize desk are shared surfaces with their own
- * chrome, not admin pages: the prize desk is a tablet an organizer may be holding, and forking it
- * by role is the one thing that must not happen to it. The `↗` says the chrome is about to change
- * rather than letting it surprise you.
+ * Four groups in the order the festival happens: what you watch on the day, what you set up
+ * before it, what you consult afterwards, and the printed and shared materials. Screens that
+ * leave the console (hall screen, prize desk, print pages) carry a `↗`.
  */
 const GROUPS: Array<{ title: StringKey; items: Item[] }> = [
-  { title: 'admin.group.run', items: [
-    { to: '/admin', label: 'admin.nav.dashboard', icon: Icon.dashboard, end: true },
-    { to: '/admin/draw', label: 'admin.nav.draw', icon: Icon.draw },
-    { to: '/admin/ratings', label: 'admin.nav.ratings', icon: Icon.audit },
-    { to: '/admin/feedback', label: 'admin.nav.feedback', icon: Icon.lists },
+  { title: 'cn.g.live', items: [
+    { to: '/admin', label: 'cn.nav.home', icon: Icon.dashboard, end: true },
+    { to: '/redeem', label: 'admin.nav.desk', icon: Icon.desk, away: true },
+    { to: '/admin/wall', label: 'admin.nav.wall', icon: Icon.screen, away: true },
     { to: '/admin/mfu333', label: 'm.nav', icon: Icon.audit },
+    { to: '/admin/draw', label: 'admin.nav.draw', icon: Icon.draw },
   ] },
-  { title: 'admin.group.setup', items: [
+  { title: 'cn.g.before', items: [
     { to: '/admin/event', label: 'admin.nav.event', icon: Icon.event },
     { to: '/admin/booths', label: 'admin.nav.booths', icon: Icon.booths },
     { to: '/admin/exhibitors', label: 'exa.nav', icon: Icon.users },
     { to: '/admin/prizes', label: 'admin.nav.prizes', icon: Icon.prizes },
+    { to: '/admin/feedback', label: 'cn.nav.survey', icon: Icon.lists },
     { to: '/admin/users', label: 'admin.nav.users', icon: Icon.users },
     { to: '/admin/applications', label: 'admin.nav.applications', icon: Icon.users },
   ] },
-  { title: 'admin.group.records', items: [
+  { title: 'cn.g.after', items: [
+    { to: '/admin/ratings', label: 'admin.nav.ratings', icon: Icon.audit },
     { to: '/admin/audit', label: 'admin.nav.audit', icon: Icon.audit },
     { to: '/admin/refdata', label: 'admin.nav.refdata', icon: Icon.lists },
   ] },
-  { title: 'admin.group.screens', items: [
-    { to: '/admin/wall', label: 'admin.nav.wall', icon: Icon.screen, away: true },
-    { to: '/redeem', label: 'admin.nav.desk', icon: Icon.desk, away: true },
+  { title: 'cn.g.print', items: [
+    { to: '/admin/booth-cards', label: 'cn.nav.cards', icon: Icon.print, away: true },
+    { to: '/admin/poster', label: 'cn.nav.poster', icon: Icon.print, away: true },
+    { to: '/admin/print?day=all', label: 'cn.nav.report', icon: Icon.print, away: true },
   ] },
 ]
 
+
 const ALL = GROUPS.flatMap((g) => g.items)
 const RAIL_KEY = 'admin-rail-collapsed'
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 function readCollapsed(): boolean {
   try { return localStorage.getItem(RAIL_KEY) === '1' } catch { return false }
 }
 
-/**
- * The sidebar's contents, rendered by two hosts: the sticky desktop rail and the drawer below it.
- * One copy is the point — the old file rendered the account links twice and Sign out twice, and
- * they had already drifted apart.
- */
-function SideNav({ collapsed, onToggle }: { collapsed: boolean; onToggle?: () => void }) {
+/** The sidebar's contents, rendered by two hosts: the sticky desktop rail and the phone drawer. */
+function SideNav({ collapsed, onToggle, onSearch }: { collapsed: boolean; onToggle?: () => void; onSearch: () => void }) {
   const event = useEvent()
   const nav = useSlidingPill<HTMLElement>()
   const { t } = useLocale()
   return (
     <>
-      {/*
-        * The design system's paper-cut campus, the same asset the booth screen, the passport cover
-        * and the signed-out horizon stand on, so the console belongs to the same set. It replaces
-        * the three SVG ridges that stood in for it while the asset could not be pulled.
-        *
-        * A fixed 22rem, centred and clipped, rather than the rail's own width. The campus is
-        * 2421px of drawn detail; poured into a 15rem rail it renders at a tenth scale and the
-        * rooftops turn to grain, and the rail then narrows to 4.5rem on collapse and halves it
-        * again. Held at one size it stays the same campus at the same scale, and collapsing just
-        * shows less of it.
-        */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <img
-          src="/brand/campus-holo.webp" alt="" aria-hidden
-          className="absolute bottom-0 left-1/2 w-[22rem] max-w-none -translate-x-1/2 opacity-[0.15]"
-          // Faded into the chrome, not laid on it: its skyline is otherwise a hard horizontal edge
-          // straight across the rail, and a straight edge above the account row reads as a panel.
-          style={{
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 42%)',
-            maskImage: 'linear-gradient(to bottom, transparent, #000 42%)',
-          }}
-        />
-      </div>
-      <div className={`relative flex items-center gap-3 py-4 ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
-        {/* The design system's rail leads with the festival logo. That artwork is one of the five
-            assets the design tool could not deliver, so the university seal — the one real mark we
-            do have — stands in beside the wordmark. */}
-        {!collapsed && <UniversityMark className="h-8 w-8" />}
-        {/* One word, because two lines did not fit: at 15rem, minus the mark and the collapse
-            button, the rail served "MFU INTERNATI…" over "Passport ad…". The event's full name is
-            on the title attribute and on the Event page; the rail only has to say where you are. */}
-        {!collapsed && <div className="min-w-0 flex-1 truncate font-semibold" title={event.nameEn}>{t('admin.rail.brand')}</div>}
+      <div aria-hidden className="cn-rail-ground pointer-events-none absolute inset-0 -z-10" />
+      <div className={`relative flex items-center gap-3 py-4 ${collapsed ? 'justify-center px-2' : 'px-4'}`}>
+        {!collapsed && (
+          <Link to="/admin" className="flex min-w-0 flex-1 items-center gap-2.5 text-white no-underline" title={event.nameEn}>
+            <img src="/brand/logo-innofest.webp" alt="" className="h-9 w-auto shrink-0" />
+            <span className="min-w-0">
+              <span className="a-hd block truncate text-[15px] font-bold leading-tight">{t('cn.brand')}</span>
+              <span className="a-mono block truncate text-[9.5px] tracking-[.12em] text-[#7FE7FF]">{t('cn.brandSub')}</span>
+            </span>
+          </Link>
+        )}
         {onToggle && (
           <button
             type="button" onClick={onToggle} className="btn-dark btn-sm btn-icon-sm"
@@ -110,23 +86,28 @@ function SideNav({ collapsed, onToggle }: { collapsed: boolean; onToggle?: () =>
         )}
       </div>
 
-      {/*
-        * `min-h-0 flex-1 overflow-y-auto` is the third containment tier: the links scroll on a
-        * short window while the account block below stays pinned to the foot of the rail.
-        */}
-      <nav ref={nav} className="tab-rail-v min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3">
+      <div className={collapsed ? 'flex justify-center px-2 pb-2' : 'px-3 pb-2'}>
+        <button type="button" onClick={onSearch} title={collapsed ? t('cn.s.open') : undefined} aria-label={t('cn.s.aria')}
+          className={`cn-railsearch flex min-h-10 w-full cursor-pointer items-center gap-2 text-left text-[13.5px] text-white/80 ${collapsed ? 'justify-center px-0' : 'px-3'}`}>
+          {SearchIcon}
+          {!collapsed && <><span className="min-w-0 flex-1 truncate">{t('cn.s.open')}</span><kbd className="a-mono text-[10.5px] text-white/60">{isMac ? '⌘K' : t('cn.s.key')}</kbd></>}
+        </button>
+      </div>
+
+      <nav ref={nav} className="cn-rail tab-rail-v min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3">
         {GROUPS.map((g) => (
           <div key={g.title} className="mb-3">
-            {!collapsed && <div className="stamp-text px-3 pb-1 pt-2 text-[10px] text-on-chrome-soft">{t(g.title)}</div>}
+            {!collapsed && <div className="a-mono px-3 pb-1 pt-2 text-[10px] font-semibold tracking-[.16em] text-[#7FE7FF]/80">{t(g.title).toUpperCase()}</div>}
             {collapsed && <div className="mx-auto my-2 h-px w-6 bg-white/15" />}
             {g.items.map((n) => (
               <NavLink
                 key={n.to} to={n.to} end={n.end} title={collapsed ? t(n.label) : undefined}
-                className={({ isActive }) => `relative z-[1] flex items-center gap-3 whitespace-nowrap rounded-full py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foil/60 ${collapsed ? 'justify-center px-0' : 'px-3.5'} ${isActive ? 'font-semibold text-white' : 'text-on-chrome-soft hover:bg-white/10 hover:text-white'}`}
+                target={n.to.startsWith('/admin/print') ? '_blank' : undefined}
+                className={({ isActive }) => `relative z-[1] flex items-center gap-3 whitespace-nowrap py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FE7FF]/60 ${collapsed ? 'justify-center px-0' : 'px-3.5'} ${isActive ? 'font-semibold text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
               >
                 <span aria-hidden className="shrink-0">{n.icon}</span>
                 {!collapsed && <span className="min-w-0 flex-1 truncate">{t(n.label)}</span>}
-                {!collapsed && n.away && <span aria-hidden className="shrink-0 text-xs text-on-chrome-soft">↗</span>}
+                {!collapsed && n.away && <span aria-hidden className="shrink-0 text-xs text-white/50">↗</span>}
               </NavLink>
             ))}
           </div>
@@ -140,20 +121,33 @@ function SideNav({ collapsed, onToggle }: { collapsed: boolean; onToggle?: () =>
   )
 }
 
+/** Phone: the four places an admin walking the hall needs, and the full menu. */
+function BottomBar({ onSearch, onMenu }: { onSearch: () => void; onMenu: () => void }) {
+  const { t } = useLocale()
+  const item = 'flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 border-0 bg-transparent px-1 !text-[11px] font-semibold leading-tight no-underline cursor-pointer'
+  const cls = ({ isActive }: { isActive: boolean }) => `${item} ${isActive ? 'text-[#7FE7FF]' : 'text-white/75'}`
+  return (
+    <nav aria-label={t('admin.menu')} className="cn-bottombar fixed inset-x-0 bottom-0 z-30 flex pb-[env(safe-area-inset-bottom)] lg:hidden print:hidden">
+      <NavLink to="/admin" end className={cls}>{Icon.dashboard}<span>{t('cn.bar.home')}</span></NavLink>
+      <NavLink to="/admin/booths" className={cls}>{Icon.booths}<span>{t('cn.bar.booths')}</span></NavLink>
+      <button type="button" onClick={onSearch} className={`${item} text-white/75`}><span className="cn-searchfab grid h-9 w-9 place-items-center">{SearchIcon}</span><span>{t('cn.bar.search')}</span></button>
+      <NavLink to="/redeem" className={cls}>{Icon.desk}<span>{t('cn.bar.desk')}</span></NavLink>
+      <button type="button" onClick={onMenu} className={`${item} text-white/75`}>{Icon.menu}<span>{t('cn.bar.menu')}</span></button>
+    </nav>
+  )
+}
+
 export default function AdminLayout() {
   const loc = useLocation()
   const { t } = useLocale()
   const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState(false)
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const dlg = useRef<HTMLDialogElement>(null)
 
-  // Navigating is the same gesture as dismissing: the drawer must not survive the page under it.
   useEffect(() => { setOpen(false) }, [loc.pathname])
 
-  /*
-   * StrictMode double-invokes this in development, and `showModal()` on an already-open dialog
-   * throws `InvalidStateError`. The guards are load-bearing, not padding.
-   */
+  // StrictMode double-invokes this; `showModal()` on an open dialog throws, so the guards stay.
   useEffect(() => {
     const d = dlg.current
     if (!d) return
@@ -161,75 +155,64 @@ export default function AdminLayout() {
     if (!open && d.open) d.close()
   }, [open])
 
+  // Ctrl K / ⌘K, and "/" when no field has focus.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))
+      if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); setSearch(true) }
+      else if (e.key === '/' && !typing) { e.preventDefault(); setSearch(true) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   function toggleRail() {
     setCollapsed((c) => {
       try { localStorage.setItem(RAIL_KEY, c ? '0' : '1') } catch { /* private window */ }
       return !c
     })
   }
+  function openSearch() { setOpen(false); setSearch(true) }
 
-  const here = ALL.find((i) => (i.end ? loc.pathname === i.to : loc.pathname.startsWith(i.to)))
+  const here = ALL.find((i) => (i.end ? loc.pathname === i.to : loc.pathname.startsWith(i.to.split('?')[0])))
   const title = here ? t(here.label) : t('admin.title')
+  const pages = useMemo<SearchPage[]>(() => GROUPS.flatMap((g) => g.items.map((i) => ({ to: i.to, label: t(i.label), group: t(g.title), icon: i.icon, away: i.away }))), [t])
 
   return (
-    <div className="flex min-h-full flex-col lg:flex-row">
-      {/*
-        * The festival's own sky wave field, full bleed, as the console's ground — the same asset the
-        * signed-out screens stand on, so the console is the same festival at a different density.
-        * It replaces the flat `page-quiet` the design system's admin kit specified; that kit chose
-        * flat "so white panels read cleanly", which they still do, because every panel here is
-        * opaque white and the field only ever shows in the gutters between them.
-        *
-        * Fixed, not scrolled: the waves are broad and slow, and dragging them past a long table
-        * would turn a still ground into motion nobody asked for.
-        *
-        * A sibling of the rail and the content, not a child of either: `main` hosts `.page-in`,
-        * whose transform would make itself the containing block for anything fixed inside it.
-        */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-page-quiet print:hidden"><div className="a-grid" /></div>
+    <div className="admin-console flex min-h-full flex-col lg:flex-row">
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-page print:hidden"><div className="a-grid" /></div>
 
-      {/* Phone and tablet: the rail is a drawer, so the bar is what is always on screen. */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 bg-chrome px-3 text-white lg:hidden">
-        <button
-          type="button" className="btn-dark btn-icon" aria-label={t('admin.menu')}
-          aria-expanded={open} aria-controls="admin-nav" onClick={() => setOpen(true)}
-        >
-          {Icon.menu}
-        </button>
-        <div className="min-w-0 flex-1 truncate font-semibold">{title}</div>
+      {/* Phone and tablet: a slim top bar for where you are, the bottom bar for getting around. */}
+      <header className="cn-topbar fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-2 px-3 text-white lg:hidden">
+        <img src="/brand/logo-innofest.webp" alt="" className="h-7 w-auto shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="a-mono truncate text-[9.5px] tracking-[.14em] text-[#7FE7FF]">{t('cn.brand').toUpperCase()}</div>
+          <div className="a-hd truncate text-[15px] font-bold leading-tight">{title}</div>
+        </div>
         <AccountMenu dark />
       </header>
 
-      {/*
-        * Sticky, not a viewport-locked shell. Only this one element needs pinning, on one
-        * breakpoint, and locking the shell would kill `window.scrollTo` on the event page, break
-        * the body-scroll-lock the user drawer relies on, and change the containing block the booth
-        * kiosk measures its QR against. `self-start` is mandatory: a stretched flex item is already
-        * the container's height, so it has no slack to stick with and silently will not move.
-        */}
-      <aside className={`sticky top-0 hidden h-dvh shrink-0 flex-col self-start bg-chrome text-white isolate transition-[width] duration-200 lg:flex ${collapsed ? 'w-[72px]' : 'w-60'}`}>
-        <SideNav collapsed={collapsed} onToggle={toggleRail} />
+      <aside className={`cn-aside sticky top-0 hidden h-dvh shrink-0 flex-col self-start text-white isolate transition-[width] duration-200 lg:flex ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+        <SideNav collapsed={collapsed} onToggle={toggleRail} onSearch={openSearch} />
       </aside>
 
-      {/*
-        * A real `<dialog>`: the focus trap, Escape, and `inert` on the page behind are the
-        * browser's job, and it does them properly. `ui.tsx`'s Drawer traps nothing.
-        * No display utility on the element itself — the UA sheet toggles `display` off `[open]`,
-        * so a `flex` class would leave this permanently on screen.
-        */}
       <dialog
         ref={dlg} id="admin-nav" className="nav-drawer" onClose={() => setOpen(false)}
         onClick={(e) => { if (e.target === dlg.current) setOpen(false) }}
       >
-        <div className="relative isolate flex h-full flex-col overflow-hidden bg-chrome text-white">
-          <SideNav collapsed={false} />
+        <div className="cn-aside relative isolate flex h-full flex-col overflow-hidden text-white">
+          <SideNav collapsed={false} onSearch={openSearch} />
         </div>
       </dialog>
 
-      <main className="min-w-0 flex-1 px-4 pb-6 pt-[4.5rem] lg:px-8 lg:py-6">
+      <main className="on-stage min-w-0 flex-1 px-4 pb-[calc(84px+env(safe-area-inset-bottom))] pt-[4.5rem] lg:px-8 lg:py-6">
         <DataErrors className="mb-4" />
         <Outlet />
       </main>
+
+      <BottomBar onSearch={openSearch} onMenu={() => setOpen(true)} />
+      {search && <QuickSearch pages={pages} onClose={() => setSearch(false)} />}
+      <AdminHandler />
     </div>
   )
 }

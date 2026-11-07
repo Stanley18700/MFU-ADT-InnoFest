@@ -88,14 +88,14 @@ export default function Mfu333() {
           [`Reached ${mfuTier?.thresholdPoints ?? 50}, not collected`, waiting],
           ['Agents registered', stats.totals.visitors],
         ].map(([label, n]) => (
-          <div key={label as string} className="rounded-2xl bg-white p-4 shadow-card">
+          <div key={label as string} className="card !p-4">
             <div className="fig text-3xl">{n as number}</div>
             <div className="mt-1 text-xs font-semibold uppercase tracking-wide text-ink-soft">{label}</div>
           </div>
         ))}
       </section>
 
-      <section className="mt-4 rounded-2xl bg-white p-5 shadow-card">
+      <section className="mt-4 card">
         <div className="flex flex-wrap items-end gap-3">
           <label className="min-w-[200px] flex-1">
             <span className="text-xs font-semibold text-ink-soft">Search student ID, name or agent ID</span>

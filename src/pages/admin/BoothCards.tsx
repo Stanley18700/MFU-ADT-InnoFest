@@ -11,9 +11,9 @@ export default function BoothCards() {
   const event = useEvent()
   const { t } = useLocale()
   return (
-    <div className="min-h-full bg-white">
-      <div className="mx-auto max-w-[190mm] p-6 print:p-0">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-ink/5 p-3 text-sm print:hidden">
+    <div className="admin-console min-h-full bg-[#E9EEF8] print:bg-white">
+      <div className="on-stage mx-auto max-w-[200mm] p-4 print:p-0">
+        <div className="card mb-6 flex flex-wrap items-center justify-between gap-3 text-sm print:hidden">
           {/* Two keys rather than one with a count: English needs the plural 's' and Thai has no
               plural at all, so the choice belongs in code, not inside a translated sentence. */}
           <span>{t(booths.length === 1 ? 'boothCards.hintOne' : 'boothCards.hint', { count: booths.length })}</span>
@@ -23,7 +23,7 @@ export default function BoothCards() {
           </div>
         </div>
         {booths.map((b) => (
-          <div key={b.id} className="print-page mb-8 border-b rule pb-8 last:border-0 print:mb-0 print:border-0 print:pb-0">
+          <div key={b.id} className="print-page mb-8 print:mb-0">
             <BoothCard booth={b} origin={APP_ORIGIN} period={event.qrPeriodSeconds} />
           </div>
         ))}

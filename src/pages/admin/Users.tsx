@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { collection, doc, documentId, getCountFromServer, getDocs, limit, limitToLast, orderBy, query, startAfter, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { api, errorMessage, type CreateUserInput, type UpdateUserInput } from '../../lib/api'
@@ -112,7 +113,9 @@ export default function Users() {
   const booths = useBooths(true)
   const filter = useSlidingPill()
   const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all')
-  const [q, setQ] = useState('')
+  const [sp] = useSearchParams()
+  const [q, setQ] = useState(() => sp.get('q') ?? '')
+  useEffect(() => { const v = sp.get('q'); if (v !== null) setQ(v) }, [sp])
   // Debounced: the search reads the whole list once, and it should not do that on every keystroke.
   const [qd, setQd] = useState('')
   useEffect(() => { const id = setTimeout(() => setQd(q), 300); return () => clearTimeout(id) }, [q])

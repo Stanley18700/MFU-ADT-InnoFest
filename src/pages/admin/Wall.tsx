@@ -6,7 +6,7 @@ import { ms, useBooths, useBoothStats, useCollection, useEvent, useEventStats } 
 import { Crest, DataErrors, Icon, fmt } from '../../components/ui'
 import { QR } from '../../components/QR'
 import { fullscreenElement, isStandalone, onFullscreenChange, requestFullscreen } from '../../lib/fullscreen'
-import { FestivalBackdrop, ScrapLabel } from '../auth/parts'
+import { StageGround } from '../../components/OrganizerPage'
 import { useLocale } from '../../lib/locale'
 import type { DrawName } from './Draw'
 
@@ -110,10 +110,14 @@ export default function Wall() {
     {/* The landing screen's own sky, clouds, rocket and paper campus — the first thing a visitor
         sees at the door should look like the poster and the app they are about to open, not like
         an operations dashboard. */}
-    <FestivalBackdrop />
+    <StageGround />
+    <div aria-hidden className="wall-glow pointer-events-none fixed inset-0 -z-10" />
     <main className="on-stage relative flex h-dvh flex-col overflow-hidden p-[3.5vw] text-ink">
       <header className="flex shrink-0 items-start justify-between gap-[2vw]">
-        <ScrapLabel tone="ink" tilt={-2}>{t('v.landing.university')}</ScrapLabel>
+        <div className="flex items-center gap-[1vw]">
+          <div className="flex items-center gap-[0.8vw] rounded-[0.6vw] bg-white px-[1vw] py-[0.6vw] shadow-sm"><img src="/brand/mfu28.png" alt="" className="h-[2.6vw] w-auto" /><span className="h-[1.8vw] w-px bg-[#C9D4EA]" /><img src="/brand/adt-mark.png" alt="" className="h-[1.9vw] w-auto" /></div>
+          <div className="a-mono flex items-center gap-[0.6vw] text-[1vw] font-semibold tracking-[.16em] text-[#1450E6]"><span className="mc-pulse" aria-hidden />{t('wall.tx').toUpperCase()} · HANDLER // 0</div>
+        </div>
         {/* Both controls vanish in full screen, which is where this screen spends the festival. */}
         {!fs && (
           <div className="flex shrink-0 items-center gap-[0.8vw]">
@@ -164,14 +168,14 @@ export default function Wall() {
        */
       <section className="mt-[1vh] grid min-h-0 flex-1 grid-cols-[1.05fr_0.95fr] items-center gap-[3vw]">
         <div className="flex min-h-0 flex-col justify-center">
-          <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="w-[min(38vw,720px)]" />
-          <div className="mt-[2.5vh]"><ScrapLabel tone="orange" tilt={1.75} className="!text-[1.3vw]">{t('v.landing.badge')}</ScrapLabel></div>
+          <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="w-[min(30vw,40vh,560px)]" />
+          <div className="mt-[2.5vh]"><span className="wall-badge a-hd inline-block px-[1.4vw] py-[0.7vh] text-[1.5vw] font-bold">{t('v.landing.badge')}</span></div>
           <p className="mt-[2vh] max-w-[36vw] text-[1.7vw] font-medium leading-snug text-ink">{t('v.landing.pitch')}</p>
 
           <ol className="mt-[3vh] flex flex-wrap gap-[1.2vw]">
             {[t('wall.step1'), t('wall.step2'), t('wall.step3')].map((step, i) => (
               <li key={step} className="glass flex items-center gap-[0.8vw] px-[1.2vw] py-[1.1vh]">
-                <span className="fig grid h-[2.4vw] w-[2.4vw] shrink-0 place-items-center rounded-full bg-action text-[1.2vw] text-white">{i + 1}</span>
+                <span className="fig wall-step-n grid h-[2.4vw] w-[2.4vw] shrink-0 place-items-center text-[1.2vw] !text-white">{i + 1}</span>
                 <span className="text-[1.25vw] font-semibold">{step}</span>
               </li>
             ))}
@@ -189,9 +193,12 @@ export default function Wall() {
 
         <div className="flex min-h-0 flex-col items-center justify-center gap-[2vh]">
           {/* The one thing a visitor at the door has to be able to act on. */}
-          <div className="glass flex flex-col items-center gap-[1.2vh] px-[2.5vw] py-[2.5vh]">
-            <div className="stamp-text text-center text-[1.25vw] text-ink">{t('wall.joinHere')}</div>
-            <QR value={APP_ORIGIN} size={qrSize} />
+          <div className="glass wall-qr flex flex-col items-center gap-[1.4vh] px-[2.5vw] py-[2.5vh]">
+            <div className="a-hd text-center text-[1.6vw] font-bold text-ink">{t('wall.scanJoin')}</div>
+            <div className="relative">
+              <span aria-hidden className="qr-brackets" style={{ inset: '-1.1vw', ['--l' as string]: '2.6vw', ['--w' as string]: '0.35vw' }} />
+              <div className="relative overflow-hidden"><QR value={APP_ORIGIN} size={qrSize} /><span aria-hidden className="qr-sweep-loop" /></div>
+            </div>
             <div className="fig text-[1.3vw] text-ink">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
           </div>
 

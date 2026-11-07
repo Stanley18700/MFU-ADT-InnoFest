@@ -17,6 +17,7 @@ import { adminEn, adminTh } from './strings.admin'
 import { agencyEn, agencyTh } from './strings.agency'
 import { handlerEn, handlerTh } from './strings.handler'
 import { exhibitEn, exhibitTh } from './strings.exhibit'
+import { consoleEn, consoleTh } from './strings.console'
 
 const staffEn = {
   'lang.label': 'Language',
@@ -432,7 +433,7 @@ const staffEn = {
   'common.saving': 'Saving…',
 } as const
 
-export const en = { ...staffEn, ...adminEn, ...agencyEn, ...handlerEn, ...exhibitEn }
+export const en = { ...staffEn, ...adminEn, ...agencyEn, ...handlerEn, ...exhibitEn, ...consoleEn }
 
 export type StringKey = keyof typeof en
 
@@ -816,4 +817,4 @@ const staffTh: Record<keyof typeof staffEn, string> = {
   'v.join.creating': 'กำลังลงทะเบียน…',
 }
 
-export const th: Record<StringKey, string> = { ...staffTh, ...adminTh, ...agencyTh, ...handlerTh, ...exhibitTh }
+export const th: Record<StringKey, string> = { ...staffTh, ...adminTh, ...agencyTh, ...handlerTh, ...exhibitTh, ...consoleTh }

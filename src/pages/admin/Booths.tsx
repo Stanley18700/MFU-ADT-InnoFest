@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { collection, limit, orderBy, query, where } from 'firebase/firestore'
 import { ref as sref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage } from '../../lib/firebase'
@@ -39,7 +39,9 @@ export default function Booths() {
   const [msg, setMsg] = useState<Msg | null>(null)
   // One booth at a time is busy — an upload on one card used to disable every button on the page.
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [filter, setFilter] = useState('')
+  const [sp] = useSearchParams()
+  const [filter, setFilter] = useState(() => sp.get('q') ?? '')
+  useEffect(() => { const v = sp.get('q'); if (v !== null) setFilter(v) }, [sp])
   const [unstaffedOnly, setUnstaffedOnly] = useState(false)
   const editorRef = useRef<HTMLElement>(null)
 

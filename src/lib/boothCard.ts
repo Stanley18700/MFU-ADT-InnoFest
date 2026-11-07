@@ -145,7 +145,7 @@ export function cardBlob(c: HTMLCanvasElement): Promise<Blob> {
   return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('Could not make the picture'))), 'image/png'))
 }
 
-function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number, maxLines: number): string[] {
+export function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number, maxLines: number): string[] {
   // Thai has no spaces between words: split on real word boundaries where the browser knows them,
   // and only break inside a "word" when one alone is wider than the line.
   const Seg = (Intl as unknown as { Segmenter?: new (l: string, o: { granularity: string }) => { segment(s: string): Iterable<{ segment: string }> } }).Segmenter
@@ -170,18 +170,18 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number, maxLine
   if (lines.length > maxLines) { const kept = lines.slice(0, maxLines); kept[maxLines - 1] = clip(ctx, kept[maxLines - 1] + '…', maxW); return kept }
   return lines
 }
-function clip(ctx: CanvasRenderingContext2D, text: string, maxW: number) {
+export function clip(ctx: CanvasRenderingContext2D, text: string, maxW: number) {
   let t = text
   while (ctx.measureText(t).width > maxW && t.length > 3) t = t.slice(0, -2) + '…'
   return t
 }
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath()
   ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r)
   ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
   ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r)
   ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath()
 }
-function loadImage(src: string): Promise<HTMLImageElement> {
+export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src })
 }

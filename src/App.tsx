@@ -67,6 +67,7 @@ const Setup = lazy(() => import('./pages/admin/Setup'))
 const Applications = lazy(() => import('./pages/admin/Applications'))
 const Exhibitors = lazy(() => import('./pages/admin/Exhibitors'))
 const Mfu333 = lazy(() => import('./pages/admin/Mfu333'))
+const Poster = lazy(() => import('./pages/admin/Poster'))
 
 /**
  * Everything past this point needs a real, confirmed account — anonymous sign-in is gone (§4.1),
@@ -169,6 +170,7 @@ export default function App() {
           {/* Print view lives outside AdminLayout so no sidebar or day tabs reach the paper. */}
           <Route path="/admin/print" element={<Print />} />
           <Route path="/admin/booth-cards" element={<BoothCards />} />
+          <Route path="/admin/poster" element={<Poster />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="users" element={<Users />} />

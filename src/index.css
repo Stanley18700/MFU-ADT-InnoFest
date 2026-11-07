@@ -1559,3 +1559,102 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 @media (prefers-reduced-motion: reduce) { .qr-brackets, .qr-sweep { animation: none; } .qr-sweep { display: none; } }
 /* A card holding an open menu (the survey builder's question type) must not clip it. */
 .on-stage .card:has(.pop), .on-stage .glass:has(.pop) { clip-path: none; }
+
+/* ── Admin console: mission control in the light agency look ───────────────────────────────────
+ * `.admin-console main` is `.on-stage`, so the exhibitor block above already gives every page cut
+ * corners, neon buttons, mono figures and display headings. What follows is the chrome around it
+ * (rail, top bar, bottom bar, search) and the console-only pieces (tabs, tables, mission control).
+ */
+.cn-aside { background: linear-gradient(180deg, #060B26 0%, #0A1A5C 62%, #13308A 100%); }
+.cn-rail-ground { overflow: hidden;
+  background:
+    linear-gradient(rgb(127 231 255 / .06) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgb(127 231 255 / .06) 1px, transparent 1px) 0 0 / 28px 28px,
+    radial-gradient(120% 50% at 0% 100%, rgb(0 200 255 / .18), transparent 70%); }
+.cn-aside::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 1.5px; background: var(--a-neon-edge); opacity: .7; pointer-events: none; }
+/* The sliding pill: a neon slab with a cyan edge, instead of the old white wash. */
+.cn-rail.tab-rail-v::before { background: linear-gradient(90deg, rgb(29 91 255 / .55), rgb(0 200 255 / .18)); border-radius: 0;
+  box-shadow: inset 3px 0 0 #7FE7FF, 0 0 18px -6px rgb(0 200 255 / .8);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%); }
+.cn-rail a { border-radius: 0; }
+.cn-railsearch { border: 1px solid rgb(127 231 255 / .28); background: rgb(255 255 255 / .06);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+.cn-railsearch:hover { background: rgb(255 255 255 / .12); color: #fff; }
+.cn-topbar { background: linear-gradient(90deg, #060B26, #0B1A5C 70%, #13308A); box-shadow: 0 1.5px 0 rgb(0 200 255 / .45); }
+.cn-bottombar { background: linear-gradient(180deg, #0B1A5C, #060B26); box-shadow: 0 -1.5px 0 rgb(0 200 255 / .45), 0 -10px 30px -12px rgb(6 11 38 / .6); }
+.cn-bottombar a, .cn-bottombar button { font-family: var(--font-display); }
+.cn-searchfab { background: var(--a-neon); color: #fff; margin-top: -18px; box-shadow: 0 6px 18px -6px rgb(29 91 255 / .9);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+
+.cn-palette { background: linear-gradient(rgb(255 255 255 / .97), rgb(255 255 255 / .97)) padding-box, var(--a-neon-edge) border-box; border: 1.5px solid transparent;
+  box-shadow: 0 30px 80px -20px rgb(6 11 38 / .6);
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px); }
+.cn-hit-on { background: linear-gradient(90deg, rgb(29 91 255 / .1), rgb(0 200 255 / .04)); box-shadow: inset 3px 0 0 #1D5BFF; }
+
+/* Tabs, tables and inputs inside the console. */
+.admin-console .on-stage .tab-group { border-radius: 0; background: rgb(255 255 255 / .7); border: 1px solid #D2DCEE;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+.admin-console .on-stage .tab-group::before { border-radius: 0; background: var(--a-neon); box-shadow: 0 4px 14px -6px rgb(29 91 255 / .8); }
+.admin-console .on-stage .tab { border-radius: 0; font-family: var(--font-display); }
+.admin-console .on-stage .tab-group[data-tab-ready] .tab[aria-selected="true"] { color: #fff; }
+.admin-console .on-stage th { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--a-muted); }
+.admin-console .on-stage table tbody tr:hover { background: rgb(29 91 255 / .04); }
+.admin-console .on-stage .field:focus { border-color: #1D5BFF; box-shadow: 0 0 0 3px rgb(0 200 255 / .25); }
+.admin-console .on-stage h1 { letter-spacing: -.01em; }
+/* Plain white panels from before the theme, so no page is left in the old look. */
+.admin-console .on-stage .shadow-card { border-radius: 0; box-shadow: 0 10px 30px -18px rgb(10 20 51 / .35); }
+/* Drawers and menus that already have their own shape keep it. */
+.admin-console .on-stage .card:has([role="listbox"]), .admin-console .on-stage .card:has([role="menu"]) { clip-path: none; }
+
+/* Mission control */
+.mc-hero { position: relative; overflow: hidden; color: #fff;
+  background: radial-gradient(90% 140% at 100% 0%, rgb(0 200 255 / .35), transparent 60%), linear-gradient(110deg, #060B26 0%, #0B1A5C 55%, #1D3BD8 100%);
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px); }
+.mc-hero::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(rgb(127 231 255 / .07) 1px, transparent 1px) 0 0 / 32px 32px, linear-gradient(90deg, rgb(127 231 255 / .07) 1px, transparent 1px) 0 0 / 32px 32px; }
+.mc-alert { position: relative; border-left: 4px solid var(--tone, #1D5BFF); background: rgb(255 255 255 / .9);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%); }
+.mc-alert[data-tone="red"] { --tone: #D94A48; background: linear-gradient(90deg, rgb(217 74 72 / .09), rgb(255 255 255 / .92) 45%); }
+.mc-alert[data-tone="amber"] { --tone: #E08A12; background: linear-gradient(90deg, rgb(255 176 32 / .12), rgb(255 255 255 / .92) 45%); }
+.mc-alert[data-tone="blue"] { --tone: #1D5BFF; background: linear-gradient(90deg, rgb(29 91 255 / .08), rgb(255 255 255 / .92) 45%); }
+.mc-pulse { width: 8px; height: 8px; border-radius: 99px; background: var(--tone, #1D5BFF); box-shadow: 0 0 0 0 var(--tone, #1D5BFF); animation: mc-pulse 1.8s ease-out infinite; }
+@keyframes mc-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--tone, #1D5BFF) 60%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
+.mc-quick { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; font-family: var(--font-display); font-weight: 600; font-size: 14px; color: #fff; text-decoration: none;
+  border: 1px solid rgb(127 231 255 / .35); background: rgb(255 255 255 / .08);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+.mc-quick:hover { background: rgb(255 255 255 / .16); }
+.mc-more > summary { list-style: none; cursor: pointer; }
+.mc-more > summary::-webkit-details-marker { display: none; }
+.mc-more[open] .mc-chev { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .mc-pulse { animation: none; } }
+
+/* A static QR on a screen (the hall wall): brackets, and a slow scan line every few seconds. */
+.qr-sweep-loop { position: absolute; left: -3%; right: -3%; top: 0; height: 3px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(0 200 255 / .5), transparent); box-shadow: 0 0 14px 3px rgb(0 200 255 / .3);
+  animation: qr-sweep-loop 6s ease-in-out infinite; }
+@keyframes qr-sweep-loop { 0%, 70% { top: 0; opacity: 0; } 73% { opacity: 1; } 97% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .qr-sweep-loop { display: none; } }
+
+/* Printed QR materials: the booth table card and the event poster. Colours print as drawn. */
+.bc-card, .po-sheet { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-shadow: 0 20px 50px -30px rgb(10 20 51 / .45); }
+@media print { .bc-card, .po-sheet { box-shadow: none; } }
+.bc-band { background: radial-gradient(80% 140% at 100% 0%, rgb(0 200 255 / .35), transparent 60%), linear-gradient(110deg, #060B26 0%, #0B1A5C 55%, #1D3BD8 100%); }
+.bc-band::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(rgb(127 231 255 / .08) 1px, transparent 1px) 0 0 / 7mm 7mm, linear-gradient(90deg, rgb(127 231 255 / .08) 1px, transparent 1px) 0 0 / 7mm 7mm; }
+.bc-band::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2mm; background: linear-gradient(90deg, #7FE7FF, #1D5BFF 35%, #9B7BFF 70%, #FFC93C); }
+.bc-qr { background: linear-gradient(#fff, #fff) padding-box, var(--a-neon-edge) border-box; border: 3px solid transparent;
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px); }
+.bc-step { background: #EEF3FF; border-left: 3px solid #1D5BFF; }
+/* The poster sheet sizes everything off its own width (cqw), so A4, A3 and the screen preview match. */
+.po-sheet { container-type: inline-size;
+  background: radial-gradient(90% 60% at 100% 0%, rgb(0 200 255 / .32), transparent 60%), linear-gradient(160deg, #060B26 0%, #0B1A5C 55%, #1D3BD8 100%); }
+.po-sheet::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(rgb(127 231 255 / .07) 1px, transparent 1px) 0 0 / 5.5cqw 5.5cqw, linear-gradient(90deg, rgb(127 231 255 / .07) 1px, transparent 1px) 0 0 / 5.5cqw 5.5cqw; }
+.po-sheet::after { content: ''; position: absolute; inset: 0; pointer-events: none; border: 2cqw solid transparent;
+  border-image: linear-gradient(135deg, #7FE7FF, #1D5BFF 35%, #9B7BFF 70%, #FFC93C) 1; }
+/* Hall wall */
+.wall-glow { background: radial-gradient(50% 60% at 78% 45%, rgb(0 200 255 / .16), transparent 70%), radial-gradient(40% 50% at 10% 90%, rgb(122 92 255 / .1), transparent 70%); }
+.wall-badge { color: #0A1433; background: #FFC93C; clip-path: polygon(0.8vw 0, 100% 0, 100% calc(100% - 0.8vw), calc(100% - 0.8vw) 100%, 0 100%, 0 0.8vw); }
+.wall-step-n { background: var(--a-neon); clip-path: polygon(0.5vw 0, 100% 0, 100% calc(100% - 0.5vw), calc(100% - 0.5vw) 100%, 0 100%, 0 0.5vw); }
+.on-stage .glass.wall-qr { background: linear-gradient(#fff, #fff) padding-box, var(--a-neon-edge) border-box; border-width: 3px;
+  box-shadow: 0 30px 80px -30px rgb(29 91 255 / .55); }

@@ -104,7 +104,7 @@ export default function Exhibitors() {
       </header>
 
       {/* The link to share */}
-      <section className="mt-5 flex flex-wrap items-center gap-5 rounded-2xl bg-white p-5 shadow-card">
+      <section className="mt-5 flex flex-wrap items-center gap-5 card">
         <QR value={link} size={132} />
         <div className="min-w-0 flex-1">
           <div className="text-xs font-semibold uppercase tracking-wide text-ink-soft">{t('exa.link')}</div>
@@ -117,7 +117,7 @@ export default function Exhibitors() {
       </section>
 
       {/* Load the list */}
-      <section className="mt-4 rounded-2xl bg-white p-5 shadow-card">
+      <section className="mt-4 card">
         <h2 className="text-lg font-bold">{t('exa.pasteTitle')}</h2>
         <p className="mt-1 text-sm text-ink-soft">{t('exa.pasteLead')}</p>
         <p className="mt-1 rounded-lg bg-sky-50 px-3 py-2 font-mono text-xs">{t('exa.cols')}</p>
@@ -152,7 +152,7 @@ export default function Exhibitors() {
       </section>
 
       {/* Who has registered */}
-      <section className="mt-4 rounded-2xl bg-white p-5 shadow-card">
+      <section className="mt-4 card">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-bold">{t('exa.teams')} <span className="ml-1 text-sm font-normal text-ink-soft">{t('exa.registered', { n: claimed, total })}</span></h2>
           <input className="field max-w-xs" placeholder={t('exa.search')} value={q} onChange={(e) => setQ(e.target.value)} />
