@@ -1,12 +1,13 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
-import { useBooths, useEvent } from '../../lib/data'
+import { useBoothStat, useBooths, useEvent } from '../../lib/data'
 import { api, errorMessage, friendlyError } from '../../lib/api'
 import { authError, isInAppWebView, signInWithGoogle } from '../../lib/authActions'
 import { Notice, Spinner } from '../../components/ui'
 import { AGround, AHeader, AIcon, Eyebrow, GhostBtn, PrimaryBtn } from '../../components/agency'
 import { useLocale } from '../../lib/locale'
+import { RegisteredNudge, ShareBlock } from '../../components/ExhibitorHandler'
 
 /**
  * /exhibit — the exhibitor link.
@@ -23,6 +24,7 @@ export default function Exhibit() {
   const { ready, user, emailVerified, role, boothId: myBooth, refreshClaims, redirectError, signOut } = useAuth()
   const event = useEvent()
   const allBooths = useBooths()
+  const myStat = useBoothStat(role === 'organizer' ? myBooth : null).data
   const nav = useNavigate()
   const [q, setQ] = useState('')
   const [boothId, setBoothId] = useState('')
@@ -68,6 +70,9 @@ export default function Exhibit() {
         <PrimaryBtn to="/booth" icon={AIcon.scan}>{t('ex.openQr')}</PrimaryBtn>
         <GhostBtn to="/booth/stats">{t('ex.openStats')}</GhostBtn>
       </div>
+      {/* Before the event: the moment to invite people. Sign-ups from the link are counted apart. */}
+      {b && <div className="mt-6"><ShareBlock booth={b} invited={myStat?.invited} came={myStat?.invitedCame} visitors={myStat?.stamps} /></div>}
+      {b && <RegisteredNudge booth={b} />}
     </>)
   }
   if (role === 'admin') {

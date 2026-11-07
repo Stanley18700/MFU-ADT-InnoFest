@@ -93,9 +93,13 @@ export const onScanCreate = onDocumentCreated({ document: 'scans/{scanId}', retr
     tx.set(demographicsRef(), {
       crossSchool: { [key(school ?? inst)]: { [hostKey]: FieldValue.increment(1) } },
     }, { merge: true })
+    // A visit by someone this booth invited (they signed up through its link): counted apart,
+    // so a booth can see how many of its sign-ups actually came. Already a visit in `stamps`.
+    const invitedHere = (visitor.data() as UserDoc).refBooth === scan.boothId
     tx.set(boothStatsRef(scan.boothId), {
       boothId: scan.boothId,
       stamps: FieldValue.increment(1),
+      ...(invitedHere ? { invitedCame: FieldValue.increment(1) } : {}),
       byVisitorType: { [vt]: FieldValue.increment(1) },
       byDay: { [scan.day]: FieldValue.increment(1) },
       byHour: { [`${scan.day}T${hourOf(at)}`]: FieldValue.increment(1) },

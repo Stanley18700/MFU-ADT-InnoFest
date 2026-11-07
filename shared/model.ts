@@ -139,6 +139,12 @@ export interface UserDoc {
   createdAt: unknown
   lastSeenAt?: unknown
   deletedAt?: unknown
+  /**
+   * The booth whose invite link (`/b/{boothId}`) this visitor signed up through, if any. Counted
+   * as "invited" for that booth at sign-up and as "invited who came" only when they actually scan
+   * it on the day, so sign-ups never inflate a booth's visitor numbers.
+   */
+  refBooth?: string | null
 }
 
 export interface BoothDoc {
@@ -331,6 +337,10 @@ export interface DemographicsShard {
 export interface BoothStats {
   boothId: string
   stamps: number
+  /** Signed up through this booth's invite link (any time, including before the event). */
+  invited?: number
+  /** Of those, how many later scanned this booth. Already included in `stamps`. */
+  invitedCame?: number
   rank?: number
   byVisitorType: Partial<Record<VisitorType, number>>
   byDay: Record<string, number>

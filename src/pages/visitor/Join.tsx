@@ -6,6 +6,7 @@ import { api, errorMessage } from '../../lib/api'
 import { useEthnicGroups, useRefList } from '../../lib/data'
 import { COUNTRIES, PINNED_COUNTRIES, countryName } from '../../lib/countries'
 import { DataErrors, Notice, Spinner } from '../../components/ui'
+import { clearInvite, pendingInvite } from '../../lib/invite'
 import { AGround, AHeader, Eyebrow, PrimaryBtn } from '../../components/agency'
 import { Select } from '../../components/Select'
 import { isMfuStudent, isStudentIdValid, type VisitorType } from '../../../shared/model'
@@ -106,7 +107,9 @@ export default function Join() {
         countryCode: f.countryCode,
         ethnicGroup: f.ethnicGroup || undefined, ethnicConsent: f.ethnicConsent,
         consent: true,
+        refBooth: pendingInvite(),
       })
+      clearInvite()
       // §4.1 — give the passport a way home. Non-fatal: registration must not fail because
       // the credential could not be linked, and `join` has already succeeded by this point.
       await refreshClaims()

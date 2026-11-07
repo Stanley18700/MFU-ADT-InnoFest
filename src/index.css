@@ -1509,3 +1509,53 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   .landing-scene { min-height: 100vh; }
   .nav-drawer { block-size: 100vh; max-block-size: 100vh; }
 }
+
+/* ── Exhibitor screens in the agency look ──────────────────────────────────────────────────────
+ * The booth screen (.booth-screen) and every organizer page (.on-stage) share these surfaces, so
+ * restating them here themes the QR kiosk, stats, survey builder and results at once: cut corners
+ * with the soft neon edge, mono labels and figures, display-face headings, neon buttons.
+ */
+.on-stage .card, .on-stage .glass, .booth-screen .glass {
+  border-radius: 0; border: 1.5px solid transparent;
+  background: linear-gradient(rgb(255 255 255 / .9), rgb(255 255 255 / .9)) padding-box, var(--a-soft-edge) border-box;
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+.on-stage .stamp-text, .booth-screen .stamp-text { font-family: var(--font-mono); letter-spacing: .12em; }
+:lang(th) .on-stage .stamp-text, :lang(th) .booth-screen .stamp-text { letter-spacing: .02em; }
+.on-stage .fig, .booth-screen .fig { font-family: var(--font-mono); font-weight: 600; letter-spacing: -0.01em; color: var(--a-blue); }
+.on-stage h1, .on-stage h2, .on-stage h3, .booth-screen h1 { font-family: var(--font-display); }
+.on-stage .btn-primary, .booth-screen .btn-primary {
+  border-radius: 0; background: var(--a-neon); color: #fff; font-family: var(--font-display); font-weight: 700;
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow: 0 8px 24px -10px rgb(29 91 255 / .7);
+}
+.on-stage .btn-ghost, .on-stage .btn-quiet, .booth-screen .btn-quiet {
+  border-radius: 0; border: 1.5px solid transparent; color: var(--a-blue); font-family: var(--font-display); font-weight: 600;
+  background: linear-gradient(#fff, #fff) padding-box, var(--a-neon-edge) border-box;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.on-stage .field { border-radius: 0; }
+
+/* The rotating QR: brackets lock in, a scan line passes, the ring counts down in neon. */
+.qr-brackets { position: absolute; pointer-events: none; z-index: 1;
+  --c: #00C8FF; --l: 34px; --w: 4px;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--c), var(--c)) top left / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / var(--w) var(--l) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / var(--l) var(--w) no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / var(--w) var(--l) no-repeat;
+  filter: drop-shadow(0 0 6px rgb(0 200 255 / .8));
+  animation: qr-brk-lock .5s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes qr-brk-lock { from { transform: scale(1.06); opacity: .2; } to { transform: none; opacity: 1; } }
+.qr-sweep { position: absolute; left: -4%; right: -4%; top: 0; height: 3px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(0 200 255 / .55), transparent);
+  box-shadow: 0 0 14px 3px rgb(0 200 255 / .35);
+  animation: qr-sweep .7s ease-in-out both; }
+@keyframes qr-sweep { from { top: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } to { top: 100%; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .qr-brackets, .qr-sweep { animation: none; } .qr-sweep { display: none; } }
+/* A card holding an open menu (the survey builder's question type) must not clip it. */
+.on-stage .card:has(.pop), .on-stage .glass:has(.pop) { clip-path: none; }

@@ -96,3 +96,26 @@ export function DecryptOverlay({ label }: { label: string }) {
     </div>
   )
 }
+
+/**
+ * Text that arrives scrambled and locks in left to right, like a code being decrypted. Same
+ * length all the way through, so in a monospace face nothing around it moves.
+ */
+export function Scramble({ text, ms = 520, className = '' }: { text: string; ms?: number; className?: string }) {
+  const [shown, setShown] = useState(text)
+  useEffect(() => {
+    if (reducedMotion()) { setShown(text); return }
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    const start = performance.now()
+    let raf = 0
+    const tick = (now: number) => {
+      const done = Math.min(1, (now - start) / ms)
+      const locked = Math.floor(done * text.length)
+      setShown(text.split('').map((c, i) => (i < locked || c === ' ' ? c : chars[Math.floor(Math.random() * chars.length)])).join(''))
+      if (done < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [text, ms])
+  return <span className={className} aria-label={text}>{shown}</span>
+}

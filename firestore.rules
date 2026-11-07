@@ -213,7 +213,8 @@ service cloud.firestore {
 
     // Per-booth rating counters — count, total, distribution. Admin only, like the ratings.
     match /stats/ratings/items/{boothId} {
-      allow read: if isAdmin();
+      // A booth's own exhibitors may read their own rating (for their share card); nobody else's.
+      allow read: if isAdmin() || (isOrganizer() && request.auth.token.get('boothId', '') == boothId);
       allow write: if false;
     }
 

@@ -2,7 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { effectivePoints } from './shared/points'
 import {
   db, auth, FieldValue, Timestamp, requireAuth, str, rateLimit, rateLimitShared, clientFingerprint, redemptionSecret, getActiveEvent,
-  audit, toMillis,
+  audit, toMillis, boothStatsRef,
 } from './lib'
 import { computeToken, constantTimeEqual, counterFor, normaliseManualCode, parsePayload, DEFAULT_PERIOD_SECONDS, ParsedToken } from './shared/token'
 import {
@@ -145,9 +145,41 @@ export const join = onCall(async (req) => {
     createdAt: FieldValue.serverTimestamp(),
     lastSeenAt: FieldValue.serverTimestamp(),
   }
+  // Signed up through a booth's invite link: remembered on the account, counted for that booth
+  // as "invited" (not as a visit — only a scan on the day is a visit). Unknown or inactive booth
+  // ids are ignored rather than refused: the link is not worth failing a registration over.
+  const refRaw = str(d.refBooth, 'refBooth', { required: false, max: 64 })
+  if (refRaw && /^[A-Za-z0-9_-]+$/.test(refRaw)) {
+    const ref = await db.doc(`booths/${refRaw}`).get()
+    if (ref.exists && (ref.data() as BoothDoc).active) user.refBooth = refRaw
+  }
   await userRef.set(user)
+  if (user.refBooth) {
+    await boothStatsRef(user.refBooth).set({ boothId: user.refBooth, invited: FieldValue.increment(1) }, { merge: true })
+      .catch((e) => console.warn('invite count not recorded', e))
+  }
   await auth.setCustomUserClaims(uid, { role: 'visitor' })
   return { ok: true, passportNo: user.passportNo, existing: false }
+})
+
+/**
+ * The public face of a booth, for its invite link (`/b/{boothId}`): who, where, when. No sign-in,
+ * because the people opening the link have not joined yet — so only fields a poster would show.
+ */
+export const publicBooth = onCall(async (req) => {
+  const id = str(req.data?.boothId, 'boothId', { max: 64 })
+  if (!/^[A-Za-z0-9_-]+$/.test(id)) return { found: false as const }
+  const snap = await db.doc(`booths/${id}`).get()
+  const b = snap.data() as BoothDoc | undefined
+  if (!b || !b.active) return { found: false as const }
+  return {
+    found: true as const,
+    booth: {
+      id, nameEn: b.nameEn, nameTh: b.nameTh, shortName: b.shortName, location: b.location, zone: b.zone,
+      hostUnit: b.hostUnit, descriptionEn: b.descriptionEn ?? '', descriptionTh: b.descriptionTh ?? '',
+      photoUrl: b.photoThumbUrl ?? b.photoUrl ?? null,
+    },
+  }
 })
 
 /** §4.3 / §5.2 — verify a booth token and stamp the passport, exactly once per booth. */

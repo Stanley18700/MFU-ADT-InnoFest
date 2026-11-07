@@ -101,6 +101,10 @@ export async function fxCall(name: string, _data: unknown): Promise<unknown> {
       return { status: 'success', boothId: b.id, pointsAwarded: 1, points: FX.points + 1, stampCount: FX.points + 1, unlockedTierIds: FX.points + 1 === 50 ? ['mfu333'] : [], serverTime: Date.now() }
     }
     case 'rateBooth': return { ok: true, already: false }
+    case 'publicBooth': {
+      const x = fxBooths[0]
+      return { found: true, booth: { id: x.id, nameEn: x.nameEn, nameTh: x.nameTh, shortName: x.shortName, location: x.location, zone: x.zone, hostUnit: x.hostUnit, descriptionEn: x.descriptionEn ?? '', descriptionTh: (x as { descriptionTh?: string }).descriptionTh ?? '', photoUrl: null } }
+    }
     case 'claimBoothSeat': throw Object.assign(new Error('That name is not on this project’s team list. Type it exactly as on the official list, in English or Thai.'), { code: 'functions/not-found' })
     case 'boothSession': return { boothId: 'b14', booth: fxBooths[13], secret: 'JBSWY3DPEHPK3PXP', period: 20, serverTime: Date.now() }
     case 'surveyForBooth': return { status: 'ok', title: 'Field report', description: '2036 wants your field report. A few questions, about two minutes.', questions: fxSurvey.questions, gatingGift: false }

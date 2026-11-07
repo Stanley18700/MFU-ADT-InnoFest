@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react'
 import { stampMarks } from '../../lib/eventText'
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
@@ -11,7 +11,8 @@ import { QR } from '../../components/QR'
 import { BoothCard } from '../../components/BoothCard'
 import { OrganizerBar } from '../../components/OrganizerBar'
 import { BoothWatermark, StageGround } from '../../components/OrganizerPage'
-import { OrganizerWelcome } from '../../components/Welcome'
+import { ExhibitorBriefing } from '../../components/ExhibitorHandler'
+import { Scramble } from '../../components/game'
 import { onStage } from '../../lib/onStage'
 import { DataErrors, Icon, IconButton, LiveDot, Notice, Spinner, fmt } from '../../components/ui'
 import { APP_ORIGIN } from '../../lib/firebase'
@@ -54,23 +55,33 @@ function QRFrame({ size, accentColor, payload, counter, left, urgent }: {
   size: number; accentColor: string; payload: string; counter: number; left: number; urgent: boolean
 }) {
   const box = size + 2 * FRAME_PAD + 2 * INSET
+  const grad = `qr-ring-${useId().replace(/:/g, '')}`
   return (
     <div className="relative">
+      {/* Agency brackets at the four corners: they lock in again on every new code. */}
+      <span key={`b${counter}`} aria-hidden className="qr-brackets" style={{ inset: -INSET - 6 }} />
       <div className="relative rounded-[36px] bg-white p-5" style={{ boxShadow: `0 0 0 ${ACCENT}px ${accentColor}, 0 30px 80px rgba(0,0,0,.45)` }}>
         {/* Keyed on the counter so the swap animation replays on every rotation. */}
-        <div key={counter} className="qr-swap">
+        <div key={counter} className="qr-swap relative">
           <QR value={payload} size={size} />
+          {/* A scan line passes over the fresh code: thin and translucent, so a camera still reads it. */}
+          <span aria-hidden className="qr-sweep" />
         </div>
         <svg
           className="pointer-events-none absolute overflow-visible"
           style={{ top: -INSET, left: -INSET, width: box, height: box }}
           viewBox={`0 0 ${box} ${box}`} aria-hidden
         >
+          <defs>
+            <linearGradient id={grad} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#2E3CFF" /><stop offset=".55" stopColor="#00C8FF" /><stop offset="1" stopColor="#7A5CFF" />
+            </linearGradient>
+          </defs>
           <rect
             className="qr-countdown"
             x={RING / 2} y={RING / 2} width={box - RING} height={box - RING}
             rx={CORNER + INSET - RING / 2} fill="none" strokeWidth={RING} strokeLinecap="butt"
-            stroke={urgent ? '#DC8A2A' : 'rgba(207,227,234,.8)'}
+            stroke={urgent ? '#FFB020' : `url(#${grad})`}
             pathLength={1} strokeDasharray={1} strokeDashoffset={1 - left}
           />
         </svg>
@@ -308,7 +319,7 @@ export default function Booth() {
       </main></>
     )
   }
-  if (!session || !token) return <><StageGround /><main className="relative min-h-full text-ink"><Spinner label={t('booth.starting')} /></main></>
+  if (!session || !token) return <Spinner page label={t('booth.starting')} />
 
   const b = live ?? session.booth
   const feedState = offline ? 'offline' as const : (stat.fromCache || ev.fromCache) ? 'stale' as const : 'live' as const
@@ -428,8 +439,8 @@ export default function Booth() {
               which reads well but costs the code its height: 327px to 295px at 1920×1080, under
               §5.1's 320px floor. The QR is what this screen is for, so the labels stay at 0.7rem. */}
           <div className="stamp-text text-ink-soft">{t('booth.manualCode')}</div>
-          <div key={token.counter} className="code-swap fig text-[2em] tracking-[0.15em] sm:text-[2.4em] sm:tracking-[0.25em]" style={{ color: accent }}>
-            {formatManualCode(token.token)}
+          <div className="fig a-mono text-[2em] tracking-[0.15em] sm:text-[2.4em] sm:tracking-[0.25em]" style={{ color: accent }}>
+            <Scramble key={token.counter} text={formatManualCode(token.token)} />
           </div>
           <div className="text-[length:max(0.5em,0.8rem)] text-ink-soft">
             {t('booth.rotatesIn')} <span className="tabular-nums">{Math.ceil(msLeft / 1000)}</span> {t('booth.seconds')}
@@ -462,7 +473,7 @@ export default function Booth() {
       </footer>
       {/* Why this screen has to stay on. An overlay, not a card in the column above: it must
           never push the QR down the page. Shown once per booth on this device. */}
-      <OrganizerWelcome boothId={session.boothId} />
+      <ExhibitorBriefing boothId={session.boothId} />
     </main>
     {/*
       * Show code. White, not the sky ground: a phone camera locks onto a QR fastest against a flat
@@ -483,8 +494,8 @@ export default function Booth() {
         <div className="flex shrink-0 flex-col items-center justify-center gap-2 text-center landscape:w-[38%]">
           <h1 className="text-lg font-extrabold leading-tight" style={{ color: accent }}>{pick(b.nameEn, b.nameTh)}</h1>
           <div className="stamp-text text-ink-soft">{t('booth.manualCode')}</div>
-          <div key={token.counter} className="code-swap fig text-[clamp(2.25rem,12vmin,5rem)] tracking-[0.18em]" style={{ color: accent }}>
-            {formatManualCode(token.token)}
+          <div className="fig a-mono text-[clamp(2.25rem,12vmin,5rem)] tracking-[0.18em]" style={{ color: accent }}>
+            <Scramble key={token.counter} text={formatManualCode(token.token)} />
           </div>
           <div className="text-sm text-ink-soft">
             {t('booth.rotatesIn')} <span className="tabular-nums">{Math.ceil(msLeft / 1000)}</span> {t('booth.seconds')}

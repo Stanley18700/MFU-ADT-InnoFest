@@ -47,6 +47,7 @@ const Redeem = lazy(() => import('./pages/organizer/Redeem'))
 const BoothSurvey = lazy(() => import('./pages/organizer/Survey'))
 const BoothSurveyResults = lazy(() => import('./pages/organizer/SurveyResults'))
 const RedeemLanding = lazy(() => import('./pages/organizer/RedeemLanding'))
+const BoothInvite = lazy(() => import('./pages/visitor/BoothInvite'))
 
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'))
@@ -124,6 +125,7 @@ export default function App() {
         {/* The exhibitor link: self-registration against the official project list. Outside every
             guard, like /booth-access — the person has no role yet. */}
         <Route path="/exhibit" element={<Exhibit />} />
+        <Route path="/b/:boothId" element={<BoothInvite />} />
         <Route path="/s/:token" element={<ScanLanding />} />
         <Route path="/r/:token" element={<RedeemLanding />} />
         <Route path="/setup" element={<Setup />} />

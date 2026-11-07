@@ -11,6 +11,11 @@ function call<Req, Res>(name: string) {
   return async (data: Req): Promise<Res> => (await fn(data)).data
 }
 
+export interface PublicBooth {
+  id: string; nameEn: string; nameTh: string; shortName: string; location: string; zone: string
+  hostUnit: string; descriptionEn: string; descriptionTh: string; photoUrl: string | null
+}
+
 export interface JoinInput {
   displayName: string
   visitorType: VisitorType
@@ -22,11 +27,14 @@ export interface JoinInput {
   ethnicGroup?: string
   ethnicConsent?: boolean
   consent: boolean
+  /** The booth whose invite link brought them here (`/b/{id}`). */
+  refBooth?: string
 }
 
 export const api = {
   // visitor
   join: call<JoinInput, { ok: true; passportNo: string; existing: boolean }>('join'),
+  publicBooth: call<{ boothId: string }, { found: false } | { found: true; booth: PublicBooth }>('publicBooth'),
   scan: call<{ payload: string }, ScanResult>('scan'),
   /** One to five stars for a booth already stamped. `already` means this visitor had rated it before. */
   rateBooth: call<{ boothId: string; stars: number; comment?: string }, { ok: true; already: boolean }>('rateBooth'),

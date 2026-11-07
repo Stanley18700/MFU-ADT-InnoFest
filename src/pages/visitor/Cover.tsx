@@ -42,7 +42,8 @@ export default function Cover() {
   const today = dayOf(new Date())
   const nextBooth = booths
     .filter((b) => b.eventId === event.id && !stamped.has(b.id) && (!event.days.includes(today) || b.activeDays.includes(today)))
-    .sort((a, b) => b.rewardPoints - a.rewardPoints || a.sortOrder - b.sortOrder)[0]
+    // The booth whose invite link brought them here comes first, until they have scanned it.
+    .sort((a, b) => Number(b.id === profile.refBooth) - Number(a.id === profile.refBooth) || b.rewardPoints - a.rewardPoints || a.sortOrder - b.sortOrder)[0]
   const nextRank = next ? rankOf(next.thresholdPoints, thresholds) : null
 
   return (

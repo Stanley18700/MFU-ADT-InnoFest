@@ -225,4 +225,4 @@ export function PhotoBooth({ frame, onClose }: { frame: FrameData; onClose: () =
 }
 
 /** iPhone, iPad (which says it is a Mac), and every iOS browser — they are all Safari inside. */
-const IOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
+export const IOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))

@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { useAuth } from '../../lib/auth'
 import { ms, useBooth, useBoothStat, useBooths, useEvent, useEventStats } from '../../lib/data'
 import { useLocale } from '../../lib/locale'
+import { ShareBlock } from '../../components/ExhibitorHandler'
 import { useSlidingPill } from '../../lib/useSlidingPill'
 import { CsvButton, DataErrors, Fig, LiveDot, Notice, Spinner, fmt } from '../../components/ui'
 import { clock } from '../../lib/eventText'
@@ -78,6 +79,9 @@ export default function BoothStats() {
         <Fig value={stat?.rank ? `#${stat.rank}` : '–'} label={t('booth.rankOf', { count: booths.filter((b) => b.active).length })} />
         <Fig value={fmt(ev.totals.stamps)} label={t('booth.eventTotal')} />
       </section>
+
+      {/* Share the booth: invite before the event, numbers on the day. Sign-ups kept apart from visits. */}
+      <div className="mt-4 max-w-xl"><ShareBlock booth={{ ...booth, id: boothId }} invited={stat?.invited} came={stat?.invitedCame} visitors={stat?.stamps} /></div>
 
       <section className="card mt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
