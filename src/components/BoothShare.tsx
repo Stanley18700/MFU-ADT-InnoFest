@@ -69,8 +69,9 @@ export function BoothShare({ booth, onClose }: { booth: Booth; onClose: () => vo
   }
   async function shareImage() {
     const f = file(); if (!f) return
-    // The caption goes to the clipboard first: Instagram and Facebook drop text sent with a picture.
-    try { await navigator.clipboard.writeText(caption) } catch { /* the Copy caption button is there */ }
+    // The caption goes to the clipboard too: Instagram and Facebook drop text sent with a picture.
+    // Not awaited: Safari only opens the share sheet straight from the tap, so both start together.
+    navigator.clipboard?.writeText(caption).catch(() => { /* the Copy caption button is there */ })
     const data = { files: [f] }
     if (navigator.canShare?.(data)) {
       try { await navigator.share(data); setNote(t('sh.captionReady')); return } catch (e) { if ((e as { name?: string }).name === 'AbortError') return }
