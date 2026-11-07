@@ -44,7 +44,7 @@ export default function PassportLayout() {
             <p className="mt-1 text-xs text-ink-soft">{t('v.offline.note')}</p>
           </div>
         )}
-        <DataErrors className="mx-4 mt-3" />
+        <DataErrors agent className="mx-4 mt-3" />
         <div key={loc.pathname} className="page-in">
           <Outlet />
         </div>

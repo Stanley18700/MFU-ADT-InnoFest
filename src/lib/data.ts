@@ -2,7 +2,8 @@ import { useEffect, useId, useMemo, useState, useSyncExternalStore } from 'react
 import {
   collection, doc, onSnapshot, orderBy, query, where, limit, type DocumentData, type Query, type DocumentReference,
 } from 'firebase/firestore'
-import { db } from './firebase'
+import { onIdTokenChanged } from 'firebase/auth'
+import { auth, db } from './firebase'
 import type { BoothDoc, BoothStats, BucketDoc, DemographicsShard, EventDoc, EventStatsShard, PrizeTierDoc, TierUnlockDoc, ScanDoc } from '../../shared/model'
 import { DEFAULT_PASSPORT_PREFIX, DEFAULT_PRIZE_SESSIONS, EVENT_DAYS, EVENT_ID, STATS_SHARDS, ZONE_POINTS } from '../../shared/model'
 
@@ -44,14 +45,56 @@ export function useDataErrors(): DataError[] {
   return useSyncExternalStore(subscribeDataErrors, getDataErrors, getDataErrors)
 }
 
+/*
+ * Who is signed in, as "uid|role" ('' when signed out; undefined until Firebase has decided).
+ *
+ * Every listener waits for it and re-opens when it changes. A listener opened before sign-in had
+ * finished (or before a new role reached the token) was refused once and stayed refused for the
+ * rest of the visit — "You are not allowed to read the prize tiers" on a signed-in agent's card.
+ */
+let authKey: string | undefined
+const authKeyListeners = new Set<() => void>()
+if (import.meta.env.MODE !== 'fixtures') {
+  onIdTokenChanged(auth, async (u) => {
+    let next = ''
+    if (u) {
+      try { next = `${u.uid}|${String((await u.getIdTokenResult()).claims.role ?? '')}` } catch { next = `${u.uid}|` }
+    }
+    if (next === authKey) return
+    authKey = next
+    authKeyListeners.forEach((l) => l())
+  })
+}
+function useAuthKey() {
+  return useSyncExternalStore((cb) => { authKeyListeners.add(cb); return () => { authKeyListeners.delete(cb) } }, () => authKey, () => authKey)
+}
+
+/**
+ * A refused read gets one second chance: the token is refreshed (a role set on the server only
+ * reaches the app with a new token) and the listener re-opens. Only a second refusal is shown.
+ */
+function useDeniedRetry() {
+  const [attempt, setAttempt] = useState(0)
+  const retry = (code: string) => {
+    if (code !== 'permission-denied' || attempt > 0) return false
+    void auth.currentUser?.getIdToken(true).catch(() => null)
+    window.setTimeout(() => setAttempt(1), 1500)
+    return true
+  }
+  return { attempt, retry }
+}
+
 export function useCollection<T = DocumentData>(q: Query | null, deps: unknown[] = [], what = 'this page'): { data: WithId<T>[]; loading: boolean; error: string | null; fromCache: boolean } {
   if (import.meta.env.MODE === 'fixtures') return fixtureCollection<T>(q)
   const id = useId()
+  const who = useAuthKey()
+  const { attempt, retry } = useDeniedRetry()
   const [data, setData] = useState<WithId<T>[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fromCache, setFromCache] = useState(false)
   useEffect(() => {
+    if (who === undefined) return
     if (!q) { setData([]); setLoading(false); return }
     setLoading(true)
     const unsub = onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
@@ -60,21 +103,24 @@ export function useCollection<T = DocumentData>(q: Query | null, deps: unknown[]
       setLoading(false)
       setError(null)
       reportDataError(id, null)
-    }, (e) => { setError(e.code); setLoading(false); reportDataError(id, { code: e.code, what }) })
+    }, (e) => { if (retry(e.code)) return; setError(e.code); setLoading(false); reportDataError(id, { code: e.code, what }) })
     return () => { unsub(); reportDataError(id, null) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+  }, [...deps, who, attempt])
   return { data, loading, error, fromCache }
 }
 
 export function useDoc<T = DocumentData>(ref: DocumentReference | null, deps: unknown[] = [], what?: string): { data: WithId<T> | null; loading: boolean; error: string | null; fromCache: boolean } {
   if (import.meta.env.MODE === 'fixtures') return { data: (ref ? fx.fxDoc(ref.path) : null) as WithId<T> | null, loading: false, error: null, fromCache: false }
   const id = useId()
+  const who = useAuthKey()
+  const { attempt, retry } = useDeniedRetry()
   const [data, setData] = useState<WithId<T> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fromCache, setFromCache] = useState(false)
   useEffect(() => {
+    if (who === undefined) return
     if (!ref) { setData(null); setLoading(false); return }
     const label = what ?? ref.path
     const unsub = onSnapshot(ref, { includeMetadataChanges: true }, (snap) => {
@@ -83,10 +129,10 @@ export function useDoc<T = DocumentData>(ref: DocumentReference | null, deps: un
       setLoading(false)
       setError(null)
       reportDataError(id, null)
-    }, (e) => { setError(e.code); setLoading(false); reportDataError(id, { code: e.code, what: label }) })
+    }, (e) => { if (retry(e.code)) return; setError(e.code); setLoading(false); reportDataError(id, { code: e.code, what: label }) })
     return () => { unsub(); reportDataError(id, null) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+  }, [...deps, who, attempt])
   return { data, loading, error, fromCache }
 }
 
@@ -147,13 +193,13 @@ export function useBoothsState(includeInactive = false) {
   return { ...r, data: r.data.filter((b) => includeInactive || b.active) }
 }
 
-export function useTiers() {
-  return useTiersState().data
+export function useTiers(enabled = true) {
+  return useTiersState(enabled).data
 }
 
 /** The tiers plus listener state, for screens that must say when the stock figures are stale. */
-export function useTiersState() {
-  return useCollection<PrizeTierDoc>(query(collection(db, 'prizeTiers'), orderBy('sortOrder')), [], 'the prize tiers')
+export function useTiersState(enabled = true) {
+  return useCollection<PrizeTierDoc>(enabled ? query(collection(db, 'prizeTiers'), orderBy('sortOrder')) : null, [enabled], 'the prize tiers')
 }
 
 export function useMyUnlocks(uid: string | undefined) {

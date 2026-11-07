@@ -25,7 +25,7 @@ export function HandlerNotifier() {
   const { role, user, profile } = useAuth()
   const uid = role === 'visitor' ? user?.uid : undefined
   const unlocksQ = useCollection<TierUnlockDoc>(uid ? query(collection(db, 'tierUnlocks'), where('visitorId', '==', uid)) : null, [uid], 'your prize unlocks')
-  const tiers = useTiers().filter((x) => x.active).sort((a, b) => a.thresholdPoints - b.thresholdPoints)
+  const tiers = useTiers(!!uid).filter((x) => x.active).sort((a, b) => a.thresholdPoints - b.thresholdPoints)
   const [queue, setQueue] = useState<Note[]>([])
   const [leaving, setLeaving] = useState(false)
 

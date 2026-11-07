@@ -136,7 +136,7 @@ export default function Join() {
         <button type="button" className="btn-quiet btn-sm shrink-0" onClick={() => void signOut()}>{t('v.join.notYou')}</button>
       </div>
 
-      <DataErrors className="mt-4" />
+      <DataErrors agent className="mt-4" />
 
       <form onSubmit={submit} className="mt-6 flex flex-col gap-5">
         <label className="block">

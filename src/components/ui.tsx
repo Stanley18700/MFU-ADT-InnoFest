@@ -252,14 +252,39 @@ export function DataError({ error, what = 'this data', dark }: { error: string |
 }
 
 /** Every live listener on the page that is currently failing (see useDataErrors in lib/data). */
-export function DataErrors({ dark, className = '' }: { dark?: boolean; className?: string }) {
+export function DataErrors({ dark, className = '', agent }: { dark?: boolean; className?: string; agent?: boolean }) {
   const errs = useDataErrors()
+  if (agent) return <AgentDataErrors codes={errs.map((e) => e.code)} className={className} />
   const seen = new Set<string>()
   const list = errs.filter((e) => { const k = `${e.code}|${e.what}`; if (seen.has(k)) return false; seen.add(k); return true })
   if (!list.length) return null
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       {list.map((e) => <DataError key={`${e.code}|${e.what}`} error={e.code} what={e.what} dark={dark} />)}
+    </div>
+  )
+}
+
+/**
+ * The agent's version: one short, translated line in the game's voice and a Reload button,
+ * instead of a sentence for testers ("…the security rules need a fix") in English.
+ */
+function AgentDataErrors({ codes, className }: { codes: string[]; className: string }) {
+  const { t } = useLocale()
+  if (!codes.length) return null
+  const offline = codes.every((c) => c === 'unavailable')
+  return (
+    <div role="alert" className={`g-alert ${offline ? 'g-alert-amber' : 'g-alert-red'} !animate-none !py-3 ${className}`}>
+      <div className="flex items-center gap-3">
+        <span className="min-w-0 flex-1">
+          <span className="a-mono block text-[10.5px] font-semibold tracking-[.14em] g-alert-ink">{offline ? 'SIGNAL LOST · OFFLINE' : 'ERR · LINK LOST'}</span>
+          <span className="mt-0.5 block text-[13.5px] leading-snug text-[#D6E0F7]">{t(offline ? 'de.offline' : 'de.failed')}</span>
+        </span>
+        {!offline && (
+          <button type="button" onClick={() => window.location.reload()}
+            className="h-10 shrink-0 cursor-pointer rounded-lg border border-solid border-white/50 bg-white/10 px-3 text-[13px] font-semibold text-white">{t('de.reload')}</button>
+        )}
+      </div>
     </div>
   )
 }
