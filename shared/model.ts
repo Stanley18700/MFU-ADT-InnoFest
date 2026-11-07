@@ -702,6 +702,16 @@ export function ratingAverage(s: { count?: number; sum?: number } | null | undef
 export const EVENT_SURVEY_ID = '_festival_'
 
 /**
+ * Whether the festival survey stands between a visitor and every reward (agent photo, prizes,
+ * MFU333): it does whenever it is published with questions. **On by default** (organisers'
+ * decision, 7 Nov 2026): `gateGift: false` is the admin's emergency switch to lift it at the desk,
+ * so absent means on. An unpublished survey gates nothing, so the app works before it is written.
+ */
+export function surveyGates(s: Pick<SurveyDoc, 'active' | 'questions' | 'gateGift'> | null | undefined): boolean {
+  return !!s?.active && (s.questions?.length ?? 0) > 0 && s.gateGift !== false
+}
+
+/**
  * The questions, as the Office of International Affairs wrote them.
  *
  * Bilingual in one string, the way the original form is: `SurveyQuestion.title` is a single
@@ -718,78 +728,34 @@ export const EVENT_SURVEY_ID = '_festival_'
  * `surveys/{id}/versions/{n}` when the set changes, which is what makes that recoverable.
  */
 export const FESTIVAL_SURVEY: { title: string; description: string; questions: SurveyQuestion[] } = {
-  title: 'แบบประเมินความพึงพอใจ / Participant Feedback',
+  // DEMO set for testing the reward lock (7 Nov 2026). Replace with the organisers' questions;
+  // new questions need new ids (see above), so answers to these are never relabelled.
+  title: '[DEMO] รายงานภารกิจ / Mission debrief',
   description:
-    'ขอบคุณที่เข้าร่วมงาน ความคิดเห็นของท่านจะช่วยให้เราพัฒนากิจกรรมในอนาคต'
-    + ' · Thank you for joining. Your feedback helps us improve future activities.',
+    'แบบประเมินตัวอย่างสำหรับทดสอบ · A demo survey for testing. The real questions will replace it.',
   questions: [
     {
-      id: 'participant', kind: 'choice', required: true,
-      title: 'ประเภทผู้เข้าร่วม / You are',
-      options: [
-        'นักศึกษา มฟล. / MFU Student',
-        'บุคลากร มฟล. / MFU Staff',
-        'บุคคลทั่วไป / General Public',
-      ],
+      id: 'demo_who', kind: 'choice', required: true,
+      title: 'คุณคือ / You are',
+      options: ['นักศึกษา มฟล. / MFU student', 'บุคลากร มฟล. / MFU staff', 'นักเรียน / School student', 'บุคคลทั่วไป / General public'],
     },
     {
-      id: 'heard', kind: 'choice', required: true,
-      title: 'ท่านทราบข่าวกิจกรรมจากช่องทางใด / How did you hear about the event?',
-      options: [
-        'Facebook / Social Media',
-        'เว็บไซต์ มฟล. / MFU Website',
-        'เพื่อนหรือเพื่อนร่วมงาน / Friends or colleagues',
-        'ประชาสัมพันธ์ภายใน มฟล. / MFU Announcement',
-        'อื่น ๆ / Other',
-      ],
+      id: 'demo_overall', kind: 'scale', required: true,
+      title: 'โดยรวม คุณชอบงาน ADT InnoFest แค่ไหน / Overall, how much did you enjoy ADT InnoFest?',
+      scaleMin: 1, scaleMax: 5, scaleMinLabel: 'น้อย / Not much', scaleMaxLabel: 'มาก / A lot',
     },
     {
-      id: 'overall', kind: 'scale', required: true,
-      title: 'โดยภาพรวม ท่านพึงพอใจต่อการจัดงานในระดับใด / Overall, how satisfied are you with the event?',
-      scaleMin: 1, scaleMax: 5,
-      scaleMinLabel: 'น้อยที่สุด / Lowest', scaleMaxLabel: 'มากที่สุด / Highest',
-    },
-    ...([
-      ['variety', 'ความหลากหลายของกิจกรรม / Variety of activities'],
-      ['quality', 'คุณภาพของกิจกรรม / Quality of activities'],
-      ['cultures', 'โอกาสในการเรียนรู้วัฒนธรรมที่หลากหลาย / Opportunities to learn about other cultures'],
-      ['connect', 'โอกาสในการพบปะและเชื่อมโยงกับผู้อื่น / Opportunities to connect with others'],
-      ['atmosphere', 'บรรยากาศของงาน / Event atmosphere'],
-      ['organization', 'การจัดงานโดยภาพรวม / Overall organization'],
-    ] as const).map(([id, title]): SurveyQuestion => ({
-      id, kind: 'scale', title, required: true,
-      scaleMin: 1, scaleMax: 5,
-      scaleMinLabel: 'น้อยที่สุด / Lowest', scaleMaxLabel: 'มากที่สุด / Highest',
-    })),
-    {
-      id: 'learned', kind: 'choice', required: true,
-      title: 'กิจกรรมนี้ช่วยให้ท่านเข้าใจวัฒนธรรมและมุมมองที่หลากหลายมากขึ้นหรือไม่'
-        + ' / Did the event help you understand different cultures and perspectives?',
-      options: [
-        'ไม่เลย / Not at all',
-        'เล็กน้อย / A little',
-        'ในระดับหนึ่ง / Somewhat',
-        'มาก / Much',
-        'มากที่สุด / Very much',
-      ],
+      id: 'demo_project', kind: 'short', required: true,
+      title: 'โปรเจกต์ไหนที่คุณชอบที่สุด / Which project caught your eye the most?',
     },
     {
-      id: 'moreInterested', kind: 'choice', required: true,
-      title: 'หลังเข้าร่วมงาน ท่านสนใจที่จะมีปฏิสัมพันธ์กับผู้คนจากหลากหลายวัฒนธรรมมากขึ้นหรือไม่'
-        + ' / After attending, are you more interested in engaging with people from other cultures?',
-      options: ['ใช่ / Yes', 'ไม่แน่ใจ / Not sure', 'ไม่ใช่ / No'],
+      id: 'demo_again', kind: 'choice', required: true,
+      title: 'คุณจะชวนเพื่อนมางานปีหน้าไหม / Would you bring a friend next year?',
+      options: ['แน่นอน / Definitely', 'อาจจะ / Maybe', 'ไม่ / No'],
     },
     {
-      id: 'enjoyed', kind: 'paragraph', required: true,
-      title: 'ท่านชื่นชอบกิจกรรมหรือส่วนใดของงานมากที่สุด / What did you enjoy most about the event?',
-    },
-    {
-      id: 'improve', kind: 'paragraph', required: true,
-      title: 'ท่านมีข้อเสนอแนะอะไรสำหรับการจัดงานครั้งต่อไป / What could we improve for future events?',
-    },
-    {
-      id: 'oneWord', kind: 'short', required: true,
-      title: 'หนึ่งคำที่อธิบายประสบการณ์ของท่าน / One word to describe your experience',
+      id: 'demo_comment', kind: 'paragraph', required: false,
+      title: 'อยากบอกอะไรผู้จัดงานไหม (ไม่บังคับ) / Anything to tell the organizers? (optional)',
     },
   ],
 }

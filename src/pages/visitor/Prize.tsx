@@ -62,9 +62,9 @@ export default function Prize() {
   const { active: activeSession, next: nextSession } = usePrizeSession()
   const anyUnlockedUnredeemed = unlocks.some((u) => claimable(u.tierId) && ((!u.redeemedAt && !u.voidedAt) || !!u.voidedAt))
   /*
-   * The festival survey comes before the gift (organisers' decision, 15 Sep): while it is
-   * gating the gift (see `gateGift`) and this visitor has not answered, the QR is withheld and the survey card takes
-   * its place. `loading` keeps the QR from flashing for the half-second before the two survey
+   * The festival survey comes before every reward (organisers' decision, 7 Nov): while it is
+   * published (see `surveyGates`) and this visitor has not answered, the QR (prize and MFU333) and
+   * the agent photo are withheld and the survey card takes their place. `loading` keeps the QR from flashing for the half-second before the two survey
    * documents arrive. Points are never touched by this — only the moment of hand-over is.
    */
   // ?photo=1 (from the scan result's "take your agent photo") opens the camera straight away.
@@ -92,12 +92,12 @@ export default function Prize() {
       </div>
 
       {anyUnlockedUnredeemed
-        ? <Transmission text={t('h.rewards.ready')} />
+        ? <Transmission text={fs.owed ? t('h.rewards.sealed') : t('h.rewards.ready')} />
         : allTiers.length > 0 && points < (allTiers[0]?.thresholdPoints ?? 0) && <Transmission text={t('h.rewards.locked', { n: allTiers[0].thresholdPoints })} />}
       {/* The 50-point reward for everyone: an agent photo in the InnoFest frame. */}
-      <AgentPhotoCard points={points} at={allTiers[0]?.thresholdPoints ?? 50} autoOpen={wantPhoto} frame={frame} />
+      <AgentPhotoCard points={points} at={allTiers[0]?.thresholdPoints ?? 50} autoOpen={wantPhoto && !fs.owed} frame={frame} sealed={fs.loading || fs.owed} />
       {mfu && (idOk ? <StudentIdLine id={profile.studentId ?? ''} /> : <StudentIdCard />)}
-      <FeedbackCard gate={anyUnlockedUnredeemed && fs.gate} />
+      <FeedbackCard gate={(anyUnlockedUnredeemed || points >= (allTiers[0]?.thresholdPoints ?? Infinity)) && fs.owed} />
       {anyUnlockedUnredeemed && !gated && (
         /* One code for every unlocked reward: the desk sees which tiers are waiting when it scans. */
         <section className="a-cut a-edge-neon a-fill-foil a-glow-soft px-4 pb-4 pt-3.5">

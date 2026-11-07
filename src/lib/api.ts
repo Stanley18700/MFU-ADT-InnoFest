@@ -241,12 +241,13 @@ export type ConfirmResult =
   | { status: 'desk_closed'; nextOpensAt: NextOpening | null }
   | { status: 'out_of_stock'; note: string; nextOpensAt: NextOpening | null }
   | { status: 'not_eligible'; mfuStudent: boolean }
+  | { status: 'survey_required' }
 
 export type LookupResult =
   | { status: 'invalid' }
   | {
       status: 'ok'
-      visitor: { uid: string; displayName: string; passportNo?: string; points: number; stampCount: number; mfuStudent?: boolean; studentId?: string | null }
+      visitor: { uid: string; displayName: string; passportNo?: string; points: number; stampCount: number; mfuStudent?: boolean; studentId?: string | null; surveyMissing?: boolean }
       /**
        * Mutually exclusive, though both keys are always sent: the server fills `nextOpensAt`
        * only when nothing is open, so a non-null `session` always comes with a null

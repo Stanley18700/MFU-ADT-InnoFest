@@ -4,25 +4,29 @@ import { useBodyScrollLock } from '../lib/useBodyScrollLock'
 import { PHOTO_H, PHOTO_W, composePhoto, drawFrame, toJpeg, type FrameData } from '../lib/agentPhoto'
 import { AIcon, GoldTag, LockedTag, PrimaryBtn } from './agency'
 import { haptic } from './game'
+import { EVENT_SURVEY_ID } from '../../shared/model'
 
 /**
  * The 50-point reward everyone gets: an agent photo in the InnoFest frame, one tap away, ready
  * to share. (MFU students get MFU333 on top, on the same Rewards tab.)
  */
-export function AgentPhotoCard({ points, at, frame, autoOpen = false }: { points: number; at: number; frame: FrameData; autoOpen?: boolean }) {
+export function AgentPhotoCard({ points, at, frame, autoOpen = false, sealed = false }: { points: number; at: number; frame: FrameData; autoOpen?: boolean; sealed?: boolean }) {
   const { t } = useLocale()
-  const ready = points >= at
+  const reached = points >= at
+  // Reached, but the festival survey is still owed: the frame stays sealed until it is answered.
+  const ready = reached && !sealed
   const [open, setOpen] = useState(autoOpen && ready)
   return (
     <>
       <section className={`a-cut ${ready ? 'a-edge-neon a-fill-foil a-glow-soft' : 'a-dashed a-fill-muted'} px-4 pb-4 pt-3.5`}>
         <div className="flex items-center justify-between gap-2">
-          {ready ? <GoldTag>{AIcon.check}{t('p.ready')}</GoldTag> : <LockedTag>{AIcon.lock}{t('p.locked', { n: at })}</LockedTag>}
+          {ready ? <GoldTag>{AIcon.check}{t('p.ready')}</GoldTag> : <LockedTag>{AIcon.lock}{reached ? t('p.sealed') : t('p.locked', { n: at })}</LockedTag>}
           <span className="a-mono text-xs text-[var(--a-muted)]">{at} pts</span>
         </div>
         <div className="a-hd mt-2 text-[20px] font-bold leading-tight text-ink">{t('p.title')}</div>
-        <p className="mb-0 mt-1 text-[13.5px] leading-snug text-[#33415F]">{t(ready ? 'p.leadReady' : 'p.leadLocked', { n: Math.max(0, at - points) })}</p>
+        <p className="mb-0 mt-1 text-[13.5px] leading-snug text-[#33415F]">{t(ready ? 'p.leadReady' : reached ? 'p.leadSealed' : 'p.leadLocked', { n: Math.max(0, at - points) })}</p>
         {ready && <div className="mt-3"><PrimaryBtn onClick={() => setOpen(true)} icon={AIcon.camera}>{t('p.open')}</PrimaryBtn></div>}
+        {reached && sealed && <div className="mt-3"><PrimaryBtn to={`/survey/${EVENT_SURVEY_ID}`}>{t('hx.a.debrief')}</PrimaryBtn></div>}
       </section>
       {open && <PhotoBooth frame={frame} onClose={() => setOpen(false)} />}
     </>

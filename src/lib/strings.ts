@@ -267,11 +267,11 @@ const staffEn = {
   'v.prize.feedbackCta': 'Answer · ตอบแบบประเมิน',
   'v.prize.feedbackDone': 'Your feedback is with the organizers.',
   // Survey before the gift (15 Sep decision) — the same card, when it stands where the QR would be.
-  'v.prize.gateEyebrow': 'One step before your gift · อีกขั้นเดียว',
-  'v.prize.gateTitle': 'Answer the festival survey to show your gift QR',
-  'v.prize.gateTitleTh': 'ตอบแบบประเมินงานเพื่อแสดง QR รับของรางวัล',
-  'v.prize.gateLead': '{n} questions, about two minutes. Your points are safe — the QR appears the moment you submit.',
-  'v.prize.gateLeadTh': '{n} คำถาม ใช้เวลาประมาณ 2 นาที คะแนนของคุณยังอยู่ครบ QR จะแสดงทันทีที่ส่งคำตอบ',
+  'v.prize.gateEyebrow': 'Rewards sealed · ล็อกอยู่',
+  'v.prize.gateTitle': 'Send your debrief to unlock your rewards',
+  'v.prize.gateTitleTh': 'ส่งรายงานภารกิจเพื่อปลดล็อกรางวัล',
+  'v.prize.gateLead': '{n} questions, about two minutes. Your points are safe: your agent photo, MFU333 and prize QR unlock the moment you submit.',
+  'v.prize.gateLeadTh': '{n} คำถาม ใช้เวลาประมาณ 2 นาที คะแนนของคุณยังอยู่ครบ รูปเจ้าหน้าที่ MFU333 และ QR รับรางวัลจะปลดล็อกทันทีที่ส่ง',
 
   // Survey nudge sheet (components/SurveyNudge)
   // First-time welcome (components/Welcome)
@@ -669,11 +669,11 @@ const staffTh: Record<keyof typeof staffEn, string> = {
   'v.prize.feedbackLeadTh': '{n} questions from the organizers — about two minutes.',
   'v.prize.feedbackCta': 'ตอบแบบประเมิน · Answer',
   'v.prize.feedbackDone': 'ผู้จัดงานได้รับความคิดเห็นของคุณแล้ว',
-  'v.prize.gateEyebrow': 'อีกขั้นเดียว · One step before your gift',
-  'v.prize.gateTitle': 'ตอบแบบประเมินงานเพื่อแสดง QR รับของรางวัล',
-  'v.prize.gateTitleTh': 'Answer the festival survey to show your gift QR',
-  'v.prize.gateLead': '{n} คำถาม ใช้เวลาประมาณ 2 นาที คะแนนของคุณยังอยู่ครบ QR จะแสดงทันทีที่ส่งคำตอบ',
-  'v.prize.gateLeadTh': '{n} questions, about two minutes. Your points are safe — the QR appears the moment you submit.',
+  'v.prize.gateEyebrow': 'ล็อกอยู่ · Rewards sealed',
+  'v.prize.gateTitle': 'ส่งรายงานภารกิจเพื่อปลดล็อกรางวัล',
+  'v.prize.gateTitleTh': 'Send your debrief to unlock your rewards',
+  'v.prize.gateLead': '{n} คำถาม ใช้เวลาประมาณ 2 นาที คะแนนของคุณยังอยู่ครบ รูปเจ้าหน้าที่ MFU333 และ QR รับรางวัลจะปลดล็อกทันทีที่ส่ง',
+  'v.prize.gateLeadTh': '{n} questions, about two minutes. Your points are safe: your agent photo, MFU333 and prize QR unlock the moment you submit.',
 
   'v.welcome.eyebrow': '2036 · บรีฟภารกิจ',
   'v.welcome.title': 'ภารกิจทำงานอย่างไร',

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useTiers } from '../lib/data'
@@ -62,9 +62,7 @@ export function VisitorWelcome() {
     return () => window.removeEventListener(OPEN_EVENT, on)
   }, [])
 
-  // Before the early return: a hook cannot be called conditionally.
   const visible = open && !!profile
-  useBodyScrollLock(visible)
 
   if (!visible) return null
   const threshold = tiers[0]?.thresholdPoints ?? 100
@@ -72,23 +70,47 @@ export function VisitorWelcome() {
   return <Briefing threshold={threshold} onClose={close} />
 }
 
-/**
- * The briefing, told by HANDLER // 0: one message at a time, each arriving as signal and then
- * decoding into the reader's language. A tap finishes the message on screen, or — once it is
- * readable — brings the next. Skip shows the whole conversation at once. The two buttons the old
- * sheet had (start, scan) arrive after the last message, unchanged.
- */
+/** The first-visit briefing: the story of the mission, then start / scan. */
 function Briefing({ threshold, onClose }: { threshold: number; onClose: () => void }) {
   const { t } = useLocale()
   const script = [
     t('h.b1'), t('h.b2'), t('h.b3'), t('h.b4'), t('h.b5'), t('h.b6', { n: threshold }), t('h.b7'),
   ]
+  return (
+    <HandlerSession script={script} onClose={onClose} actions={(
+      <>
+        <PrimaryBtn onClick={onClose}>{t('v.welcome.start')}</PrimaryBtn>
+        <GhostBtn to="/scan" onClick={onClose} icon={AIcon.scan}>{t('v.welcome.scanNow')}</GhostBtn>
+        <p className="m-0 text-center text-[12px] text-white/85">{t('v.welcome.free')}</p>
+      </>
+    )} />
+  )
+}
+
+/**
+ * HANDLER // 0 talking: one message at a time, each arriving as signal and then decoding into the
+ * reader's language, with autoplay, Skip, and the actions once the last message is in. Used for the
+ * first-visit briefing and for every later transmission (rewards unlocked, the debrief, the desk).
+ * A tap finishes the message on screen, or — once it is readable — brings the next.
+ */
+export function HandlerSession({ script, actions, onClose, tag }: {
+  script: string[]
+  /** Shown after the last message, in the footer. */
+  actions: ReactNode
+  onClose: () => void
+  /** Small label over the first message ("PRIORITY", "DEBRIEF"…); TX numbers otherwise. */
+  tag?: string
+}) {
+  const { t } = useLocale()
   const [count, setCount] = useState(1)       // messages on screen
   const [ready, setReady] = useState(false)   // the newest one is fully decoded
   const [rush, setRush] = useState(false)     // settle the newest one now
   const [gap, setGap] = useState(false)       // the "typing" beat before the next one
   const end = useRef<HTMLDivElement>(null)
+  const gapTimer = useRef(0)
   const finished = count >= script.length && ready
+  useBodyScrollLock(true)
+  useEffect(() => () => window.clearTimeout(gapTimer.current), [])
 
   useEffect(() => { end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }) }, [count, ready, gap])
 
@@ -105,9 +127,10 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
     if (count >= script.length) return
     // A short "typing" beat, then the next message starts as signal.
     setGap(true)
-    setTimeout(() => { setGap(false); setReady(false); setRush(false); setCount((n) => n + 1) }, 380)
+    gapTimer.current = window.setTimeout(() => { setGap(false); setReady(false); setRush(false); setCount((n) => Math.min(n + 1, script.length)) }, 380)
   }
-  const skip = () => { setGap(false); setCount(script.length); setReady(true); setRush(true) }
+  // Skip during the "typing" beat used to let that beat land afterwards and push past the end.
+  const skip = () => { window.clearTimeout(gapTimer.current); setGap(false); setCount(script.length); setReady(true); setRush(true) }
 
   /*
    * Autoplay: once a message is fully decoded it stays up for 1 second, then the next one arrives
@@ -147,7 +170,7 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
                 <li key={i} className="hd-msg flex items-end gap-2">
                   <span className={`shrink-0 ${newest ? '' : 'opacity-0'}`}><HandlerAvatar size={28} live={newest} /></span>
                   <div className="hd-card min-w-0 flex-1 px-3.5 py-2.5 text-[16px] font-medium leading-relaxed text-ink">
-                    <div className="a-mono mb-1 text-[10px] font-semibold tracking-[.14em] text-[#1450E6]">TX-{String(i + 1).padStart(2, '0')} · 2036</div>
+                    <div className="a-mono mb-1 text-[10px] font-semibold tracking-[.14em] text-[#1450E6]">{i === 0 && tag ? tag : `TX-${String(i + 1).padStart(2, '0')}`} · 2036</div>
                     <Decode text={line} remember={false} instant={!newest || rush} onDone={newest ? () => setReady(true) : undefined} />
                   </div>
                 </li>
@@ -166,16 +189,12 @@ function Briefing({ threshold, onClose }: { threshold: number; onClose: () => vo
           <div ref={end} />
         </div>
 
-        {/* Footer: tap hint + skip while the story plays; the two mission buttons once it ends. */}
+        {/* Footer: tap hint + skip while the story plays; the actions once it ends. */}
         <div className="relative border-0 border-t border-solid hd-holo-foot border-white/25 px-4 pb-5 pt-3">
           {/* The countdown to the next message, along the top edge of the footer. */}
           {autoplaying && <span key={count} aria-hidden className="hd-autobar" style={{ animationDuration: `${holdMs}ms` }} />}
           {finished ? (
-            <div className="hd-msg flex flex-col gap-3">
-              <PrimaryBtn onClick={onClose}>{t('v.welcome.start')}</PrimaryBtn>
-              <GhostBtn to="/scan" onClick={onClose} icon={AIcon.scan}>{t('v.welcome.scanNow')}</GhostBtn>
-              <p className="m-0 text-center text-[12px] text-white/85">{t('v.welcome.free')}</p>
-            </div>
+            <div className="hd-msg flex flex-col gap-3">{actions}</div>
           ) : (
             <div className="flex items-center justify-between gap-3">
               <button type="button" onClick={advance}

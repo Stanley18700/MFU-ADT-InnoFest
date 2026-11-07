@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { FieldPath } from 'firebase-admin/firestore'
 import { db, FieldValue, requireRole, str, audit, getActiveEvent } from './lib'
-import { resolveRedemption } from './visitor'
+import { resolveRedemption, surveyStillOwed } from './visitor'
 import {
   ActiveSession, BoothDoc, DEFAULT_PRIZE_SESSIONS, EventDoc, PrizeTierDoc, TierUnlockDoc, UserDoc,
   currentPrizeSession, minuteToHHMM, nextPrizeSession, sessionStockRemaining, isMfuOnlyTier, isMfuStudent, tierEligible } from './shared/model'
@@ -66,6 +66,7 @@ export const lookupRedemption = onCall(async (req) => {
   ])
   if (!userSnap.exists) return { status: 'invalid' as const }
   const u = userSnap.data() as UserDoc
+  const surveyMissing = await surveyStillOwed(v.uid)
   const window = prizeWindow(event as EventDoc)
   // "Already handed over by whom" (UAT P-04): the desk cannot read users, so resolve names here.
   const names = await staffNames(unlocks.docs.map((x) => (x.data() as TierUnlockDoc).redeemedBy).filter((x): x is string => !!x))
@@ -75,6 +76,8 @@ export const lookupRedemption = onCall(async (req) => {
       uid: v.uid, displayName: u.displayName, passportNo: u.passportNo, points: u.points, stampCount: u.stampCount,
       // Shown at the desk for MFU333: the credit is recorded against it.
       mfuStudent: isMfuStudent(u), studentId: isMfuStudent(u) ? (u.studentId ?? null) : null,
+      // The festival survey comes before every reward; the desk says so instead of handing over.
+      surveyMissing,
     },
     session: window.session,
     nextOpensAt: window.nextOpensAt,
@@ -113,6 +116,9 @@ export const confirmRedemption = onCall(async (req) => {
   const tierRef = db.doc(`prizeTiers/${tierId}`)
   const event = (await getActiveEvent()) as EventDoc
   const window = prizeWindow(event)
+
+  // No reward before the festival survey (see `surveyGates`), whatever the app showed.
+  if (await surveyStillOwed(v.uid)) return { status: 'survey_required' as const }
 
   const userRef = db.doc(`users/${v.uid}`)
   const result = await db.runTransaction(async (tx) => {

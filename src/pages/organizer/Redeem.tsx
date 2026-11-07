@@ -100,6 +100,8 @@ export default function Redeem() {
         if (l && l.status === 'ok') setLookup(l)
       } else if (r.status === 'already') {
         setMsg({ tone: 'amber', text: `Already handed over at ${clock(r.redeemedAt)}${r.redeemedByName ? ` by ${r.redeemedByName}` : ''}.` })
+      } else if (r.status === 'survey_required') {
+        setMsg({ tone: 'amber', text: 'They haven’t answered the festival survey yet. Ask them to open the app and answer it (Rewards tab), then show a fresh code.' })
       } else if (r.status === 'not_eligible') {
         setMsg({ tone: 'amber', text: r.mfuStudent
           ? 'MFU333 needs their 10-digit MFU student ID. They can add it on the Rewards tab of the app, then show the new code.'
@@ -242,6 +244,9 @@ export default function Redeem() {
           <div className="stamp-text text-ink-soft">Visitor</div>
           <div className="text-2xl font-bold">{lookup.visitor.displayName}</div>
           <div className="text-sm text-ink-soft">{[lookup.visitor.passportNo, `${lookup.visitor.points} points`, `${lookup.visitor.stampCount} stamps`].filter(Boolean).join(' · ')}</div>
+          {lookup.visitor.surveyMissing && (
+            <div className="mt-3 rounded-xl bg-warn-bg px-3 py-2 text-sm font-semibold text-warn-text">Survey not answered yet. Nothing can be handed over until they answer it in the app (Rewards tab).</div>
+          )}
           {/* MFU333 credit is recorded against this — read it out, or check it against their card. */}
           {lookup.visitor.mfuStudent && (
             <div className="mt-2 inline-flex items-baseline gap-2 rounded-xl bg-sky-50 px-3 py-1.5">

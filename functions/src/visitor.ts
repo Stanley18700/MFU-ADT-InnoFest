@@ -6,7 +6,8 @@ import {
 } from './lib'
 import { computeToken, constantTimeEqual, counterFor, normaliseManualCode, parsePayload, DEFAULT_PERIOD_SECONDS, ParsedToken } from './shared/token'
 import {
-  BoothDoc, PrizeTierDoc, ScanResult, UserDoc, VisitorType, dayOf, passportNo, isMfuStudent, isStudentIdValid } from './shared/model'
+  BoothDoc, PrizeTierDoc, ScanResult, SurveyDoc, UserDoc, VisitorType, dayOf, passportNo, isMfuStudent, isStudentIdValid,
+  EVENT_SURVEY_ID, surveyGates } from './shared/model'
 
 const VISITOR_TYPES: VisitorType[] = ['student', 'staff', 'alumni', 'guest']
 
@@ -280,10 +281,23 @@ async function matchManualCode(code: string, nowCounter: number): Promise<Parsed
   return null
 }
 
+/**
+ * True when this visitor must still answer the festival survey before any reward is handed over
+ * (see `surveyGates`). Checked on the server so a reward cannot be collected by skipping the app.
+ */
+export async function surveyStillOwed(uid: string): Promise<boolean> {
+  const [survey, taken] = await Promise.all([
+    db.doc(`surveys/${EVENT_SURVEY_ID}`).get(),
+    db.doc(`surveyTaken/${uid}_${EVENT_SURVEY_ID}`).get(),
+  ])
+  return surveyGates(survey.data() as SurveyDoc | undefined) && !taken.exists
+}
+
 /** §4.4 — rotating 8-character redemption code for the caller (30 s period). */
 export const REDEMPTION_PERIOD = 30
 export const redemptionCode = onCall(async (req) => {
   const uid = requireAuth(req)
+  if (await surveyStillOwed(uid)) throw new HttpsError('failed-precondition', 'survey_required')
   const secret = await redemptionSecret()
   const counter = counterFor(Date.now(), REDEMPTION_PERIOD)
   const code = (await computeToken(secret, `r:${uid}`, counter)) + (await computeToken(secret, `r2:${uid}`, counter)).slice(0, 2)

@@ -7,6 +7,8 @@ import { useAuth } from '../../lib/auth'
 import { api } from '../../lib/api'
 import { useBooths, useDoc, useEvent, useTiers } from '../../lib/data'
 import { RATING_COMMENT_MAX, tierEligible } from '../../../shared/model'
+import { EVENT_SURVEY_ID } from '../../../shared/model'
+import { useFestivalSurvey } from '../../lib/festivalSurvey'
 import { useLocale } from '../../lib/locale'
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
 import { AIcon, ALang, Eyebrow, GhostBtn, GoldTag, InkTag, NextTarget, PrimaryBtn, pad3, rankOf } from '../../components/agency'
@@ -365,6 +367,8 @@ function RatingSheet({
  * scan moved the agent up a rank, a RANK UP banner slams in.
  */
 function ScoreGain({ awarded, points, top, thresholds, summary }: { awarded: number; points: number; top: number; thresholds: number[]; summary: string }) {
+  // Rewards stay sealed until the festival survey is answered: the button goes there instead.
+  const fs = useFestivalSurvey()
   const { t } = useLocale()
   const before = Math.max(0, points - awarded)
   const shown = useCountUp(points, { from: before, ms: 900 })
@@ -396,7 +400,9 @@ function ScoreGain({ awarded, points, top, thresholds, summary }: { awarded: num
       )}
       {/* Crossing the first reward (50) unlocks the agent photo: one tap straight into the camera. */}
       {thresholds.length > 0 && before < Math.min(...thresholds) && points >= Math.min(...thresholds) && (
-        <PrimaryBtn to="/mission/rewards?photo=1" icon={AIcon.camera}>{t('p.cta')}</PrimaryBtn>
+        fs.owed
+          ? <PrimaryBtn to={`/survey/${EVENT_SURVEY_ID}`}>{t('hx.a.debrief')}</PrimaryBtn>
+          : <PrimaryBtn to="/mission/rewards?photo=1" icon={AIcon.camera}>{t('p.cta')}</PrimaryBtn>
       )}
     </>
   )

@@ -36,7 +36,7 @@ export default function FestivalSurvey() {
 
   const questions = survey?.questions ?? []
   const live = !!survey?.active && questions.length > 0
-  const gating = live && survey?.gateGift === true
+  const gating = live && survey?.gateGift !== false
 
   /**
    * Writing the standard set is `saveSurvey` like any other edit, so it is audited, and so the

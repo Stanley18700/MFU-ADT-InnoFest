@@ -80,7 +80,7 @@ const fxSurvey = {
 }
 export function fxDoc(path: string): (Record<string, unknown> & { id: string }) | null {
   if (path === 'users/fx-user') return fxUser
-  if (path === 'surveys/_festival_') return qs.has('survey') ? fxSurvey : null
+  if (path === 'surveys/_festival_') return qs.has('survey') ? { ...fxSurvey, gateGift: qs.get('survey') === 'off' ? false : undefined } : null
   if (path === 'surveyTaken/fx-user__festival_') return qs.get('survey') === 'taken' ? { id: 'x' } : null
   if (path.startsWith('booths/')) return fxBooths.find((b) => `booths/${b.id}` === path) ?? null
   if (path === 'stats/event') return { id: 'event', activeLast15m: 212 }

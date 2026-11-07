@@ -1,7 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { DataErrors, LiveDot } from '../../components/ui'
 import { AGround, AHeader, AIcon, ATabBar } from '../../components/agency'
-import { SurveyNudge } from '../../components/SurveyNudge'
 import { VisitorWelcome } from '../../components/Welcome'
 import { useOnline } from '../../lib/useOnline'
 import { useLocale } from '../../lib/locale'
@@ -48,9 +47,6 @@ export default function PassportLayout() {
         <div key={loc.pathname} className="page-in">
           <Outlet />
         </div>
-        {/* The festival survey's asks, over whichever tab is open. Outside the keyed page so a
-            tab change does not re-run its once-only logic. */}
-        <SurveyNudge />
         {/* First-time explanation; reopened by the cover's "How it works". */}
         <VisitorWelcome />
         <ATabBar scanTo="/scan" scanLabel={t('a.scan.label')} tabs={[

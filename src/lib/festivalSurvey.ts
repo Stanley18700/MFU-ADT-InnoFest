@@ -2,7 +2,7 @@ import { doc } from 'firebase/firestore'
 import { db } from './firebase'
 import { useAuth } from './auth'
 import { useDoc } from './data'
-import { EVENT_SURVEY_ID, type SurveyDoc } from '../../shared/model'
+import { EVENT_SURVEY_ID, surveyGates, type SurveyDoc } from '../../shared/model'
 
 /**
  * The festival survey as it concerns the visitor holding the phone: is it published, how long
@@ -16,10 +16,10 @@ import { EVENT_SURVEY_ID, type SurveyDoc } from '../../shared/model'
  * `loading` matters to the gate: until both documents have answered, the Prize page must not
  * decide either way, or the QR would flash for a moment before the survey card replaced it.
  */
-export function useFestivalSurvey() {
+export function useFestivalSurvey(enabled = true) {
   const { user } = useAuth()
-  const survey = useDoc<SurveyDoc>(doc(db, 'surveys', EVENT_SURVEY_ID), [])
-  const taken = useDoc(user ? doc(db, 'surveyTaken', `${user.uid}_${EVENT_SURVEY_ID}`) : null, [user?.uid])
+  const survey = useDoc<SurveyDoc>(enabled ? doc(db, 'surveys', EVENT_SURVEY_ID) : null, [enabled])
+  const taken = useDoc(user && enabled ? doc(db, 'surveyTaken', `${user.uid}_${EVENT_SURVEY_ID}`) : null, [user?.uid, enabled])
   const count = survey.data?.questions?.length ?? 0
   return {
     survey: survey.data,
@@ -27,12 +27,13 @@ export function useFestivalSurvey() {
     /** Published with at least one question — the only state in which a visitor is asked. */
     live: !!survey.data?.active && count > 0,
     /**
-     * Whether an unanswered survey also withholds the gift QR. Separate from `live` so the gate
-     * can come down at the prize desk without unpublishing the survey and losing the answers;
-     * absent means off, so a deploy never arms it on its own.
+     * Whether an unanswered survey withholds every reward: agent photo, prizes, MFU333. On while
+     * the survey is published, unless an admin lifted it (`gateGift: false`). See `surveyGates`.
      */
-    gate: !!survey.data?.active && count > 0 && survey.data?.gateGift === true,
+    gate: surveyGates(survey.data),
     taken: !!taken.data,
-    loading: survey.loading || (!!user && taken.loading),
+    /** Rewards are sealed until the survey is answered. */
+    owed: surveyGates(survey.data) && !taken.data,
+    loading: survey.loading || (!!user && enabled && taken.loading),
   }
 }
