@@ -125,6 +125,13 @@ export const exhibitEn = {
   'iab.open': 'Open in browser',
   'iab.copied': 'Link copied. Tap ⋯ (top right) → Open in browser, or paste it into Chrome or Safari.',
   'iab.close': 'Dismiss',
+  'bt.title': 'Best in Chrome or Safari',
+  'bt.android': 'This browser may have trouble with the camera and sign-in. For the smoothest mission, open it in Chrome.',
+  'bt.oldIos': 'Your iPhone’s software is older than iOS 15, so the scanner may not work. Update iOS in Settings, or ask the agency desk for help.',
+  'bt.noCamera': 'This browser can’t open the camera, so you can’t scan booths here. Open the link in Chrome (Android) or Safari (iPhone).',
+  'bt.openChrome': 'Open in Chrome',
+  'bt.copy': 'Copy link',
+  'bt.copied': 'Link copied. Paste it into Safari or Chrome.',
 }
 
 export const exhibitTh: Record<keyof typeof exhibitEn, string> = {
@@ -249,4 +256,11 @@ export const exhibitTh: Record<keyof typeof exhibitEn, string> = {
   'iab.open': 'เปิดในเบราว์เซอร์',
   'iab.copied': 'คัดลอกลิงก์แล้ว แตะ ⋯ (มุมขวาบน) → เปิดในเบราว์เซอร์ หรือวางลิงก์ใน Chrome หรือ Safari',
   'iab.close': 'ปิด',
+  'bt.title': 'ใช้งานได้ดีที่สุดบน Chrome หรือ Safari',
+  'bt.android': 'เบราว์เซอร์นี้อาจมีปัญหากับกล้องและการเข้าสู่ระบบ เปิดใน Chrome เพื่อภารกิจที่ลื่นที่สุด',
+  'bt.oldIos': 'iPhone ของคุณใช้ระบบเก่ากว่า iOS 15 เครื่องสแกนอาจใช้งานไม่ได้ อัปเดต iOS ในการตั้งค่า หรือขอความช่วยเหลือที่โต๊ะหน่วยงาน',
+  'bt.noCamera': 'เบราว์เซอร์นี้เปิดกล้องไม่ได้ จึงสแกนบูธไม่ได้ เปิดลิงก์ใน Chrome (Android) หรือ Safari (iPhone)',
+  'bt.openChrome': 'เปิดใน Chrome',
+  'bt.copy': 'คัดลอกลิงก์',
+  'bt.copied': 'คัดลอกลิงก์แล้ว วางใน Safari หรือ Chrome',
 }

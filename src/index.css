@@ -1495,3 +1495,17 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   transform:translateY(-50%) rotate(-10deg); pointer-events:none; animation:g-stamp-in .38s .35s cubic-bezier(.2,1.6,.4,1) both; }
 @keyframes g-stamp-in { 0%{opacity:0; transform:translateY(-50%) rotate(-10deg) scale(2.4)} 100%{opacity:1; transform:translateY(-50%) rotate(-10deg) scale(1)} }
 @media (prefers-reduced-motion: reduce) { .g-alert,.g-alert-title,.g-stamp,.g-alert-dot { animation:none } }
+
+/*
+ * Browsers without dvh (iOS < 15.4, Chrome < 108, older Samsung Internet) drop any rule that uses
+ * it, so a sheet capped at 90dvh had no cap and its top went off-screen. Same sizes in vh for them.
+ */
+@supports not (height: 1dvh) {
+  .min-h-dvh { min-height: 100vh; }
+  .h-dvh { height: 100vh; }
+  .max-h-\[90dvh\] { max-height: 90vh; }
+  .max-h-\[56dvh\] { max-height: 56vh; }
+  .h-\[min\(600px\,80dvh\)\] { height: min(600px, 80vh); }
+  .landing-scene { min-height: 100vh; }
+  .nav-drawer { block-size: 100vh; max-block-size: 100vh; }
+}
