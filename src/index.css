@@ -1658,3 +1658,26 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 .wall-step-n { background: var(--a-neon); clip-path: polygon(0.5vw 0, 100% 0, 100% calc(100% - 0.5vw), calc(100% - 0.5vw) 100%, 0 100%, 0 0.5vw); }
 .on-stage .glass.wall-qr { background: linear-gradient(#fff, #fff) padding-box, var(--a-neon-edge) border-box; border-width: 3px;
   box-shadow: 0 30px 80px -30px rgb(29 91 255 / .55); }
+
+/* Admin booth cards: a case file per booth, lit in the booth's accent (--acc). */
+.admin-console .on-stage .card.bt-card { position: relative;
+  background: linear-gradient(rgb(255 255 255 / .92), rgb(255 255 255 / .92)) padding-box,
+    linear-gradient(120deg, var(--acc, #1D5BFF) 0%, color-mix(in srgb, var(--acc, #1D5BFF) 35%, #6FE0FF) 55%, #B7A4FF 100%) border-box; }
+.admin-console .on-stage .card.bt-card::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 0; width: 4px; background: var(--acc, #1D5BFF);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--acc, #1D5BFF) 60%, transparent); }
+.bt-tile { background: linear-gradient(150deg, #060B26, #0B1A5C 70%, color-mix(in srgb, var(--acc) 55%, #0B1A5C));
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow: inset 0 0 0 2px var(--acc), inset 0 0 18px color-mix(in srgb, var(--acc) 45%, transparent); }
+.bt-tile::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(rgb(127 231 255 / .1) 1px, transparent 1px) 0 0 / 10px 10px, linear-gradient(90deg, rgb(127 231 255 / .1) 1px, transparent 1px) 0 0 / 10px 10px; }
+.bt-pts { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--acc); padding: 3px 8px;
+  background: color-mix(in srgb, var(--acc) 10%, white); border: 1px solid color-mix(in srgb, var(--acc) 45%, white);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+.bt-pts b { font-size: 17px; font-weight: 700; margin-right: 2px; }
+.bt-chip { font-family: var(--font-mono); letter-spacing: .02em; color: #33415F; padding: 2px 7px; background: #EEF3FF; border: 1px solid #D2DCEE; }
+.bt-chip-off { color: #8f2a1c; background: #FDEDEC; border-color: #F3C6C2; }
+.bt-swatch { clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px); box-shadow: inset 0 0 0 2px rgb(255 255 255 / .35); }
+/* Keep the cut corner unless its menu is actually open. */
+.admin-console .on-stage .card.bt-card:not(:has(details[open])) { clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+.bt-card .btn-sm { padding-inline: 10px; }
+.admin-console .on-stage .card.bt-card:has(details[open]) { z-index: 20; }

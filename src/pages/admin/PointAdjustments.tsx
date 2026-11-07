@@ -65,7 +65,7 @@ export function PointAdjustments({ booths }: { booths: Array<BoothDoc & { id: st
 
   const candidates = booths.filter((b) => b.active && !b.isPrizeDesk)
   const tooEarly = preview ? preview.createdAt < preview.notBefore : false
-  const offered = preview?.rows.filter((r) => r.boostPoints > 0) ?? []
+  const offered = (preview?.rows ?? []).filter((r) => r.boostPoints > 0) ?? []
   // Defensive against a preview from a function deployed before groups existed.
   const groups = preview?.groups ?? []
 
@@ -109,7 +109,7 @@ export function PointAdjustments({ booths }: { booths: Array<BoothDoc & { id: st
       </summary>
       {preview && <div className="mt-3">
         {groups.map((g) => {
-          const rows = preview.rows.filter((r) => r.groupKey === g.key)
+          const rows = (preview.rows ?? []).filter((r) => r.groupKey === g.key)
           return <div key={g.key} className="mt-4 first:mt-0">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="font-semibold">{g.label}</h3>

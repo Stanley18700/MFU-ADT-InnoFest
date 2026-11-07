@@ -5,7 +5,7 @@ import {
 import { onIdTokenChanged } from 'firebase/auth'
 import { auth, db } from './firebase'
 import type { BoothDoc, BoothStats, BucketDoc, DemographicsShard, EventDoc, EventStatsShard, PrizeTierDoc, TierUnlockDoc, ScanDoc } from '../../shared/model'
-import { DEFAULT_PASSPORT_PREFIX, DEFAULT_PRIZE_SESSIONS, EVENT_DAYS, EVENT_ID, STATS_SHARDS, ZONE_POINTS } from '../../shared/model'
+import { DEFAULT_PASSPORT_PREFIX, DEFAULT_PRIZE_SESSIONS, EVENT_DAYS, EVENT_ID, STATS_SHARDS, ZONE_POINTS, themedAccent } from '../../shared/model'
 
 export type WithId<T> = T & { id: string }
 
@@ -190,7 +190,8 @@ export function useBooths(includeInactive = false) {
 /** The booths plus listener state, for screens that must not judge anything before they arrive. */
 export function useBoothsState(includeInactive = false) {
   const r = useCollection<BoothDoc>(query(collection(db, 'booths'), orderBy('sortOrder')), [], 'the booth list')
-  return { ...r, data: r.data.filter((b) => includeInactive || b.active) }
+  const data = useMemo(() => r.data.filter((b) => includeInactive || b.active).map((b) => ({ ...b, accentColor: themedAccent(b.accentColor) })), [r.data, includeInactive])
+  return { ...r, data }
 }
 
 export function useTiers(enabled = true) {
@@ -264,7 +265,9 @@ export function useBoothStats() {
  * notice a deactivation, a schedule change or the prize-desk flag without a reload.
  */
 export function useBooth(boothId: string | null | undefined) {
-  return useDoc<BoothDoc>(boothId ? doc(db, 'booths', boothId) : null, [boothId ?? null], 'your booth')
+  const r = useDoc<BoothDoc>(boothId ? doc(db, 'booths', boothId) : null, [boothId ?? null], 'your booth')
+  const data = useMemo(() => (r.data ? { ...r.data, accentColor: themedAccent(r.data.accentColor) } : null), [r.data])
+  return { ...r, data }
 }
 
 export function useBoothStat(boothId: string | null) {

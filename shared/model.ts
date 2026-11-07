@@ -49,9 +49,21 @@ export const ZONE_POINTS: Record<Zone, number> = {
 export const DEFAULT_PASSPORT_PREFIX = 'ADT-IF'
 export type EventStatus = 'draft' | 'live' | 'archived'
 
+/**
+ * Booth accent colours: the InnoFest agency neon set (blue, cyan, violet, gold, magenta, teal,
+ * indigo, orange, azure), each dark enough to read as text on white and bright enough to glow on
+ * navy. Booths saved with the InterFest palette are shown in the matching new colour by
+ * `themedAccent`, so nothing has to be re-saved.
+ */
 export const ACCENTS = [
-  '#EF5F5F', '#0FAFD0', '#4C764F', '#F5C63C', '#FF919C', '#F0A445', '#45CFC0', '#E08761', '#2F5D3E',
+  '#1D5BFF', '#00A3D9', '#7A5CFF', '#D99A00', '#E0457B', '#0FA58A', '#3A3FE0', '#F06A1D', '#0A86DA',
 ] as const
+const LEGACY_ACCENTS = ['#EF5F5F', '#0FAFD0', '#4C764F', '#F5C63C', '#FF919C', '#F0A445', '#45CFC0', '#E08761', '#2F5D3E']
+export function themedAccent(c: string | null | undefined): string {
+  if (!c) return ACCENTS[0]
+  const i = LEGACY_ACCENTS.indexOf(c.toUpperCase())
+  return i >= 0 ? ACCENTS[i] : c
+}
 
 /**
  * A window during the day in which the main-organiser gift can be collected, each with its own

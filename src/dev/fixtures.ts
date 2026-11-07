@@ -27,7 +27,7 @@ export const fxBooths = Array.from({ length: 100 }, (_, i) => {
     id: `b${i + 1}`, eventId: 'innofest-2026', nameEn: TITLES[i % TITLES.length] + (i >= TITLES.length ? ` ${Math.floor(i / TITLES.length) + 1}` : ''),
     nameTh: '', shortName: code, hostUnit: TEAMS[i % TEAMS.length], location: `Zone ${zone} · Booth ${(i % 25) + 1}`,
     descriptionEn: 'An app that helps visitors find their way around the MFU campus with augmented reality and live arrows.',
-    category: CATS[i % CATS.length], accentColor: '#1D5BFF', points: 1, zone: 'middle', activeDays: ['2026-11-11'], teamSize: 3,
+    category: CATS[i % CATS.length], accentColor: ['#EF5F5F', '#0FAFD0', '#4C764F', '#F5C63C', '#FF919C', '#F0A445', '#45CFC0', '#E08761', '#2F5D3E'][i % 9], points: 1, zone: 'middle', activeDays: ['2026-11-11'], teamSize: 3,
     isPrizeDesk: false, active: true, sortOrder: i, createdAt: null,
   }
 })
@@ -109,6 +109,7 @@ export async function fxCall(name: string, _data: unknown): Promise<unknown> {
     case 'boothSession': return { boothId: 'b14', booth: fxBooths[13], secret: 'JBSWY3DPEHPK3PXP', period: 20, serverTime: Date.now() }
     case 'surveyForBooth': return { status: 'ok', title: 'Field report', description: '2036 wants your field report. A few questions, about two minutes.', questions: fxSurvey.questions, gatingGift: false }
     case 'submitSurveyResponse': return { ok: true, rewardIndex: null }
+    case 'previewPointAdjustments': throw new Error('Point balancing needs the live server (not available in fixtures).')
     default: return { ok: true }
   }
 }

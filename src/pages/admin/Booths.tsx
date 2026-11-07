@@ -5,8 +5,6 @@ import { ref as sref, uploadBytes, getDownloadURL, deleteObject } from 'firebase
 import { db, storage } from '../../lib/firebase'
 import { api, errorMessage, type BoothInput } from '../../lib/api'
 import { useBooths, useCollection, useEvent } from '../../lib/data'
-import { Stamp } from '../../components/Stamp'
-import { stampMarks } from '../../lib/eventText'
 import { CopyButton, Notice, Toast, type Msg } from '../../components/ui'
 import { useLabels } from '../../lib/labels'
 import { Select } from '../../components/Select'
@@ -31,7 +29,6 @@ export default function Booths() {
   const event = useEvent()
   const eventDays = event.days
   const zonePoints = event.zonePoints
-  const marks = stampMarks(event)
   const organizers = useCollection<UserDoc>(query(collection(db, 'users'), where('role', '==', 'organizer')), [], 'the organizer list').data
   const invites = useCollection<InviteDoc>(query(collection(db, 'invites'), orderBy('sentAt', 'desc'), limit(200)), [], 'the invitations').data
   const [editing, setEditing] = useState<BoothInput | null>(null)
@@ -131,47 +128,53 @@ export default function Booths() {
     const busy = busyId === b.id
     const closeMenu = (e: React.SyntheticEvent) => (e.currentTarget as HTMLElement).closest('details')?.removeAttribute('open')
     return (
-      <li key={b.id} className={`card flex flex-col gap-3 ${b.active && !stale ? '' : 'opacity-70'} ${busy ? 'animate-pulse' : ''}`}>
-        <div className="flex gap-3">
-          <Stamp booth={b} collected tilt={-4} size={72} {...marks} />
-          {b.photoUrl && <img src={b.photoThumbUrl ?? b.photoUrl} alt="" className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover" />}
+      <li key={b.id} className={`card bt-card flex flex-col gap-3 ${b.active && !stale ? '' : 'opacity-70'} ${busy ? 'animate-pulse' : ''}`} style={{ ['--acc' as string]: b.accentColor }}>
+        <div className="flex gap-3.5">
+          <BoothTile code={b.shortName} accent={b.accentColor} img={b.badgeThumbUrl ?? b.badgeUrl} photo={b.photoThumbUrl ?? b.photoUrl} />
           <div className="min-w-0 flex-1 text-sm">
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0"><div className="truncate font-semibold">{b.nameEn}</div><div className="truncate text-xs text-ink-soft">{b.hostUnit}</div></div>
-              <span className="fig text-lg" style={{ color: b.accentColor }}>{effectivePoints(b, now)}</span>
+              <div className="min-w-0">
+                <div className="a-hd truncate text-[15.5px] font-bold leading-tight text-ink">{b.nameEn}</div>
+                <div className="truncate text-xs text-ink-soft">{b.hostUnit}</div>
+              </div>
+              <span className="bt-pts shrink-0"><b>{effectivePoints(b, now)}</b> PTS</span>
             </div>
             {rewardExpiry(b, now) && <div className="mt-1 text-xs text-ink-soft">{rewardExpiry(b, now)} (Bangkok)</div>}
-            <div className="mt-1 text-xs text-ink-soft">{b.location} · {ZONE_LABEL[b.zone]} · {t('booths.days', { done: b.activeDays.length, total: eventDays.length })}{b.isPrizeDesk ? ` · ${t('booths.prizeDesk')}` : ''}{b.active ? '' : ` · ${t('booths.inactive')}`}</div>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-              {stale ? (
-                <>
-                  <button className="btn-ghost btn-sm" disabled={busy} onClick={() => keep(b)}>{t('booths.keep')}</button>
-                  <button className="btn-danger-soft btn-sm" disabled={busy} onClick={() => remove(b)}>{t('booths.delete')}</button>
-                </>
-              ) : (
-                <>
-                  <button className="btn-ghost btn-sm" disabled={busy} onClick={() => startEdit(b)}>{t('booths.edit')}</button>
-                  <Link className="btn-ghost btn-sm" to={`/booth?boothId=${b.id}`} target="_blank" rel="noopener">{t('booths.openScreen')}</Link>
-                  <Link className="btn-quiet btn-sm" to={`/booth/stats?boothId=${b.id}`}>{t('booths.stats')}</Link>
-                  {/* Artwork and the two dangerous actions live under one menu, so nine underlined words no longer compete. */}
-                  <details className="relative">
-                    <summary className="btn-quiet btn-sm list-none" aria-label={t('booths.moreActions', { name: b.nameEn })}>{t('booths.more')}</summary>
-                    <div className="pop absolute left-0 z-10 mt-1 flex w-52 flex-col rounded-xl bg-white p-1.5 text-sm shadow-lg ring-1 ring-black/10">
-                      <label className="menu-item">{t(b.badgeUrl ? 'booths.replaceBadge' : 'booths.uploadBadge')}
-                        <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; closeMenu(e); if (f) void upload(b, 'badge', f) }} /></label>
-                      {b.badgeUrl && <button className="menu-item" disabled={busy} onClick={(e) => { closeMenu(e); void removeImage(b, 'badge') }}>{t('booths.removeBadge')}</button>}
-                      <label className="menu-item">{t(b.photoUrl ? 'booths.replacePhoto' : 'booths.uploadPhoto')}
-                        <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; closeMenu(e); if (f) void upload(b, 'photo', f) }} /></label>
-                      {b.photoUrl && <button className="menu-item" disabled={busy} onClick={(e) => { closeMenu(e); void removeImage(b, 'photo') }}>{t('booths.removePhoto')}</button>}
-                      <div className="my-1 border-t rule" />
-                      <button className="menu-item text-[#8a4a12] hover:bg-warn/10" disabled={busy} onClick={(e) => { closeMenu(e); void rotate(b) }}>{t('booths.rotateSecret')}</button>
-                      <button className="menu-item text-[#8f2a1c] hover:bg-danger/10" disabled={busy} onClick={(e) => { closeMenu(e); void remove(b) }}>{t('booths.deleteBooth')}</button>
-                    </div>
-                  </details>
-                </>
-              )}
+            <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+              {[b.location, ZONE_LABEL[b.zone], t('booths.days', { done: b.activeDays.length, total: eventDays.length }), b.isPrizeDesk ? t('booths.prizeDesk') : '', b.active ? '' : t('booths.inactive')].filter(Boolean).map((x, i) => (
+                <span key={i} className={`bt-chip ${!b.active && x === t('booths.inactive') ? 'bt-chip-off' : ''}`}>{x}</span>
+              ))}
             </div>
           </div>
+        </div>
+        <div className="bt-actions flex flex-wrap items-center gap-1.5 text-xs">
+          {stale ? (
+            <>
+              <button className="btn-ghost btn-sm" disabled={busy} onClick={() => keep(b)}>{t('booths.keep')}</button>
+              <button className="btn-danger-soft btn-sm" disabled={busy} onClick={() => remove(b)}>{t('booths.delete')}</button>
+            </>
+          ) : (
+            <>
+              <button className="btn-ghost btn-sm" disabled={busy} onClick={() => startEdit(b)}>{t('booths.edit')}</button>
+              <Link className="btn-ghost btn-sm" to={`/booth?boothId=${b.id}`} target="_blank" rel="noopener">{t('booths.openScreen')}</Link>
+              <Link className="btn-quiet btn-sm" to={`/booth/stats?boothId=${b.id}`}>{t('booths.stats')}</Link>
+              {/* Artwork and the two dangerous actions live under one menu, so nine underlined words no longer compete. */}
+              <details className="relative">
+                <summary className="btn-quiet btn-sm list-none" aria-label={t('booths.moreActions', { name: b.nameEn })}>⋯</summary>
+                <div className="pop absolute left-0 z-10 mt-1 flex w-52 flex-col rounded-xl bg-white p-1.5 text-sm shadow-lg ring-1 ring-black/10">
+                  <label className="menu-item">{t(b.badgeUrl ? 'booths.replaceBadge' : 'booths.uploadBadge')}
+                    <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; closeMenu(e); if (f) void upload(b, 'badge', f) }} /></label>
+                  {b.badgeUrl && <button className="menu-item" disabled={busy} onClick={(e) => { closeMenu(e); void removeImage(b, 'badge') }}>{t('booths.removeBadge')}</button>}
+                  <label className="menu-item">{t(b.photoUrl ? 'booths.replacePhoto' : 'booths.uploadPhoto')}
+                    <input type="file" accept="image/*" className="sr-only" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; closeMenu(e); if (f) void upload(b, 'photo', f) }} /></label>
+                  {b.photoUrl && <button className="menu-item" disabled={busy} onClick={(e) => { closeMenu(e); void removeImage(b, 'photo') }}>{t('booths.removePhoto')}</button>}
+                  <div className="my-1 border-t rule" />
+                  <button className="menu-item text-[#8a4a12] hover:bg-warn/10" disabled={busy} onClick={(e) => { closeMenu(e); void rotate(b) }}>{t('booths.rotateSecret')}</button>
+                  <button className="menu-item text-[#8f2a1c] hover:bg-danger/10" disabled={busy} onClick={(e) => { closeMenu(e); void remove(b) }}>{t('booths.deleteBooth')}</button>
+                </div>
+              </details>
+            </>
+          )}
         </div>
         {!stale && (
           <OrganizerPanel booth={b}
@@ -223,11 +226,11 @@ export default function Booths() {
           <div className="flex items-start gap-4 md:col-span-2">
             <div className="min-w-0 flex-1">
               <div>{t('booths.accent')}</div>
-              <div className="mt-1 flex flex-wrap gap-2">{ACCENTS.map((c) => <button key={c} type="button" onClick={() => setEditing({ ...editing, accentColor: c })} className={`h-8 w-8 cursor-pointer rounded-full transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/45 focus-visible:ring-offset-2 ${editing.accentColor === c ? 'ring-2 ring-offset-2 ring-ink' : ''}`} style={{ background: c }} aria-label={t('booths.accentAria', { colour: c })} aria-pressed={editing.accentColor === c} />)}</div>
+              <div className="mt-1 flex flex-wrap gap-2">{ACCENTS.map((c) => <button key={c} type="button" onClick={() => setEditing({ ...editing, accentColor: c })} className={`bt-swatch h-9 w-9 cursor-pointer border-0 transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/45 focus-visible:ring-offset-2 ${editing.accentColor === c ? 'ring-2 ring-offset-2 ring-ink' : ''}`} style={{ background: c }} aria-label={t('booths.accentAria', { colour: c })} aria-pressed={editing.accentColor === c} />)}</div>
             </div>
             {/* What the visitor's stamp will look like, as the fields change. */}
             <div className="shrink-0 text-center text-xs text-ink-soft">
-              <Stamp booth={{ shortName: editing.shortName || editing.nameEn.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() || 'NEW', accentColor: editing.accentColor ?? ACCENTS[0], nameEn: editing.nameEn || 'New booth', badgeUrl: editRow?.badgeUrl ?? null, badgeThumbUrl: editRow?.badgeThumbUrl ?? null }} collected size={80} {...marks} />
+              <BoothTile size={84} code={editing.shortName || editing.nameEn.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() || 'NEW'} accent={editing.accentColor ?? ACCENTS[0]} img={editRow?.badgeThumbUrl ?? editRow?.badgeUrl} />
               <div className="mt-1">{t('booths.stampPreview')}</div>
             </div>
           </div>
@@ -256,7 +259,7 @@ export default function Booths() {
         </div>
       )}
 
-      <ul className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 [&>li]:min-w-0">
         {shown.map((b) => card(b))}
         {current.length === 0 && <li className="text-sm text-ink-soft">{t('booths.none')}</li>}
         {current.length > 0 && shown.length === 0 && <li className="text-sm text-ink-soft">{t('booths.noMatch')}</li>}
@@ -405,6 +408,29 @@ function OrganizerPanel({ booth, organizer, pending, onMsg }: {
           </details>
         ) : row
       })()}
+    </div>
+  )
+}
+
+/**
+ * A booth as an agency case file: a navy tile with the booth code in mono, lit along the edge in
+ * the booth's accent. The booth's badge artwork, when uploaded, takes the tile's place; the team
+ * photo, when there is one, sits in the corner.
+ */
+function BoothTile({ code, accent, img, photo, size = 76 }: { code: string; accent: string; img?: string | null; photo?: string | null; size?: number }) {
+  return (
+    <div className="bt-tile relative shrink-0" style={{ width: size, height: size, ['--acc' as string]: accent }}>
+      {img
+        ? <img src={img} alt="" className="absolute inset-[3px] h-[calc(100%-6px)] w-[calc(100%-6px)] object-cover" />
+        : (
+          <div className="absolute inset-[3px] grid place-items-center">
+            <div className="text-center">
+              <div className="a-mono text-[8.5px] font-semibold tracking-[.2em] text-[#7FE7FF]/80">FILE</div>
+              <div className="a-mono font-bold leading-none text-white" style={{ fontSize: Math.round(size * (code.length > 4 ? 0.2 : 0.25)) }}>{code}</div>
+            </div>
+          </div>
+        )}
+      {photo && <img src={photo} alt="" className="absolute -bottom-1.5 -right-1.5 h-7 w-7 rounded-full object-cover ring-2 ring-white" />}
     </div>
   )
 }
