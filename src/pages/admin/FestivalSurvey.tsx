@@ -388,9 +388,13 @@ function flat(v: SurveyAnswer | undefined): string | number {
  * exactly what it did on the first deploy.
  */
 function normalise(questions: SurveyQuestion[]): string {
-  return JSON.stringify(questions.map((q) => Object.fromEntries(
-    Object.entries(q)
-      .filter(([, v]) => v !== null && v !== undefined && v !== '')
-      .sort(([a], [b]) => a.localeCompare(b)),
-  )))
+  // Sorted at every level: Firestore hands maps back with their keys in alphabetical order, so
+  // a stored `showIf` reads { anyOf, id } while the shipped one reads { id, anyOf }.
+  const tidy = (v: unknown): unknown => Array.isArray(v) ? v.map(tidy)
+    : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v)
+      .filter(([, x]) => x !== null && x !== undefined && x !== '')
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, x]) => [k, tidy(x)]))
+    : v
+  return JSON.stringify(tidy(questions))
 }
