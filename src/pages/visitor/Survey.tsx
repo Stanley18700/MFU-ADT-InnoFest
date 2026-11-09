@@ -78,6 +78,8 @@ export default function Survey() {
 
   const questions = offer?.status === 'ok' ? offer.questions : []
   const missing = useMissing(questions, answers)
+  // A long form in parts (the festival survey) is described by its parts, not its 67 rows.
+  const parts = new Set(questions.map((q) => q.section).filter(Boolean)).size
 
   async function submit() {
     setTried(true)
@@ -157,15 +159,13 @@ export default function Survey() {
       <h1 className="a-hd mb-0 mt-1.5 text-[26px] font-bold leading-tight">{offer.title}</h1>
       {offer.description && <p className="mb-0 mt-1 text-sm text-[#33415F]">{offer.description}</p>}
       <p className="mb-0 mt-2 text-xs text-[var(--a-muted)]">
-        {t('v.survey.count', { n: questions.length })}
+        {parts ? t('v.survey.parts', { n: parts }) : t('v.survey.count', { n: questions.length })}
         {' · '}
         {gatingGift ? t('v.survey.gateRelease') : festival ? t('v.survey.noPrizeEffect') : t('v.survey.pointsSaved')}
       </p>
 
       {/* The questions sit on a white panel, the same surface every passport card uses. */}
       <div className="a-cut a-edge-neon mt-5 px-3 py-3">
-        {/* Anchors for the scroll-to-first-missing jump. */}
-        {questions.map((q) => <span key={q.id} id={`q-${q.id}`} />)}
         <SurveyForm questions={questions} answers={answers} onChange={setAnswers}
           showErrors={tried} accent={booth?.accentColor} />
       </div>

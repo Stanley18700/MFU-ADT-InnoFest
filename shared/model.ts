@@ -243,6 +243,11 @@ export interface PrizeTierDoc {
   sortOrder: number
   /** Only MFU students with a valid student ID can claim it (MFU333 activity credit). */
   mfuStudentsOnly?: boolean
+  /**
+   * Everyone EXCEPT MFU students (ADT InnoFest, 9 Nov 2026: MFU students get activity points,
+   * high-school and outside visitors get the lucky draw at the information desk instead).
+   */
+  othersOnly?: boolean
 }
 
 export interface TierUnlockDoc {
@@ -255,6 +260,7 @@ export interface TierUnlockDoc {
   redeemedBy?: string | null
   /** Snapshotted at hand-over, so the credit list survives later profile edits. */
   studentIdAtRedeem?: string | null
+  schoolAtRedeem?: string | null
   nameAtRedeem?: string | null
   passportNoAtRedeem?: string | null
   pointsAtRedeem?: number | null
@@ -487,6 +493,18 @@ export interface SurveyQuestion {
   scaleMaxLabel?: string
   /** rating — how many stars. */
   stars?: number
+  /**
+   * The part of the form this question belongs to ("Keynote Speeches / การบรรยายจากวิทยากร").
+   * The renderer prints the heading once, where the section changes, and draws the scale rows
+   * under it compactly, so a 10-row Google Forms grid reads as one block on a phone.
+   */
+  section?: string
+  /**
+   * Shown only when an EARLIER choice question was answered with one of these options — the way
+   * a visitor skips the parts of the festival they did not attend. A hidden question is never
+   * required and its answer is never stored (the server re-checks both).
+   */
+  showIf?: { id: string; anyOf: string[] }
 }
 
 export interface SurveyDoc {
@@ -589,6 +607,16 @@ export const QUESTION_KINDS: Array<{ kind: QuestionKind; label: string; hasOptio
 ]
 
 export const QUESTION_LIMIT = 30
+/** The festival survey reproduces the organisers' Google Form whole (67 rows), so it gets more room. */
+export const FESTIVAL_QUESTION_LIMIT = 90
+export const questionLimit = (boothId: string) => (boothId === EVENT_SURVEY_ID ? FESTIVAL_QUESTION_LIMIT : QUESTION_LIMIT)
+
+/** Is this question shown, given the answers so far? Questions without `showIf` always are. */
+export function questionVisible(q: SurveyQuestion, answers: Record<string, SurveyAnswer | undefined>): boolean {
+  if (!q.showIf) return true
+  const a = answers[q.showIf.id]
+  return typeof a === 'string' && q.showIf.anyOf.includes(a)
+}
 export const OPTION_LIMIT = 20
 
 export function hasOptions(kind: QuestionKind): boolean {
@@ -616,13 +644,18 @@ export function answerIsEmpty(a: SurveyAnswer | undefined): boolean {
  * Structural problems an organizer can see and fix, in the order the questions appear. Shared so
  * the builder can refuse to save exactly what the callable would refuse to accept.
  */
-export function surveyProblems(title: string, questions: SurveyQuestion[]): string[] {
+export function surveyProblems(title: string, questions: SurveyQuestion[], limit = QUESTION_LIMIT): string[] {
   const out: string[] = []
   if (!title.trim()) out.push('The survey needs a title.')
   if (questions.length === 0) out.push('Add at least one question.')
-  if (questions.length > QUESTION_LIMIT) out.push(`At most ${QUESTION_LIMIT} questions.`)
+  if (questions.length > limit) out.push(`At most ${limit} questions.`)
   questions.forEach((q, i) => {
     const at = `Question ${i + 1}`
+    if (q.showIf) {
+      const src = questions.slice(0, i).find((o) => o.id === q.showIf!.id)
+      if (!src || src.kind !== 'choice') out.push(`${at} depends on a question that is not an earlier multiple-choice question.`)
+      else if (!q.showIf.anyOf.length || q.showIf.anyOf.some((o) => !(src.options ?? []).includes(o))) out.push(`${at} depends on an option that question does not have.`)
+    }
     if (!q.title.trim()) out.push(`${at} has no question text.`)
     if (hasOptions(q.kind)) {
       const opts = (q.options ?? []).map((o) => o.trim()).filter(Boolean)
@@ -749,35 +782,127 @@ export function surveyGates(s: Pick<SurveyDoc, 'active' | 'questions' | 'gateGif
  * so relabels answers already given. `saveSurvey` retires the old question set to
  * `surveys/{id}/versions/{n}` when the set changes, which is what makes that recoverable.
  */
+const F_SCALE = {
+  kind: 'scale' as const, required: true, scaleMin: 1, scaleMax: 5,
+  scaleMinLabel: '1 น้อยที่สุด / Very dissatisfied', scaleMaxLabel: '5 มากที่สุด / Very satisfied',
+}
+export const F_ROLE_COMPETITOR = 'ผู้เข้าร่วมแข่งขัน / Competitor'
+export const F_ROLE_OTHER = 'อื่น ๆ / Other'
+export const F_JOINED = 'เข้าร่วม / Yes, I joined'
+export const F_SKIPPED = 'ไม่ได้เข้าร่วม (ข้ามส่วนนี้) / No — skip this part'
+
+/** One part of the form: optionally a "did you join it?" gate, then its grid rows. */
+function fPart(key: string, section: string, rows: string[], gate?: string, showIf?: SurveyQuestion['showIf']): SurveyQuestion[] {
+  const out: SurveyQuestion[] = []
+  if (gate) out.push({ id: `f26_${key}_join`, kind: 'choice', required: true, section, title: gate, options: [F_JOINED, F_SKIPPED] })
+  const cond = gate ? { id: `f26_${key}_join`, anyOf: [F_JOINED] } : showIf
+  rows.forEach((title, i) => out.push({ id: `f26_${key}_${i + 1}`, ...F_SCALE, section, title, ...(cond ? { showIf: cond } : {}) }))
+  return out
+}
+
 export const FESTIVAL_SURVEY: { title: string; description: string; questions: SurveyQuestion[] } = {
-  // DEMO set for testing the reward lock (7 Nov 2026). Replace with the organisers' questions;
-  // new questions need new ids (see above), so answers to these are never relabelled.
-  title: '[DEMO] รายงานภารกิจ / Mission debrief',
+  /*
+   * The organisers' satisfaction form (Google Form forms.gle/MwH7KpBDvVYRoL8u8, received 9 Nov
+   * 2026): the same parts, rows and 1-5 scale. Two changes, both agreed with the team: each
+   * part a visitor may not have attended opens with "did you join it?" so they can skip it
+   * (the Google Form made every part required), and the competitors' part only appears for
+   * someone who said they are a competitor. Ids are new (f26_*), so nothing from the demo set is
+   * relabelled.
+   */
+  title: 'แบบประเมินความพึงพอใจกิจกรรม ADT InnoFest 2026 / ADT InnoFest 2026 Satisfaction Survey',
   description:
-    'แบบประเมินตัวอย่างสำหรับทดสอบ · A demo survey for testing. The real questions will replace it.',
+    'กรุณาเลือกระดับความพึงพอใจที่ตรงกับความคิดเห็นของท่าน (1 = น้อยที่สุด, 5 = มากที่สุด) ส่วนที่ไม่ได้เข้าร่วมข้ามได้ · '
+    + 'Please choose the level that best matches your opinion (1 = very dissatisfied, 5 = very satisfied). Skip any part you did not join. '
+    + '— สำนักวิชาเทคโนโลยีดิจิทัลประยุกต์ มหาวิทยาลัยแม่ฟ้าหลวง / School of Applied Digital Technology, Mae Fah Luang University',
   questions: [
     {
-      id: 'demo_who', kind: 'choice', required: true,
-      title: 'คุณคือ / You are',
-      options: ['นักศึกษา มฟล. / MFU student', 'บุคลากร มฟล. / MFU staff', 'นักเรียน / School student', 'บุคคลทั่วไป / General public'],
+      id: 'f26_role', kind: 'choice', required: true,
+      title: 'สถานะของท่านในการเข้าร่วมงาน / What is your role in the event?',
+      options: ['นักศึกษา / นักเรียน / Student', F_ROLE_COMPETITOR, 'ผู้เข้าร่วมงานทั่วไป / General attendee',
+        'เจ้าหน้าที่หรือผู้จัดงาน / Staff or organizer', 'วิทยากร / กรรมการ / Speaker or judge', F_ROLE_OTHER],
     },
     {
-      id: 'demo_overall', kind: 'scale', required: true,
-      title: 'โดยรวม คุณชอบงาน ADT InnoFest แค่ไหน / Overall, how much did you enjoy ADT InnoFest?',
-      scaleMin: 1, scaleMax: 5, scaleMinLabel: 'น้อย / Not much', scaleMaxLabel: 'มาก / A lot',
+      id: 'f26_role_other', kind: 'short', required: false, showIf: { id: 'f26_role', anyOf: [F_ROLE_OTHER] },
+      title: 'โปรดระบุ / Please specify',
     },
+    ...fPart('key', 'การบรรยายจากวิทยากร / Keynote Speeches', [
+      'หัวข้อการบรรยายน่าสนใจ / The session topic was interesting',
+      'เนื้อหาชัดเจน เข้าใจง่าย และเหมาะสมกับผู้ฟัง / The content was clear, easy to understand and suited to the audience',
+      'วิทยากรมีความรู้และความเชี่ยวชาญในเรื่องที่บรรยาย / The speaker had strong knowledge and expertise',
+      'วิทยากรถ่ายทอดเนื้อหาได้ชัดเจนและน่าสนใจ / The speaker delivered the content clearly and engagingly',
+      'วิทยากรสร้างการมีส่วนร่วมและสร้างแรงบันดาลใจให้ผู้ฟัง / The speaker engaged and inspired the audience',
+      'การบรรยายช่วยเพิ่มความรู้และมุมมองด้านเทคโนโลยีและนวัตกรรม / The session broadened my knowledge and perspective on technology and innovation',
+      'ระยะเวลาและรูปแบบการบรรยายเหมาะสม / The duration and format were appropriate',
+      'ความพึงพอใจโดยรวมต่อการบรรยายจากวิทยากร / Overall satisfaction with the guest speaker session',
+    ], 'ท่านได้ฟังการบรรยายจากวิทยากรหรือไม่ / Did you attend the keynote speeches?'),
+    ...fPart('pit', 'การแข่งขัน Pitching / Pitching Competition', [
+      'การนำเสนอ Pitching น่าสนใจและน่าติดตาม / The pitches were interesting and engaging to watch',
+      'แนวคิดและผลงานมีความคิดสร้างสรรค์และเป็นนวัตกรรม / The ideas and projects were creative and innovative',
+      'ผู้เข้าแข่งขันนำเสนอได้ชัดเจนและมีประสิทธิภาพ / The presenters were clear and effective',
+      'ผลงานประยุกต์ใช้เทคโนโลยีและนวัตกรรมได้อย่างเหมาะสม / The projects applied technology and innovation appropriately',
+      'กิจกรรมสร้างแรงบันดาลใจให้เกิดแนวคิดและนวัตกรรมใหม่ / The activity inspired new ideas and innovations',
+      'กิจกรรมช่วยเพิ่มความรู้ด้านเทคโนโลยีและนวัตกรรม / The activity added to my knowledge of technology and innovation',
+      'รูปแบบและระยะเวลาของกิจกรรมเหมาะสม / The format and duration were appropriate',
+      'สถานที่ ระบบเสียง และอุปกรณ์นำเสนอเหมาะสม / The venue, sound system and presentation equipment were suitable',
+      'ความพึงพอใจโดยรวมต่อการแข่งขัน Pitching / Overall satisfaction with the Pitching Competition',
+    ], 'ท่านได้ชมการแข่งขัน Pitching หรือไม่ / Did you watch the Pitching Competition?'),
+    ...fPart('cur', 'บูธหลักสูตรต่าง ๆ / Academic Curriculum Booths', [
+      'ข้อมูลหลักสูตรน่าสนใจและเข้าใจง่าย / The programme information was interesting and easy to understand',
+      'การเยี่ยมชมบูธช่วยให้เข้าใจหลักสูตรและแนวทางการศึกษาต่อ / Visiting helped me understand the programmes and further study options',
+      'เจ้าหน้าที่ประจำบูธตอบคำถามได้ชัดเจน / The booth staff answered questions clearly',
+      'กิจกรรมในบูธสนุกและน่าสนใจ / The booth activities were fun and engaging',
+      'การตกแต่งและการจัดบูธมีความสร้างสรรค์และสวยงาม / The booth decoration and layout were creative and attractive',
+      'ความพึงพอใจโดยรวมต่อบูธหลักสูตร / Overall satisfaction with the curriculum booths',
+    ], 'ท่านได้เยี่ยมชมบูธหลักสูตรหรือไม่ / Did you visit the curriculum booths?'),
+    ...fPart('sci', 'บูธฐานวิทยาศาสตร์ / Science Station Booth', [
+      'เกมและกิจกรรมสนุกและน่าสนใจ / The games and activities were fun and engaging',
+      'กิจกรรมส่งเสริมให้ได้ลงมือปฏิบัติจริง / The activities encouraged hands-on participation',
+      'กิจกรรมเหมาะสมกับวัยและระดับความรู้ของผู้เข้าร่วม / The activities suited participants’ age and level of knowledge',
+      'เจ้าหน้าที่ประจำบูธเป็นมิตรและกระตือรือร้น / The booth staff were friendly and enthusiastic',
+      'การจัดพื้นที่และอุปกรณ์เหมาะสมและปลอดภัย / The layout and equipment were appropriate and safe',
+      'ความพึงพอใจโดยรวมต่อบูธฐานวิทยาศาสตร์ / Overall satisfaction with the Science Station booth',
+    ], 'ท่านได้ร่วมกิจกรรมบูธฐานวิทยาศาสตร์หรือไม่ / Did you join the Science Station booth?'),
+    ...fPart('exh', 'ส่วนแสดงผลงานโครงงานนักศึกษา ADT / ADT Student Project Exhibition', [
+      'ผลงานโครงงานนักศึกษาน่าสนใจและมีความหลากหลาย / The student projects were interesting and diverse',
+      'ผลงานแสดงถึงความคิดสร้างสรรค์และการประยุกต์ใช้เทคโนโลยี / The projects showed creativity and use of technology',
+      'ผลงานมีศักยภาพในการนำไปใช้ประโยชน์ได้จริง / The projects have real-world potential',
+      'นักศึกษาอธิบายแนวคิดของผลงานได้ชัดเจน / The students explained their ideas clearly',
+      'นักศึกษามีความรู้ในผลงานและตอบคำถามได้ดี / The students knew their projects and answered questions well',
+      'สื่อนำเสนอและการสาธิตช่วยให้เข้าใจผลงาน / The presentation materials and demos helped me understand the projects',
+      'นิทรรศการช่วยเพิ่มความรู้และมุมมองใหม่ / The exhibition added to my knowledge and perspective',
+      'ผลงานสร้างแรงบันดาลใจในการเรียนรู้ วิจัย หรือทำโครงงานใหม่ / The projects inspired new learning, research or project ideas',
+      'การจัดพื้นที่และการจัดแสดงผลงานเป็นระเบียบและสะดวก / The layout and displays were well organised and convenient',
+      'ความพึงพอใจโดยรวมต่อนิทรรศการผลงานนักศึกษา / Overall satisfaction with the student project exhibition',
+    ]),
+    ...fPart('comp', 'ประสบการณ์การเข้าร่วมแข่งขัน (สำหรับผู้เข้าแข่งขัน) / Competition Experience (competitors only)', [
+      'รูปแบบและกติกาการแข่งขันชัดเจน / The format and rules were clear',
+      'โจทย์การแข่งขันเหมาะสมกับระดับความสามารถของผู้เข้าแข่งขัน / The challenges suited participants’ skill levels',
+      'เวลาที่ใช้ในการแข่งขันเหมาะสม / The time allowed was appropriate',
+      'การรับสมัครและข้อมูลก่อนการแข่งขันชัดเจน / Registration and pre-competition information were clear',
+      'สถานที่และสิ่งอำนวยความสะดวกเหมาะสม / The venue and facilities were appropriate',
+      'เจ้าหน้าที่ให้คำแนะนำและการสนับสนุนอย่างเหมาะสม / The staff gave appropriate guidance and support',
+      'กระบวนการและเกณฑ์การตัดสินชัดเจนและเป็นธรรม / The judging process and criteria were clear and fair',
+      'การแข่งขันสนุก ท้าทาย และเป็นประสบการณ์ที่ดี / The competition was enjoyable, challenging and positive',
+      'การแข่งขันส่งเสริมการทำงานเป็นทีมและการแลกเปลี่ยนประสบการณ์ / The competition encouraged teamwork and sharing experience',
+      'ความพึงพอใจโดยรวมต่อประสบการณ์การเข้าร่วมแข่งขัน / Overall satisfaction with the competition experience',
+    ], undefined, { id: 'f26_role', anyOf: [F_ROLE_COMPETITOR] }),
+    ...fPart('all', 'ภาพรวมการจัดงานและการให้ข้อมูลกิจกรรม / Overall Event Organization and Information Services', [
+      'ช่องทางประชาสัมพันธ์และการเข้าถึงข้อมูลสะดวก / Publicity channels and access to information were convenient',
+      'มีการแจ้งกำหนดการและรายละเอียดกิจกรรมอย่างชัดเจน / The schedule and activity details were clearly communicated',
+      'การลงทะเบียนสะดวกและรวดเร็ว / Registration was convenient and efficient',
+      'เจ้าหน้าที่ให้ข้อมูลได้ชัดเจนและถูกต้อง / The staff gave clear and accurate information',
+      'เจ้าหน้าที่เป็นมิตร สุภาพ และให้ความช่วยเหลือ / The staff were friendly, courteous and helpful',
+      'การจัดผังพื้นที่และโซนกิจกรรมเป็นระเบียบ / The layout and activity zones were well organised',
+      'ป้ายและข้อมูลบอกทางชัดเจนและเพียงพอ / Signage and directions were clear and sufficient',
+      'สถานที่และสิ่งอำนวยความสะดวกเหมาะสม สะอาด และปลอดภัย / The venue and facilities were appropriate, clean and safe',
+      'กิจกรรมมีความหลากหลายและเหมาะสมกับผู้เข้าร่วม / The activities were varied and suited participants',
+      'การจัดงานเป็นระบบและดำเนินไปอย่างราบรื่น / The event was well organised and ran smoothly',
+      'ความพึงพอใจโดยรวมต่องาน ADT InnoFest 2026 / Overall satisfaction with ADT InnoFest 2026',
+    ]),
     {
-      id: 'demo_project', kind: 'short', required: true,
-      title: 'โปรเจกต์ไหนที่คุณชอบที่สุด / Which project caught your eye the most?',
-    },
-    {
-      id: 'demo_again', kind: 'choice', required: true,
-      title: 'คุณจะชวนเพื่อนมางานปีหน้าไหม / Would you bring a friend next year?',
-      options: ['แน่นอน / Definitely', 'อาจจะ / Maybe', 'ไม่ / No'],
-    },
-    {
-      id: 'demo_comment', kind: 'paragraph', required: false,
-      title: 'อยากบอกอะไรผู้จัดงานไหม (ไม่บังคับ) / Anything to tell the organizers? (optional)',
+      id: 'f26_comment', kind: 'paragraph', required: false,
+      section: 'ข้อเสนอแนะเพิ่มเติม / Additional Comments',
+      title: 'ข้อเสนอแนะเพิ่มเติม (ไม่บังคับ) / Any other comments or suggestions? (optional)',
     },
   ],
 }
@@ -844,6 +969,14 @@ export const isMfuStudent = (u: { visitorType?: string | null; institution?: str
 /** MFU333 (activity credit) is only for MFU students. The live tier predates the flag, so its id counts too. */
 export const isMfuOnlyTier = (t: { mfuStudentsOnly?: boolean }, id: string) => t.mfuStudentsOnly ?? id === 'mfu333'
 /** Can this visitor claim this tier? Everyone can, except MFU-only tiers need an MFU student with a valid ID. */
-export function tierEligible(t: { mfuStudentsOnly?: boolean }, id: string, u: { visitorType?: string | null; institution?: string | null; studentId?: string | null }) {
+export function tierEligible(t: { mfuStudentsOnly?: boolean; othersOnly?: boolean }, id: string, u: { visitorType?: string | null; institution?: string | null; studentId?: string | null }) {
+  if (t.othersOnly) return !isMfuStudent(u)
   return !isMfuOnlyTier(t, id) || (isMfuStudent(u) && isStudentIdValid(u.studentId))
 }
+/** Whether this visitor is shown the tier at all (an MFU student without an ID still sees MFU333, to add it). */
+export function tierShownTo(t: { mfuStudentsOnly?: boolean; othersOnly?: boolean }, id: string, u: { visitorType?: string | null; institution?: string | null }) {
+  if (t.othersOnly) return !isMfuStudent(u)
+  return !isMfuOnlyTier(t, id) || isMfuStudent(u)
+}
+/** ADT InnoFest: MFU activity points go on the School list for ADT students, Extracurricular for the rest. */
+export const isAdtSchool = (school?: string | null) => /applied digital technology|\badt\b|เทคโนโลยีดิจิทัลประยุกต์/i.test(school ?? '')

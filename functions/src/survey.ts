@@ -25,9 +25,9 @@ import {
   db, FieldValue, requireRole, requireAuth, str, num, audit, getActiveEvent, shardRef,
 } from './lib'
 import {
-  EVENT_SURVEY_ID, OPTION_LIMIT, QUESTION_KINDS, QUESTION_LIMIT, QuestionKind, SURVEY_REWARDS,
+  EVENT_SURVEY_ID, OPTION_LIMIT, QUESTION_KINDS, QuestionKind, SURVEY_REWARDS,
   PrizeTierDoc, SurveyAnswer, SurveyDoc, SurveyQuestion, SurveyResponseDoc, UserDoc,
-  answerIsEmpty, hasOptions, surveyProblems,
+  answerIsEmpty, hasOptions, questionLimit, questionVisible, surveyProblems,
 } from './shared/model'
 
 const KINDS = QUESTION_KINDS.map((k) => k.kind)
@@ -44,9 +44,9 @@ function boothFor(req: Parameters<typeof requireAuth>[0], field = 'boothId'): { 
 }
 
 /** Trusts nothing from the builder: every field is re-read and re-checked from scratch. */
-function cleanQuestions(raw: unknown): SurveyQuestion[] {
+function cleanQuestions(raw: unknown, limit: number): SurveyQuestion[] {
   if (!Array.isArray(raw)) throw new HttpsError('invalid-argument', 'questions[] required')
-  if (raw.length > QUESTION_LIMIT) throw new HttpsError('invalid-argument', `At most ${QUESTION_LIMIT} questions`)
+  if (raw.length > limit) throw new HttpsError('invalid-argument', `At most ${limit} questions`)
   const seen = new Set<string>()
   return raw.map((r: Record<string, unknown>, i: number) => {
     const kind = str(r.kind, `questions[${i}].kind`) as QuestionKind
@@ -90,6 +90,14 @@ function cleanQuestions(raw: unknown): SurveyQuestion[] {
     if (kind === 'rating') {
       q.stars = typeof r.stars === 'number' ? num(r.stars, 'stars', { min: 3, max: 10 }) : 5
     }
+    const section = str(r.section, `questions[${i}].section`, { required: false, max: 160 })
+    if (section) q.section = section
+    // Checked against the earlier questions by surveyProblems, which saveSurvey runs next.
+    const si = r.showIf as { id?: unknown; anyOf?: unknown } | undefined
+    if (si && typeof si === 'object') {
+      const anyOf = (Array.isArray(si.anyOf) ? si.anyOf : []).filter((o): o is string => typeof o === 'string').slice(0, OPTION_LIMIT)
+      q.showIf = { id: str(si.id, `questions[${i}].showIf.id`, { max: 40 }), anyOf }
+    }
     return q
   })
 }
@@ -99,10 +107,10 @@ export const saveSurvey = onCall(async (req) => {
   const ev = await getActiveEvent()
   const title = str(req.data?.title, 'title', { max: 200 })
   const description = str(req.data?.description, 'description', { required: false, max: 1000 })
-  const questions = cleanQuestions(req.data?.questions)
+  const questions = cleanQuestions(req.data?.questions, questionLimit(boothId))
 
   // The same check the builder runs, so the two can never disagree about what is publishable.
-  const problems = surveyProblems(title, questions)
+  const problems = surveyProblems(title, questions, questionLimit(boothId))
   if (problems.length) throw new HttpsError('invalid-argument', problems[0])
 
   const ref = db.doc(`surveys/${boothId}`)
@@ -173,7 +181,7 @@ export const setSurveyActive = onCall(async (req) => {
   if (!snap.exists) throw new HttpsError('not-found', 'This booth has no survey yet')
   if (active) {
     const s = snap.data() as SurveyDoc
-    const problems = surveyProblems(s.title, s.questions ?? [])
+    const problems = surveyProblems(s.title, s.questions ?? [], questionLimit(boothId))
     if (problems.length) throw new HttpsError('failed-precondition', problems[0])
   }
   await ref.set(gateGift === undefined ? { active } : { active, gateGift }, { merge: true })
@@ -254,6 +262,9 @@ export const submitSurveyResponse = onCall(async (req) => {
   const raw = (req.data?.answers ?? {}) as Record<string, unknown>
   const answers: Record<string, SurveyAnswer> = {}
   for (const q of survey.questions) {
+    // A part the visitor said they did not attend: not required, and nothing of it is kept.
+    // Judged on the answers already cleaned, so a forged gate answer cannot open a section.
+    if (!questionVisible(q, answers)) continue
     const a = raw[q.id]
     let value: SurveyAnswer | undefined
 

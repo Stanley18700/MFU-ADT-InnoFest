@@ -250,8 +250,9 @@ function Results({ questions, responses, answered }: {
    * column and a question nobody answered yet does not vanish from the file.
    */
   const header = (q: SurveyQuestion) => {
-    const title = q.title.trim() || q.id
-    return questions.some((o) => o.id !== q.id && o.title.trim() === title) ? `${title} [${q.id}]` : title
+    // Grid rows repeat ("Overall satisfaction") across parts, so the part leads the column name.
+    const title = (q.section ? `${q.section.split(' / ')[0]} — ` : '') + (q.title.trim() || q.id)
+    return questions.some((o) => o.id !== q.id && (o.section ? `${o.section.split(' / ')[0]} — ` : '') + o.title.trim() === title) ? `${title} [${q.id}]` : title
   }
   const csvColumns = ['Timestamp', ...questions.map(header), 'Survey version']
   // Memoised for the same reason as the tallies: this builds one row per response with a column
@@ -279,10 +280,13 @@ function Results({ questions, responses, answered }: {
         ? <p className="mt-3 text-sm text-ink-soft">{t('admin.fsurvey.noneYet')}</p>
         : (
           <div className="mt-3 space-y-4">
-            {questions.map((q) => (
-              <div key={q.id} className="card card-static p-4">
-                <div className="text-sm font-semibold leading-snug">{q.title}</div>
-                <QuestionResult q={q} stat={stats.get(q.id)} />
+            {questions.map((q, i) => (
+              <div key={q.id}>
+                {q.section && q.section !== questions[i - 1]?.section && <h3 className="mb-2 mt-6 text-base font-bold">{q.section}</h3>}
+                <div className="card card-static p-4">
+                  <div className="text-sm font-semibold leading-snug">{q.title}</div>
+                  <QuestionResult q={q} stat={stats.get(q.id)} />
+                </div>
               </div>
             ))}
           </div>

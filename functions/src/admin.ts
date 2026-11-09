@@ -398,6 +398,10 @@ export const savePrizePolicy = onCall({ timeoutSeconds: 120 }, async (req) => {
       outOfStockNoteEn: str(t.outOfStockNoteEn, 'outOfStockNoteEn', { required: false, max: 200 }),
       outOfStockNoteTh: str(t.outOfStockNoteTh, 'outOfStockNoteTh', { required: false, max: 200 }),
       stockTotal: typeof t.stockTotal === 'number' ? num(t.stockTotal, 'stockTotal', { min: 0 }) : undefined,
+      // Who may claim it. Written only when the page sends it, so the live MFU333 tier (which
+      // predates the flag and is recognised by its id) is never silently opened to everyone.
+      ...(typeof t.mfuStudentsOnly === 'boolean' ? { mfuStudentsOnly: t.mfuStudentsOnly } : {}),
+      ...(typeof t.othersOnly === 'boolean' ? { othersOnly: t.othersOnly } : {}),
     }
   })
 

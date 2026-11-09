@@ -75,7 +75,7 @@ export const claimBoothSeat = onCall(async (req) => {
     if (mine) return { member: mine.name, boothName: booth.nameEn }
     const i = roster.members.findIndex((m) => m.keys.includes(key))
     if (i < 0) {
-      throw new HttpsError('not-found', 'That name is not on this project’s team list. Type it exactly as on the official list, in English or Thai.')
+      throw new HttpsError('not-found', 'That name is not on this project’s team list. Type it exactly as on the official list, in English or Thai, or type your student ID.')
     }
     const m = roster.members[i]
     if (m.uid && m.uid !== uid) {

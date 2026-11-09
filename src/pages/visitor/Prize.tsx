@@ -4,7 +4,7 @@ import { AgentPhotoCard } from '../../components/AgentPhoto'
 import { Transmission } from '../../components/handler'
 import { useAuth } from '../../lib/auth'
 import { ms, useMyUnlocks, useTiers } from '../../lib/data'
-import { EVENT_SURVEY_ID, isMfuOnlyTier, isMfuStudent, isStudentIdValid, minuteToHHMM, tierEligible } from '../../../shared/model'
+import { EVENT_SURVEY_ID, isMfuStudent, isStudentIdValid, minuteToHHMM, tierEligible, tierShownTo } from '../../../shared/model'
 import { prizeStock, usePrizeSession } from '../../lib/prizeSession'
 import { useFestivalSurvey } from '../../lib/festivalSurvey'
 import { api, errorMessage } from '../../lib/api'
@@ -56,7 +56,7 @@ export default function Prize() {
    */
   const mfu = profile ? isMfuStudent(profile) : false
   const idOk = isStudentIdValid(profile?.studentId)
-  const tiers = allTiers.filter((x) => mfu || !isMfuOnlyTier(x, x.id))
+  const tiers = allTiers.filter((x) => tierShownTo(x, x.id, profile ?? {}))
   const claimable = (tierId: string) => { const tr = allTiers.find((x) => x.id === tierId); return !tr || tierEligible(tr, tierId, profile ?? {}) }
   const unlocks = useMyUnlocks(profile?.id)
   const { active: activeSession, next: nextSession } = usePrizeSession()

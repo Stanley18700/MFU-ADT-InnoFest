@@ -20,12 +20,17 @@ export function useFestivalSurvey(enabled = true) {
   const { user } = useAuth()
   const survey = useDoc<SurveyDoc>(enabled ? doc(db, 'surveys', EVENT_SURVEY_ID) : null, [enabled])
   const taken = useDoc(user && enabled ? doc(db, 'surveyTaken', `${user.uid}_${EVENT_SURVEY_ID}`) : null, [user?.uid, enabled])
-  const count = survey.data?.questions?.length ?? 0
+  const qs = survey.data?.questions ?? []
+  const n = qs.length
+  // A form in parts (the organisers' one) is described by its parts — "8 short parts" — not by
+  // its 67 grid rows, which is what every "{q} …" line in the copy quotes.
+  const parts = new Set(qs.map((q) => q.section).filter(Boolean)).size
+  const count = parts || n
   return {
     survey: survey.data,
     count,
     /** Published with at least one question — the only state in which a visitor is asked. */
-    live: !!survey.data?.active && count > 0,
+    live: !!survey.data?.active && n > 0,
     /**
      * Whether an unanswered survey withholds every reward: agent photo, prizes, MFU333. On while
      * the survey is published, unless an admin lifted it (`gateGift: false`). See `surveyGates`.

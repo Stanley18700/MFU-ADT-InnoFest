@@ -9,6 +9,7 @@ import { ts } from '../../lib/eventText'
 import { Select } from '../../components/Select'
 import { useUnsavedGuard } from '../../lib/useUnsavedGuard'
 import { useLocale } from '../../lib/locale'
+import { isMfuOnlyTier } from '../../../shared/model'
 
 /**
  * A field's label. Sentence case, not the uppercase eyebrow it used to be: `stamp-text` is 10px at
@@ -59,7 +60,7 @@ export default function Prizes() {
 
   useEffect(() => {
     if (!tiers.length) return
-    const fresh = tiers.map((x) => ({ id: x.id, name: x.name, thresholdPoints: x.thresholdPoints, reward: x.reward, grantsDrawEntry: x.grantsDrawEntry, active: x.active, outOfStockNoteEn: x.outOfStockNoteEn ?? '' }))
+    const fresh = tiers.map((x) => ({ id: x.id, name: x.name, thresholdPoints: x.thresholdPoints, reward: x.reward, grantsDrawEntry: x.grantsDrawEntry, active: x.active, outOfStockNoteEn: x.outOfStockNoteEn ?? '', mfuStudentsOnly: isMfuOnlyTier(x, x.id), othersOnly: x.othersOnly === true }))
     const key = JSON.stringify(fresh)
     if (!dirty) { setRows(fresh); seeded.current = key; setRemoteChanged(false) }
     else if (seeded.current && key !== seeded.current) setRemoteChanged(true)
@@ -171,6 +172,7 @@ export default function Prizes() {
                   <h3 className="min-w-0 flex-1 truncate text-base font-semibold">{r.name.trim() || <span className="text-ink-soft">{t('prizes.newTier')}</span>}</h3>
                   {Number.isFinite(r.thresholdPoints) && <span className="text-sm tabular-nums text-ink-soft">{t('prizes.nPoints', { n: r.thresholdPoints })}</span>}
                   {r.grantsDrawEntry && <span className="rounded-full bg-foil/25 px-2 py-0.5 text-[11px] font-medium">{t('prizes.drawEntry')}</span>}
+                  {(r.mfuStudentsOnly || r.othersOnly) && <span className="rounded-full bg-sky-700/10 px-2 py-0.5 text-[11px] font-medium">{t(r.othersOnly ? 'prizes.aud.others' : 'prizes.aud.mfu')}</span>}
                   {/* Both figures, because they answer different questions and one of them was
                       being read as the other. `stockRemaining`/`stockTotal` are the event-wide
                       audit pool — 300 across the festival — while the desk spends the session
@@ -210,6 +212,15 @@ export default function Prizes() {
                   )}
 
                   <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                    <label className="flex items-center gap-2">
+                      <span className="text-ink-soft">{t('prizes.audience')}</span>
+                      <select className="field !w-auto !py-1.5" value={r.othersOnly ? 'others' : r.mfuStudentsOnly ? 'mfu' : 'all'}
+                        onChange={(e) => set(i, { mfuStudentsOnly: e.target.value === 'mfu', othersOnly: e.target.value === 'others' })}>
+                        <option value="all">{t('prizes.aud.all')}</option>
+                        <option value="mfu">{t('prizes.aud.mfu')}</option>
+                        <option value="others">{t('prizes.aud.others')}</option>
+                      </select>
+                    </label>
                     <label className="flex items-center gap-2"><input type="checkbox" checked={!!r.grantsDrawEntry} onChange={(e) => set(i, { grantsDrawEntry: e.target.checked })} />{t('prizes.stageDrawEntry')}</label>
                     {!showNote && <button type="button" className="btn-quiet btn-sm" onClick={() => setNoteOpen({ ...noteOpen, [key]: true })}>{t('prizes.addNote')}</button>}
                   </div>

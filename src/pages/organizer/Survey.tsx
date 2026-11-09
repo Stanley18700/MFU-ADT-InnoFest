@@ -15,7 +15,7 @@ import { num } from '../../lib/form'
 import { onStage } from '../../lib/onStage'
 import { Select } from '../../components/Select'
 import {
-  EVENT_SURVEY_ID, OPTION_LIMIT, QUESTION_KINDS, QUESTION_LIMIT, blankQuestion, hasOptions, surveyProblems,
+  EVENT_SURVEY_ID, OPTION_LIMIT, QUESTION_KINDS, blankQuestion, questionLimit, hasOptions, surveyProblems,
   type QuestionKind, type SurveyDoc, type SurveyQuestion,
 } from '../../../shared/model'
 
@@ -76,7 +76,8 @@ export default function Survey() {
   )
   useUnsavedGuard(dirty)
 
-  const problems = surveyProblems(title, questions)
+  const limit = questionLimit(boothId ?? '')
+  const problems = surveyProblems(title, questions, limit)
   const published = saved.data?.active === true
   const responses = saved.data?.responseCount ?? 0
 
@@ -84,7 +85,7 @@ export default function Survey() {
     setQuestions(questions.map((q, j) => (j === i ? { ...q, ...p } : q)))
 
   function add(kind: QuestionKind) {
-    if (questions.length >= QUESTION_LIMIT) { setMsg({ tone: 'amber', text: `${QUESTION_LIMIT} questions is the limit.` }); return }
+    if (questions.length >= limit) { setMsg({ tone: 'amber', text: `${limit} questions is the limit.` }); return }
     setQuestions([...questions, blankQuestion(kind, newId())])
   }
 

@@ -103,9 +103,11 @@ export default function Redeem() {
       } else if (r.status === 'survey_required') {
         setMsg({ tone: 'amber', text: 'They haven’t answered the festival survey yet. Ask them to open the app and answer it (Rewards tab), then show a fresh code.' })
       } else if (r.status === 'not_eligible') {
-        setMsg({ tone: 'amber', text: r.mfuStudent
-          ? 'MFU333 needs their 10-digit MFU student ID. They can add it on the Rewards tab of the app, then show the new code.'
-          : 'MFU333 is for Mae Fah Luang University students only. They can still collect the prize at 100 points.' })
+        setMsg({ tone: 'amber', text: tier?.othersOnly
+          ? 'The lucky draw is for high-school and outside visitors. MFU students get activity points instead (at 50 points).'
+          : r.mfuStudent
+            ? 'Activity points need their 10-digit MFU student ID. They can add it on the Rewards tab of the app, then show the new code.'
+            : 'Activity points are for Mae Fah Luang University students only. Outside visitors get a lucky-draw try at 100 points instead.' })
       } else if (r.status === 'desk_closed') {
         // A shut window is not an empty one, and staff must not tell a visitor they missed out
         // when they only have to come back. This used to fall through the branch below and
@@ -266,7 +268,7 @@ export default function Redeem() {
                   : t.eligible === false ? (
                     // MFU333 is for MFU students with a valid ID. Not a stock or points problem.
                     <span className="max-w-[55%] shrink-0 text-right text-xs text-ink-soft">
-                      {lookup.visitor.mfuStudent ? 'Needs a 10-digit student ID — they can add it in the app (Rewards tab)' : 'MFU students only'}
+                      {t.othersOnly ? 'Not for MFU students — they get activity points' : lookup.visitor.mfuStudent ? 'Needs a 10-digit student ID — they can add it in the app (Rewards tab)' : 'MFU students only'}
                     </span>
                   )
                   : t.unlocked ? (

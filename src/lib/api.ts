@@ -221,6 +221,8 @@ export interface TierInput {
   grantsDrawEntry?: boolean
   active?: boolean
   outOfStockNoteEn?: string
+  mfuStudentsOnly?: boolean
+  othersOnly?: boolean
 }
 
 /**
@@ -274,7 +276,7 @@ export type LookupResult =
         stockPerSession: number | null
         outOfStockNote: string; unlocked: boolean; redeemedAt: number | null; redeemedBy: string | null; redeemedByName: string | null
         /** False for MFU333 when the visitor is not an MFU student with a valid ID. */
-        eligible?: boolean; mfuOnly?: boolean
+        eligible?: boolean; mfuOnly?: boolean; othersOnly?: boolean
       }>
     }
 

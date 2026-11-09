@@ -3,7 +3,7 @@ import { collection, query, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { useCollection, useEventStats, useTiers } from '../../lib/data'
 import { downloadCsv } from '../../lib/csv'
-import { isMfuOnlyTier, isStudentIdValid, type TierUnlockDoc, type UserDoc } from '../../../shared/model'
+import { isAdtSchool, isMfuOnlyTier, isStudentIdValid, type TierUnlockDoc, type UserDoc } from '../../../shared/model'
 
 const ms = (v: unknown) => (v && typeof (v as { toMillis?: () => number }).toMillis === 'function' ? (v as { toMillis(): number }).toMillis() : 0)
 /** "2026-11-11T08:20:00+07:00": Bangkok time, the shape the brief's export uses. */
@@ -33,6 +33,7 @@ export default function Mfu333() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
 
+  const schoolOf = useMemo(() => new Map(students.map((u) => [u.id, u.school ?? ''])), [students])
   const rows = useMemo(() => {
     if (!mfuTier) return []
     const list = unlocks
@@ -40,12 +41,16 @@ export default function Mfu333() {
       .map((u) => ({
         uid: u.visitorId, at: ms(u.redeemedAt),
         studentId: u.studentIdAtRedeem ?? '', name: u.nameAtRedeem ?? '', passportNo: u.passportNoAtRedeem ?? '', points: u.pointsAtRedeem ?? null,
+        // ADT InnoFest: ADT students' points go on the School activity list, everyone else's on
+        // the Extracurricular one. The school as it was at hand-over, else the profile's now.
+        school: u.schoolAtRedeem ?? schoolOf.get(u.visitorId) ?? '',
       }))
+      .map((r) => ({ ...r, credit: isAdtSchool(r.school) ? 'School activity (ADT)' : 'Extracurricular' }))
       .sort((a, b) => a.at - b.at)
     const count = new Map<string, number>()
     for (const r of list) if (r.studentId) count.set(r.studentId, (count.get(r.studentId) ?? 0) + 1)
     return list.map((r, i) => ({ ...r, no: i + 1, dup: !!r.studentId && (count.get(r.studentId) ?? 0) > 1, bad: !isStudentIdValid(r.studentId) }))
-  }, [unlocks, mfuTier])
+  }, [unlocks, mfuTier, schoolOf])
 
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase()
@@ -68,23 +73,23 @@ export default function Mfu333() {
 
   function exportCsv() {
     downloadCsv(shown.map((r) => ({
-      no: r.no, student_id: r.studentId, name: r.name, passport_no: r.passportNo,
+      no: r.no, student_id: r.studentId, name: r.name, school: r.school, credit_type: r.credit, passport_no: r.passportNo,
       points_at_redeem: r.points ?? '', redeemed_at: bkkIso(r.at), duplicate_student_id: r.dup ? 'yes' : '',
-    })), `mfu333-redemptions-${new Date().toISOString().slice(0, 10)}.csv`,
-    ['no', 'student_id', 'name', 'passport_no', 'points_at_redeem', 'redeemed_at', 'duplicate_student_id'])
+    })), `activity-points-${new Date().toISOString().slice(0, 10)}.csv`,
+    ['no', 'student_id', 'name', 'school', 'credit_type', 'passport_no', 'points_at_redeem', 'redeemed_at', 'duplicate_student_id'])
   }
 
   return (
     <div className="page-in">
       <header>
-        <h1 className="text-2xl font-bold">MFU333 redemptions</h1>
-        <p className="mt-1 max-w-3xl text-sm text-ink-soft">Everyone who collected MFU333 activity credit at the desk, for recording credit. The CSV contains student IDs: keep it in an access-restricted place and delete it once the credit is recorded.</p>
+        <h1 className="text-2xl font-bold">Activity points (MFU students)</h1>
+        <p className="mt-1 max-w-3xl text-sm text-ink-soft">Everyone who collected activity points at the desk. ADT students go on the School activity list, students of other schools on the Extracurricular list — the Credit column and the CSV say which. The CSV contains student IDs: keep it in an access-restricted place and delete it once the credit is recorded.</p>
       </header>
 
       <section className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          ['MFU333 redeemed', redeemedMfu],
-          ['Prizes redeemed', prizesRedeemed],
+          ['Activity points collected', redeemedMfu],
+          ['Lucky-draw tries given', prizesRedeemed],
           [`Reached ${mfuTier?.thresholdPoints ?? 50}, not collected`, waiting],
           ['Agents registered', stats.totals.visitors],
         ].map(([label, n]) => (
@@ -112,16 +117,17 @@ export default function Mfu333() {
             <thead className="text-xs uppercase tracking-wide text-ink-soft">
               <tr className="border-b border-[var(--a-line)]">
                 <th className="py-2 pr-3">No</th><th className="py-2 pr-3">Student ID</th><th className="py-2 pr-3">Name</th>
-                <th className="py-2 pr-3">Agent ID</th><th className="py-2 pr-3">Points</th><th className="py-2">Redeemed at</th>
+                <th className="py-2 pr-3">Credit</th><th className="py-2 pr-3">Agent ID</th><th className="py-2 pr-3">Points</th><th className="py-2">Redeemed at</th>
               </tr>
             </thead>
             <tbody>
-              {shown.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-ink-soft">{rows.length ? 'Nothing matches the search.' : 'No MFU333 redemptions yet.'}</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-ink-soft">{rows.length ? 'Nothing matches the search.' : 'No activity points collected yet.'}</td></tr>}
               {shown.map((r) => (
                 <tr key={r.uid} className={`border-b border-[var(--a-line)] ${r.dup || r.bad ? 'bg-warn-bg/60' : ''}`}>
                   <td className="py-2 pr-3 text-ink-soft">{r.no}</td>
                   <td className="py-2 pr-3 font-mono">{r.studentId || '—'}{r.dup && <span className="ml-2 rounded bg-warn-text/15 px-1.5 py-0.5 text-[11px] font-semibold text-warn-text">duplicate</span>}</td>
                   <td className="py-2 pr-3">{r.name}</td>
+                  <td className="py-2 pr-3 text-xs"><div>{r.credit}</div><div className="max-w-[14rem] truncate text-ink-soft">{r.school}</div></td>
                   <td className="py-2 pr-3 font-mono">{r.passportNo}</td>
                   <td className="py-2 pr-3">{r.points ?? '—'}</td>
                   <td className="py-2">{bkkClock(r.at)}</td>

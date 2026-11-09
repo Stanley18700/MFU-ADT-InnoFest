@@ -97,6 +97,7 @@ export const lookupRedemption = onCall(async (req) => {
         // MFU333 is for MFU students with a valid ID; anyone else sees it as not theirs to collect.
         eligible: tierEligible(tier, t.id, u),
         mfuOnly: isMfuOnlyTier(tier, t.id),
+        othersOnly: tier.othersOnly === true,
         redeemedAt: un?.redeemedAt ? (un.redeemedAt as { toMillis(): number }).toMillis() : null,
         redeemedBy: un?.redeemedBy ?? null,
         redeemedByName: un?.redeemedBy ? names.get(un.redeemedBy) ?? null : null,
@@ -133,6 +134,7 @@ export const confirmRedemption = onCall(async (req) => {
     // What the MFU333 credit list records: who, as they were at the moment of hand-over.
     const snapshot = {
       studentIdAtRedeem: isMfuStudent(visitor) ? (visitor.studentId ?? null) : null,
+      schoolAtRedeem: isMfuStudent(visitor) ? (visitor.school ?? null) : null,
       nameAtRedeem: visitor.displayName ?? null, passportNoAtRedeem: visitor.passportNo ?? null,
       pointsAtRedeem: typeof visitor.points === 'number' ? visitor.points : null,
     }

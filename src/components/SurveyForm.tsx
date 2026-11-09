@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { answerIsEmpty, type SurveyAnswer, type SurveyQuestion } from '../../shared/model'
+import { answerIsEmpty, questionVisible, type SurveyAnswer, type SurveyQuestion } from '../../shared/model'
 import { Select } from './Select'
 
 export type Answers = Record<string, SurveyAnswer>
@@ -31,28 +31,39 @@ export function SurveyForm({ questions, answers, onChange, showErrors = false, r
     onChange(next)
   }
 
+  const shown = questions.filter((q) => questionVisible(q, answers))
   return (
     <ol className="flex flex-col gap-4">
-      {questions.map((q, i) => {
+      {shown.map((q, i) => {
         const missing = showErrors && q.required && answerIsEmpty(answers[q.id])
+        const prev = shown[i - 1]
+        const opens = !!q.section && q.section !== prev?.section
+        // Rows of a Google Forms grid: one statement and five buttons each, under one heading.
+        const row = !!q.section && q.kind === 'scale'
+        const firstRow = row && !(prev?.section === q.section && prev.kind === 'scale')
         return (
-          <li key={q.id} className={`card ${missing ? 'ring-1 ring-danger' : ''}`}>
-            <fieldset disabled={readOnly} className="min-w-0">
-              <legend className="text-sm font-semibold">
-                <span className="text-ink-soft">{i + 1}.</span> {q.title || <span className="text-ink-soft">(no question text yet)</span>}
-                {q.required && <span className="ml-1 text-danger-text" aria-label="required">*</span>}
-              </legend>
-              {q.help && <p className="mt-1 text-xs text-ink-soft">{q.help}</p>}
-              {q.imageUrl && (
-                // Organizer-supplied artwork of unknown proportions: cap the height so one tall
-                // image cannot push the questions under it off the screen.
-                <img src={q.imageUrl} alt="" className="mt-2 max-h-56 w-auto rounded-lg object-contain" />
-              )}
-              <div className="mt-3">
-                <QuestionInput q={q} value={answers[q.id]} onChange={(v) => set(q.id, v)} accent={accent} readOnly={readOnly} />
-              </div>
-              {missing && <p className="mt-2 text-xs text-danger-text">This one is required.</p>}
-            </fieldset>
+          <li key={q.id} id={`q-${q.id}`} className={`scroll-mt-24 ${row ? '-mt-2' : ''}`}>
+            {opens && (
+              <h3 className="a-hd m-0 mb-2 mt-3 border-0 border-l-4 border-solid border-[#1D5BFF] pl-2.5 text-[16px] font-bold leading-snug text-ink">{q.section}</h3>
+            )}
+            <div className={`${row ? 'rounded-lg border border-solid border-ink/10 bg-white px-3 py-2.5' : 'card'} ${missing ? 'ring-1 ring-danger' : ''}`}>
+              <fieldset disabled={readOnly} className="min-w-0">
+                <legend className={row ? 'text-[13.5px] font-medium leading-snug' : 'text-sm font-semibold'}>
+                  <span className="text-ink-soft">{i + 1}.</span> {q.title || <span className="text-ink-soft">(no question text yet)</span>}
+                  {q.required && <span className="ml-1 text-danger-text" aria-label="required">*</span>}
+                </legend>
+                {q.help && <p className="mt-1 text-xs text-ink-soft">{q.help}</p>}
+                {q.imageUrl && (
+                  // Organizer-supplied artwork of unknown proportions: cap the height so one tall
+                  // image cannot push the questions under it off the screen.
+                  <img src={q.imageUrl} alt="" className="mt-2 max-h-56 w-auto rounded-lg object-contain" />
+                )}
+                <div className={row ? 'mt-2' : 'mt-3'}>
+                  <QuestionInput q={q} value={answers[q.id]} onChange={(v) => set(q.id, v)} accent={accent} readOnly={readOnly} compact={row} labels={!row || firstRow} />
+                </div>
+                {missing && <p className="mt-2 text-xs text-danger-text">This one is required.</p>}
+              </fieldset>
+            </div>
           </li>
         )
       })}
@@ -60,8 +71,12 @@ export function SurveyForm({ questions, answers, onChange, showErrors = false, r
   )
 }
 
-function QuestionInput({ q, value, onChange, accent, readOnly = false }: {
+function QuestionInput({ q, value, onChange, accent, readOnly = false, compact = false, labels = true }: {
   q: SurveyQuestion
+  /** A grid row: five equal buttons across the width. */
+  compact?: boolean
+  /** The scale's end labels — once per grid, not under every row. */
+  labels?: boolean
   value: SurveyAnswer | undefined
   onChange: (v: SurveyAnswer | undefined) => void
   accent?: string
@@ -133,19 +148,19 @@ function QuestionInput({ q, value, onChange, accent, readOnly = false }: {
       const steps = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i)
       return (
         <div>
-          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={q.title}>
+          <div className={compact ? 'grid gap-1.5' : 'flex flex-wrap gap-1.5'} style={compact ? { gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` } : undefined} role="radiogroup" aria-label={q.title}>
             {steps.map((n) => {
               const on = value === n
               return (
                 <button key={n} type="button" role="radio" aria-checked={on} onClick={() => onChange(on ? undefined : n)}
-                  className={`h-11 min-w-11 rounded-lg border px-2 text-sm tabular-nums ${on ? 'border-transparent text-white' : 'border-ink/15 hover:bg-ink/5'}`}
+                  className={`${compact ? 'h-10' : 'h-11 min-w-11'} rounded-lg border px-2 text-sm tabular-nums ${on ? 'border-transparent text-white' : 'border-ink/15 hover:bg-ink/5'}`}
                   style={on ? { background: accent ?? '#1D5BFF' } : undefined}>
                   {n}
                 </button>
               )
             })}
           </div>
-          {(q.scaleMinLabel || q.scaleMaxLabel) && (
+          {labels && (q.scaleMinLabel || q.scaleMaxLabel) && (
             <div className="mt-1 flex justify-between text-xs text-ink-soft">
               <span>{q.scaleMinLabel}</span><span>{q.scaleMaxLabel}</span>
             </div>
@@ -177,7 +192,7 @@ function QuestionInput({ q, value, onChange, accent, readOnly = false }: {
 /** Ids of the required questions still blank — drives both the submit guard and the hint text. */
 export function useMissing(questions: SurveyQuestion[], answers: Answers): string[] {
   return useMemo(
-    () => questions.filter((q) => q.required && answerIsEmpty(answers[q.id])).map((q) => q.id),
+    () => questions.filter((q) => q.required && questionVisible(q, answers) && answerIsEmpty(answers[q.id])).map((q) => q.id),
     [questions, answers],
   )
 }
