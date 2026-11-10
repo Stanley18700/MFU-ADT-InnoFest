@@ -1715,3 +1715,8 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   box-shadow: 0 0.5vw 1.8vw rgba(42,69,255,.12), inset 0 0 0 1px rgba(120,150,255,.16); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 .hall-num { border-radius: 0.8vw; background: linear-gradient(135deg, #2A45FF, #17B4F2); box-shadow: 0 0.3vw 1vw rgba(42,69,255,.35); }
 .hall-qr { background: #fff; border-radius: 1.6vw; box-shadow: 0 0 0 0.22vw rgba(255,255,255,.9), 0 0 0 0.36vw rgba(53,150,255,.35), 0 1.6vw 4vw rgba(42,69,255,.26), 0 0 6vw rgba(53,196,255,.28); }
+.hall-mark { opacity: .5; filter: saturate(1.15) drop-shadow(0 0 2.4vw rgba(80,170,255,.35)); }
+/* Frosted glass over the campus: the picture shows through, blurred. */
+.hall-glass { position: relative; border-radius: 1.1vw; background: linear-gradient(135deg, rgba(255,255,255,.34), rgba(255,255,255,.12));
+  border: 1px solid rgba(255,255,255,.55); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: 0 0.8vw 2.4vw rgba(12,30,120,.22), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -1px 0 rgba(255,255,255,.15); }

@@ -12,7 +12,7 @@ import type { DrawName } from './Draw'
 /** Big enough to scan from the middle of a hall, small enough to leave the board room. */
 function qrPx() {
   if (typeof window === 'undefined') return 260
-  return Math.round(Math.max(180, Math.min(window.innerWidth * 0.15, window.innerHeight * 0.30)))
+  return Math.round(Math.max(180, Math.min(window.innerWidth * 0.19, window.innerHeight * 0.38)))
 }
 
 const STEPS: Array<[string, string]> = [
@@ -46,6 +46,8 @@ function HallGround() {
     <div aria-hidden className="hall-ground pointer-events-none fixed inset-0 -z-20 overflow-hidden">
       <div className="hall-grid absolute inset-0" />
       <div className="hall-halo absolute inset-0" />
+      {/* The festival mark, big, at the very back: the campus and Doi Tung stand in front of it. */}
+      <img src="/brand/logo-innofest.webp" alt="" className="hall-mark absolute left-[58.5%] top-[12vh] w-[40vw] -translate-x-1/2" />
       {/* One box the shape of the picture: the streams are placed inside it, on the buildings. */}
       <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[112vw] -translate-x-1/2">
         <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute inset-0 h-full w-full" />
@@ -205,42 +207,46 @@ export default function Wall() {
        * to the campus and the light rising out of it, which is what people stop to look at.
        * Bilingual on the screen itself, because the hall is mostly Thai visitors.
        */
-      <section className="relative grid min-h-0 flex-1 grid-cols-[1fr_auto] items-start gap-[4vw] pt-[3vh]">
-        <div className="min-w-0">
-          <span className="hall-badge a-mono inline-block px-[1.2vw] py-[0.5vh] text-[0.95vw] font-semibold tracking-[.18em]">RECOVER THE FUTURE · กู้คืนอนาคต</span>
-          <h1 className="a-hd m-0 mt-[1.6vh] text-[4.6vw] font-bold leading-[1] tracking-[-0.015em] text-[#0B1437]">
-            Scan. Collect.<br /><span className="hall-grad">Get rewards.</span>
-          </h1>
-          <p className="m-0 mt-[1.2vh] text-[1.6vw] font-semibold text-[#1B2A5C]">สแกน QR ที่บูธ · สะสมคะแนน · รับรางวัล</p>
+      <section className="relative grid min-h-0 flex-1 grid-cols-[1fr_auto] items-stretch gap-[4vw] pt-[2.4vh]">
+        {/* The words at the top; the glass blocks low, floating over the campus. */}
+        <div className="flex min-h-0 min-w-0 flex-col justify-between pb-[2.2vh]">
+          <div>
+            <span className="hall-badge a-mono inline-block px-[1.3vw] py-[0.6vh] text-[1.1vw] font-semibold tracking-[.18em]">RECOVER THE FUTURE · กู้คืนอนาคต</span>
+            <h1 className="a-hd m-0 mt-[1.8vh] text-[5.6vw] font-bold leading-[0.98] tracking-[-0.015em] text-[#0B1437]">
+              <span className="[text-shadow:0_0.2vw_1.6vw_rgba(255,255,255,.9)]">Scan. Collect.</span><br /><span className="hall-grad">Get rewards.</span>
+            </h1>
+            <p className="m-0 mt-[1.6vh] text-[2vw] font-semibold text-[#1B2A5C] [text-shadow:0_0_1vw_#fff]">สแกน QR ที่บูธ · สะสมคะแนน · รับรางวัล</p>
+          </div>
 
-          <ol className="m-0 mt-[2.8vh] flex list-none gap-[0.9vw] p-0">
-            {STEPS.map(([en, th], i) => (
-              <li key={en} className="hall-card flex items-center gap-[0.8vw] px-[1vw] py-[1.1vh] text-left">
-                <span className="hall-num a-hd grid h-[2.5vw] w-[2.5vw] shrink-0 place-items-center text-[1.25vw] font-bold text-white">{i + 1}</span>
-                <span className="leading-tight"><span className="block text-[1.1vw] font-semibold text-[#0B1437]">{th}</span><span className="block text-[0.8vw] text-[#4A5A85]">{en}</span></span>
-              </li>
-            ))}
-          </ol>
-
-          <div className="mt-[1.6vh] flex gap-[0.9vw]">
-            {([['Agents', 'ผู้เข้าร่วม', ev.totals.visitors], ['Booth scans', 'การสแกนบูธ', ev.totals.stamps], ['Rewards given', 'มอบรางวัลแล้ว', ev.totals.redeemed]] as const).map(([en, th, v]) => (
-              <div key={en} className="hall-card px-[1.2vw] py-[1vh] text-left">
-                <div className="hall-grad a-mono text-[2.1vw] font-semibold leading-none">{show(v)}</div>
-                <div className="mt-[0.5vh] text-[0.85vw] font-semibold text-[#0B1437]">{th} <span className="font-normal text-[#4A5A85]">· {en}</span></div>
-              </div>
-            ))}
+          <div>
+            <ol className="m-0 flex list-none gap-[1vw] p-0">
+              {STEPS.map(([en, th], i) => (
+                <li key={en} className="hall-glass flex items-center gap-[0.9vw] px-[1.1vw] py-[1.3vh] text-left">
+                  <span className="hall-num a-hd grid h-[2.8vw] w-[2.8vw] shrink-0 place-items-center text-[1.4vw] font-bold text-white">{i + 1}</span>
+                  <span className="leading-tight"><span className="block text-[1.25vw] font-semibold text-white">{th}</span><span className="block text-[0.85vw] text-white/80">{en}</span></span>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-[1.4vh] flex gap-[1vw]">
+              {([['Agents', 'ผู้เข้าร่วม', ev.totals.visitors], ['Booth scans', 'การสแกนบูธ', ev.totals.stamps], ['Rewards given', 'มอบรางวัลแล้ว', ev.totals.redeemed]] as const).map(([en, th, v]) => (
+                <div key={en} className="hall-glass px-[1.4vw] py-[1.2vh] text-left">
+                  <div className="a-mono text-[2.5vw] font-semibold leading-none text-white [text-shadow:0_0_1.2vw_rgba(120,220,255,.8)]">{show(v)}</div>
+                  <div className="mt-[0.6vh] text-[0.95vw] font-semibold text-white">{th} <span className="font-normal text-white/75">· {en}</span></div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* The one thing a visitor at the door has to be able to act on. */}
-        <div className="hall-qr relative flex flex-col items-center px-[1.8vw] pb-[1.6vh] pt-[1.8vh]">
-          <div className="a-hd text-[1.5vw] font-bold leading-tight text-[#0B1437]">สแกนเพื่อเริ่มภารกิจ</div>
-          <div className="mb-[1.6vh] text-[0.9vw] font-semibold tracking-[.04em] text-[#2B5BFF]">Scan to start the mission</div>
+        <div className="hall-qr relative flex flex-col items-center self-start px-[2.3vw] pb-[2.2vh] pt-[2.4vh]">
+          <div className="a-hd text-[1.9vw] font-bold leading-tight text-[#0B1437]">สแกนเพื่อเริ่มภารกิจ</div>
+          <div className="mb-[2.2vh] text-[1.1vw] font-semibold tracking-[.04em] text-[#2B5BFF]">Scan to start the mission</div>
           <div className="relative">
-            <span aria-hidden className="qr-brackets" style={{ inset: '-0.8vw', ['--l' as string]: '2vw', ['--w' as string]: '0.28vw' }} />
+            <span aria-hidden className="qr-brackets" style={{ inset: '-1vw', ['--l' as string]: '2.4vw', ['--w' as string]: '0.32vw' }} />
             <div className="relative overflow-hidden bg-white"><QR value={APP_ORIGIN} size={qrSize} /><span aria-hidden className="qr-sweep-loop" /></div>
           </div>
-          <div className="a-mono mt-[1.6vh] text-[1.1vw] font-semibold text-[#1746E0]">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
+          <div className="a-mono mt-[2.2vh] text-[1.35vw] font-semibold text-[#1746E0]">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
         </div>
       </section>
       )}
