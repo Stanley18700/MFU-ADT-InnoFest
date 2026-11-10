@@ -1693,16 +1693,16 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 
 /* ── Hall screen: campus ground with uplink rays (10 Nov) ── */
 .hall-campus { opacity: .8; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 22%); mask-image: linear-gradient(to bottom, transparent 0%, #000 22%); }
-.hall-ray { position: absolute; width: 0.14vw; min-width: 2px; overflow: hidden; border-radius: 999px;
-  background: linear-gradient(to top, rgba(140,240,255,.95) 0%, rgba(0,205,255,.75) 30%, rgba(0,190,255,.28) 72%, transparent 100%);
-  filter: drop-shadow(0 0 0.35vw rgba(0,210,255,.9)) drop-shadow(0 0 1.1vw rgba(0,190,255,.45));
-  animation: hall-ray 5s ease-in-out infinite; }
-/* A pulse of data climbing the beam. */
-.hall-ray i { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; border-radius: 999px;
-  background: linear-gradient(to top, transparent, #fff 60%, transparent); animation: hall-pulse 3.8s linear infinite; }
-@keyframes hall-ray { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
-@keyframes hall-pulse { 0% { transform: translateY(100%); opacity: 0; } 12% { opacity: 1; } 80% { opacity: .9; } 100% { transform: translateY(-460%); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .hall-ray, .hall-ray i { animation: none; } .hall-ray i { display: none; } }
+.hall-ray { position: absolute; width: 0.13vw; min-width: 2px; margin-left: -0.065vw; border-radius: 999px;
+  /* One colour the whole way up; only the last stretch fades out. */
+  background: linear-gradient(to top, #19C8FF 0%, #19C8FF 62%, rgba(25,200,255,0) 100%);
+  filter: drop-shadow(0 0 0.3vw rgba(25,200,255,.95)) drop-shadow(0 0 1vw rgba(25,200,255,.5));
+  animation: hall-ray 4.6s ease-in-out infinite; }
+/* Where it leaves the roof: a small pool of the same light. */
+.hall-ray::after { content: ""; position: absolute; left: 50%; bottom: -0.25vw; width: 1.5vw; height: 0.5vw; border-radius: 50%;
+  transform: translateX(-50%); background: radial-gradient(closest-side, rgba(25,200,255,.95), rgba(25,200,255,0)); }
+@keyframes hall-ray { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .hall-ray { animation: none; } }
 .wall-grad { background: linear-gradient(90deg, #1D5BFF, #00A3D9 70%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .wall-chip, .wall-stat { background: rgba(255,255,255,.86); border: 1px solid #C9D9F7; box-shadow: 0 0.3vw 1.2vw rgba(29,91,255,.10); backdrop-filter: blur(6px);
   clip-path: polygon(0.7vw 0, 100% 0, 100% calc(100% - 0.7vw), calc(100% - 0.7vw) 100%, 0 100%, 0 0.7vw); }

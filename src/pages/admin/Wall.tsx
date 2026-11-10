@@ -22,13 +22,20 @@ const STEPS: Array<[string, string]> = [
 ]
 
 /**
- * The uplink beams: tall, hair-thin columns of light standing on the campus and fading out
- * high above it, each with a pulse of data climbing it. Left edge in %, foot above the bottom
- * edge in vh, height in vh, pulse delay in s.
+ * The uplink beams: hair-thin columns of one cyan, each standing on a building of the campus
+ * picture and fading out high above it. Positions are in % of the PICTURE (left, foot above its
+ * bottom edge, height), so a beam stays on its rooftop at any screen shape. Last is the delay.
  */
 const RAYS: Array<[number, number, number, number]> = [
-  [7, 16, 46, 0], [15.5, 9, 62, 2.2], [24, 20, 40, 1.1], [33, 12, 70, 3.1], [41.5, 24, 52, 0.5],
-  [50, 15, 76, 1.8], [58.5, 22, 48, 2.7], [67, 11, 66, 0.9], [76, 19, 44, 3.5], [84.5, 8, 60, 1.4], [93, 17, 50, 2.4],
+  [12, 27, 78, 0],      // the small hall on the left
+  [22, 30, 118, 1.6],   // the long building
+  [30.5, 32, 66, 0.7],  // the tiered roof beside it
+  [39.5, 38, 104, 2.3], // left wing of the main court
+  [49.3, 50, 92, 0.3],  // the hall at the head of the court
+  [59, 38, 110, 1.9],   // right wing of the main court
+  [62.2, 46, 60, 1.1],  // the block behind it
+  [76, 20, 84, 2.7],    // the lake
+  [86.5, 39, 98, 0.9],  // the pavilion on the right
 ]
 
 /**
@@ -40,12 +47,13 @@ function HallGround() {
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-20 overflow-hidden bg-[linear-gradient(180deg,#F8FBFF_0%,#EEF4FF_45%,#DCE8FF_100%)]">
       <div className="a-grid" />
       <div className="absolute inset-0 bg-[radial-gradient(60%_45%_at_50%_62%,rgba(0,200,255,.22),transparent_70%)]" />
-      <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute bottom-0 left-1/2 w-[104vw] max-w-none -translate-x-1/2" />
-      {RAYS.map(([x, foot, h, d]) => (
-        <span key={x} className="hall-ray" style={{ left: `${x}%`, bottom: `${foot}vh`, height: `${h}vh`, animationDelay: `${d * 0.7}s` }}>
-          <i style={{ animationDelay: `${d}s` }} />
-        </span>
-      ))}
+      {/* One box the shape of the picture: the beams are placed inside it, on the buildings. */}
+      <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[104vw] -translate-x-1/2">
+        <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute inset-0 h-full w-full" />
+        {RAYS.map(([x, foot, h, d]) => (
+          <span key={x} className="hall-ray" style={{ left: `${x}%`, bottom: `${foot}%`, height: `${h}%`, animationDelay: `${d}s` }} />
+        ))}
+      </div>
       <div className="absolute inset-x-0 bottom-0 h-[12vh] bg-gradient-to-t from-white/70 to-transparent" />
     </div>
   )
