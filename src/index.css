@@ -1695,11 +1695,11 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 .hall-ground { background: linear-gradient(180deg, #FDFEFF 0%, #F3F6FF 38%, #E6ECFF 70%, #D9E3FF 100%); }
 .hall-grid { background-image: linear-gradient(rgba(60,100,220,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(60,100,220,.07) 1px, transparent 1px);
   background-size: 2.6vw 2.6vw; -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.35) 55%, transparent 85%); mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.35) 55%, transparent 85%); }
-.hall-halo { background: radial-gradient(60% 40% at 30% 22%, rgba(255,255,255,.95), rgba(255,255,255,0) 72%),
+.hall-halo { background: radial-gradient(42% 46% at 50% 46%, rgba(255,255,255,.95), rgba(255,255,255,0) 72%),
   radial-gradient(58% 50% at 50% 60%, rgba(150,150,255,.30), rgba(150,150,255,0) 70%),
   radial-gradient(40% 36% at 50% 78%, rgba(60,200,255,.22), rgba(60,200,255,0) 72%); }
-.hall-campus { opacity: .82; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); }
-.hall-mist { background: linear-gradient(to top, rgba(255,255,255,.85) 0%, rgba(255,255,255,.25) 35%, rgba(255,255,255,0) 70%); }
+.hall-campus { opacity: .66; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); }
+.hall-mist { background: linear-gradient(to top, rgba(255,255,255,.92) 0%, rgba(255,255,255,.45) 45%, rgba(255,255,255,0) 100%); }
 /* A dashed thread of light: the dashes climb, the whole thread breathes, both ends fade. */
 .hall-ray { position: absolute; width: 0.12vw; min-width: 2px; margin-left: -0.06vw;
   background-image: repeating-linear-gradient(to top, #35C4FF 0, #35C4FF 0.5vw, transparent 0.5vw, transparent 0.82vw); background-size: 100% 0.82vw;
@@ -1715,8 +1715,11 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
   box-shadow: 0 0.5vw 1.8vw rgba(42,69,255,.12), inset 0 0 0 1px rgba(120,150,255,.16); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 .hall-num { border-radius: 0.8vw; background: linear-gradient(135deg, #2A45FF, #17B4F2); box-shadow: 0 0.3vw 1vw rgba(42,69,255,.35); }
 .hall-qr { background: #fff; border-radius: 1.6vw; box-shadow: 0 0 0 0.22vw rgba(255,255,255,.9), 0 0 0 0.36vw rgba(53,150,255,.35), 0 1.6vw 4vw rgba(42,69,255,.26), 0 0 6vw rgba(53,196,255,.28); }
-.hall-mark { opacity: .5; filter: saturate(1.15) drop-shadow(0 0 2.4vw rgba(80,170,255,.35)); }
-/* Frosted glass over the campus: the picture shows through, blurred. */
-.hall-glass { position: relative; border-radius: 1.1vw; background: linear-gradient(135deg, rgba(255,255,255,.34), rgba(255,255,255,.12));
-  border: 1px solid rgba(255,255,255,.55); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
-  box-shadow: 0 0.8vw 2.4vw rgba(12,30,120,.22), inset 0 1px 0 rgba(255,255,255,.7), inset 0 -1px 0 rgba(255,255,255,.15); }
+/* Frosted glass for the hall screen's side blocks: the campus and sky show through, blurred; dark text stays readable on both. */
+.hall-glass { position: relative; border-radius: 1vw; background: linear-gradient(135deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.26) 100%);
+  border: 1px solid rgba(255,255,255,.75); -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: 0 0.8vw 2.4vw rgba(20,45,150,.18), inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(255,255,255,.25); overflow: hidden; }
+/* A soft sheen across the top of the glass. */
+.hall-glass::before { content: ""; position: absolute; inset: 0 0 55% 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0)); }
+.hall-glass > * { position: relative; }
