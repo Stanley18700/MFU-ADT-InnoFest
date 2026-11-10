@@ -294,22 +294,25 @@ function RatingSheet({
         role="dialog"
         aria-modal="true"
         aria-label={t('v.rate.title')}
-        className="a-cut a-cut-xl a-edge-neon sheet-in max-h-[92dvh] w-full max-w-md overflow-y-auto px-5 pt-3 text-left"
+        className="a-cut a-cut-xl a-edge-neon sheet-in max-h-[96dvh] w-full max-w-md overflow-y-auto px-5 pt-3 text-left"
         style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}
       >
-        <h2 className="a-hd m-0 text-[20px] font-bold">{t('v.rate.title')}</h2>
-        <p className="mb-0 mt-0.5 text-sm text-[#33415F]">{t('v.rate.lead')}</p>
+        <h2 className="a-hd m-0 text-[25px] font-bold leading-tight">{t('v.rate.title')}</h2>
+        <p className="mb-0 mt-0.5 text-[15px] leading-snug text-[#33415F]">{t('v.rate.lead')}</p>
 
-        {/* Five rows, label over stars: the stars get the full width, so each target stays ~44px+
-            on the narrowest phone and the whole sheet still fits without scrolling. */}
-        <div className="mt-2 space-y-1">
-          {RATING_CRITERIA.map((k) => {
+        {/* One group per question: numbered label, then plain stars left-aligned under it. No box
+            per star — the boxes made five rows of 25 tiles read as one grid. */}
+        <div className="mt-2 divide-y divide-[#E3E8F2]">
+          {RATING_CRITERIA.map((k, i) => {
             const label = t(`v.rate.c.${k}` as 'v.rate.c.design')
             const v = scores[k] ?? 0
             return (
-              <div key={k}>
-                <div className="text-[13px] font-semibold text-[#1B2748]">{label}</div>
-                <div className="flex gap-1" role="radiogroup" aria-label={t('v.rate.critAria', { c: label })}>
+              <div key={k} className="py-1.5">
+                <div className="flex items-baseline gap-2 text-[16px] font-semibold text-[#1B2748]">
+                  <span className="a-mono text-[13px] font-bold text-[#1D5BFF]">{String(i + 1).padStart(2, '0')}</span>
+                  {label}
+                </div>
+                <div className="-ml-1 flex gap-1.5" role="radiogroup" aria-label={t('v.rate.critAria', { c: label })}>
                   {[1, 2, 3, 4, 5].map((n) => {
                     const on = n <= v
                     return (
@@ -321,12 +324,12 @@ function RatingSheet({
                         aria-label={n === 1 ? t('v.rate.star', { n }) : t('v.rate.stars', { n })}
                         disabled={busy}
                         onClick={() => setScore(k, n)}
-                        className={`a-cut a-cut-s grid h-11 flex-1 cursor-pointer place-items-center border-0 bg-transparent transition-transform active:scale-90 disabled:opacity-50 ${on ? 'a-edge-neon' : 'a-edge-strong'}`}
+                        // A 40px-wide target around a 31px glyph: easy to hit without a box drawn round it.
+                        className="grid h-10 w-10 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform active:scale-90 disabled:opacity-50"
                         style={{
                           // Always the SOLID star. Outline-against-filled is the distinction that
-                          // disappears in sunlight; a lit blue star against a flat grey one does not.
-                          color: on ? '#1D5BFF' : '#9AA6BF',
-                          ['--fill' as string]: on ? '#EEF3FF' : '#F7F9FC',
+                          // disappears in sunlight; a lit blue star against a pale grey one does not.
+                          color: on ? '#1D5BFF' : '#C9D1E0',
                           filter: on ? 'drop-shadow(0 0 5px rgb(0 200 255 / .4))' : undefined,
                         }}
                       >
@@ -335,7 +338,7 @@ function RatingSheet({
                           * { font: inherit }` (index.css) is unlayered, so it beats every layered
                           * `text-*` utility and silently resets a button's font-size to 16px.
                           */}
-                        <span aria-hidden className="text-[26px] leading-none">★</span>
+                        <span aria-hidden className="text-[31px] leading-none">★</span>
                       </button>
                     )
                   })}
@@ -345,11 +348,12 @@ function RatingSheet({
           })}
         </div>
 
-        <label className="mt-2 block">
+        <label className="mt-1.5 block">
           <span className="a-lbl">{t('v.rate.comment')}</span>
           <textarea
             className="a-field"
             rows={1}
+            style={{ minHeight: 0 }}
             maxLength={RATING_COMMENT_MAX}
             value={comment}
             disabled={busy}

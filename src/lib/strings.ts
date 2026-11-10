@@ -224,7 +224,7 @@ const staffEn = {
   'v.rate.star': '{n} star',
   'v.rate.stars': '{n} stars',
   'v.rate.comment': 'Anything to add? (optional)',
-  'v.rate.placeholder': 'What made it good, or what would make it better',
+  'v.rate.placeholder': 'What was good, or what to improve',
   'v.rate.send': 'Send',
   'v.rate.sending': 'Sending…',
   'v.rate.thanks': 'Thank you',
