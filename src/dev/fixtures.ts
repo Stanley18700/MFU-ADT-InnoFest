@@ -1,4 +1,4 @@
-import { FESTIVAL_SURVEY } from '../../shared/model'
+import { FESTIVAL_SURVEY, RATING_CRITERIA } from '../../shared/model'
 /*
  * Sample data for `npm run preview:fixtures` — the visitor screens rendered with no Firebase at
  * all, for design review and screenshots. Never imported by a real build: vite.config.ts swaps
@@ -57,6 +57,32 @@ export const fxUnlocks = fxTiers.filter((t) => FX.points >= t.thresholdPoints).m
 export const fxScans = stamped.map((id, i) => ({ id: `s${i}`, visitorId: 'fx-user', boothId: id, eventId: 'innofest-2026', scannedAt: { toMillis: () => Date.now() - (stamped.length - i) * 300_000 }, day: '2026-11-11', pointsAwarded: 1, counter: i }))
 export const fxStatsShards = [{ id: '0', visitors: 1240, stamps: 41870, points: 41870, redeemed: 310, visitorsWithStamps: 1180, tierReached: 640 }]
 
+/*
+ * Ratings: a deterministic spread over the first 30 booths, a few under 10 votes so the admin
+ * page shows its greyed "few votes" rows. `?rated=1` marks the scanned booth as already rated.
+ */
+const seed = (n: number) => { const x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x) }
+const fxRatings = fxBooths.slice(0, 30).flatMap((b, bi) => Array.from({ length: bi % 7 === 3 ? 4 : 8 + (bi * 5) % 30 }, (_, i) => {
+  const lean = 2.5 + (bi % 5) * 0.5
+  const scores = Object.fromEntries(RATING_CRITERIA.map((k, ki) => [k, Math.max(1, Math.min(5, Math.round(lean + (seed(bi * 1000 + i * 10 + ki) - 0.5) * 2.5)))])) as Record<(typeof RATING_CRITERIA)[number], number>
+  const mean = RATING_CRITERIA.reduce((n, k) => n + scores[k], 0) / RATING_CRITERIA.length
+  return {
+    id: `r${bi}_${i}`, boothId: b.id, eventId: 'innofest-2026', scores, stars: Math.round(mean), mean, day: '2026-11-11',
+    ratedAt: { toMillis: () => Date.now() - (bi * 40 + i) * 60_000, toDate: () => new Date(Date.now() - (bi * 40 + i) * 60_000) },
+    ...(i % 4 === 0 ? { comment: ['Loved the demo!', 'Clear explanation, would use this.', 'Needs a bigger screen.', 'Really creative idea.'][(bi + i) % 4] } : {}),
+  }
+}))
+const fxRatingStats = fxBooths.slice(0, 30).map((b) => {
+  const rs = fxRatings.filter((r) => r.boothId === b.id)
+  const bump = (d: Record<string, number>, n: number) => { d[n] = (d[n] ?? 0) + 1; return d }
+  return {
+    id: b.id, boothId: b.id, count: rs.length, sum: rs.reduce((n, r) => n + r.mean, 0),
+    dist: rs.reduce((d, r) => bump(d, r.stars), {} as Record<string, number>),
+    crit: Object.fromEntries(RATING_CRITERIA.map((k) => [k, { sum: rs.reduce((n, r) => n + r.scores[k], 0), dist: rs.reduce((d, r) => bump(d, r.scores[k]), {} as Record<string, number>) }])),
+    comments: rs.filter((r) => r.comment).length, updatedAt: null,
+  }
+})
+
 /** Collection or document path → rows. */
 export function fxRows(path: string): Array<Record<string, unknown> & { id: string }> {
   switch (path) {
@@ -66,6 +92,8 @@ export function fxRows(path: string): Array<Record<string, unknown> & { id: stri
     case 'tierUnlocks': return fxUnlocks
     case 'scans': return fxScans
     case 'stats/event/shards': return fxStatsShards as never
+    case 'stats/ratings/items': return fxRatingStats as never
+    case 'boothRatings': return fxRatings as never
     case 'boothRosters': return fxBooths.slice(0, 8).map((b, i) => ({ id: b.id, boothId: b.id, members: TEAMS[i % TEAMS.length].split(' · ').map((n, j) => ({ name: n, keys: [], uid: j <= i % 3 ? `u${i}${j}` : null, email: j <= i % 3 ? `${n.split(' ')[0].toLowerCase()}@lamduan.mfu.ac.th` : null })) }))
     default: return []
   }
@@ -86,6 +114,8 @@ export function fxDoc(path: string): (Record<string, unknown> & { id: string }) 
   if (path === 'surveyTaken/fx-user__festival_') return qs.get('survey') === 'taken' ? { id: 'x' } : null
   if (path.startsWith('booths/')) return fxBooths.find((b) => `booths/${b.id}` === path) ?? null
   if (path === 'stats/event') return { id: 'event', activeLast15m: 212 }
+  if (path.startsWith('boothRated/')) return qs.has('rated') ? { id: 'x' } : null
+  if (path.startsWith('stats/ratings/items/')) return (fxRatingStats.find((r) => `stats/ratings/items/${r.id}` === path) as never) ?? null
   if (path.startsWith('stats/booths/items/')) return { id: 'b14', stamps: 214, visitors: 214, points: 214 }
   return null
 }

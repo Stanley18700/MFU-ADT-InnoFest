@@ -7,17 +7,18 @@
  *
  *   boothRatings/{autoId}               the score and comment, with no visitor id anywhere
  *   boothRated/{visitorId}_{boothId}    "this person has rated this booth", with no score
- *   stats/ratings/items/{boothId}       the running count, total and distribution
+ *   stats/ratings/items/{boothId}       the running count, total and distribution, overall and per criterion
  *
  * All three are written in one transaction, so a booth's average can never drift from the rows
  * behind it, and a visitor who double-taps is counted once.
  */
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { db, FieldValue, requireAuth, str, getActiveEvent, rateLimit } from './lib'
-import { BoothRatedDoc, BoothRatingDoc, RATING_COMMENT_MAX, dayOf } from './shared/model'
+import { BoothRatedDoc, BoothRatingDoc, RATING_COMMENT_MAX, RATING_CRITERIA, RatingCriterion, dayOf } from './shared/model'
 
 /**
- * Leave a rating for a booth already in your passport.
+ * Leave a rating for a booth already in your passport: `{ boothId, scores: { design, problem,
+ * creativity, future, impact }, comment? }`, every score a whole 1–5.
  *
  * Returns `{ ok: true }` on the first rating and `{ ok: true, already: true }` on any later
  * one. A second attempt is not an error: the phone that lost its reply to a dropped connection
@@ -29,10 +30,22 @@ export const rateBooth = onCall(async (req) => {
   const boothId = str(req.data?.boothId, 'boothId', { max: 60 })
 
   // Not `num()`: that accepts 3.5 and 0, and a score has to be one of five whole values.
-  const stars = req.data?.stars
-  if (typeof stars !== 'number' || !Number.isInteger(stars) || stars < 1 || stars > 5) {
-    throw new HttpsError('invalid-argument', 'stars must be a whole number from 1 to 5')
+  const raw = req.data?.scores
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new HttpsError('invalid-argument', 'scores is required')
   }
+  const unknown = Object.keys(raw).filter((k) => !(RATING_CRITERIA as readonly string[]).includes(k))
+  if (unknown.length) throw new HttpsError('invalid-argument', `unknown score: ${unknown[0]}`)
+  const scores = {} as Record<RatingCriterion, number>
+  for (const k of RATING_CRITERIA) {
+    const v = (raw as Record<string, unknown>)[k]
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 1 || v > 5) {
+      throw new HttpsError('invalid-argument', `${k} must be a whole number from 1 to 5`)
+    }
+    scores[k] = v
+  }
+  const mean = RATING_CRITERIA.reduce((n, k) => n + scores[k], 0) / RATING_CRITERIA.length
+  const stars = Math.round(mean)
 
   const comment = str(req.data?.comment, 'comment', { required: false, max: RATING_COMMENT_MAX }).trim()
 
@@ -59,6 +72,7 @@ export const rateBooth = onCall(async (req) => {
   const rating: BoothRatingDoc = {
     boothId,
     eventId: ev.id,
+    scores,
     stars,
     ratedAt: FieldValue.serverTimestamp(),
     day: dayOf(new Date()),
@@ -76,8 +90,12 @@ export const rateBooth = onCall(async (req) => {
       tx.set(statsRef, {
         boothId,
         count: FieldValue.increment(1),
-        sum: FieldValue.increment(stars),
+        sum: FieldValue.increment(mean),
         dist: { [String(stars)]: FieldValue.increment(1) },
+        crit: Object.fromEntries(RATING_CRITERIA.map((k) => [k, {
+          sum: FieldValue.increment(scores[k]),
+          dist: { [String(scores[k])]: FieldValue.increment(1) },
+        }])),
         comments: FieldValue.increment(comment ? 1 : 0),
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true })

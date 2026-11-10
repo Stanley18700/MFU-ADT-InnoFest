@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions'
 import { functions } from './firebase'
 import * as fx from '@fixtures'
 import type { ApplyPointsInput, ApplyPointsResult, PointPreview } from '../../shared/points'
-import type { PrizeSession, Role, ScanResult, SurveyAnswer, SurveyQuestion, VisitorType, Zone } from '../../shared/model'
+import type { PrizeSession, RatingCriterion, Role, ScanResult, SurveyAnswer, SurveyQuestion, VisitorType, Zone } from '../../shared/model'
 
 function call<Req, Res>(name: string) {
   const fn = httpsCallable<Req, Res>(functions, name)
@@ -36,8 +36,8 @@ export const api = {
   join: call<JoinInput, { ok: true; passportNo: string; existing: boolean }>('join'),
   publicBooth: call<{ boothId: string }, { found: false } | { found: true; booth: PublicBooth }>('publicBooth'),
   scan: call<{ payload: string }, ScanResult>('scan'),
-  /** One to five stars for a booth already stamped. `already` means this visitor had rated it before. */
-  rateBooth: call<{ boothId: string; stars: number; comment?: string }, { ok: true; already: boolean }>('rateBooth'),
+  /** One to five stars on each of the five criteria, for a booth already stamped. `already` means this visitor had rated it before. */
+  rateBooth: call<{ boothId: string; scores: Record<RatingCriterion, number>; comment?: string }, { ok: true; already: boolean }>('rateBooth'),
   redemptionCode: call<Record<string, never>, { code: string; counter: number; period: number; payload: string; serverTime: number }>('redemptionCode'),
   /** Copies the address on the Auth account onto users/{uid} after an email change. */
   syncAccount: call<Record<string, never>, { ok: true; synced: boolean; contact: string | null; contactVerified?: boolean }>('syncAccount'),

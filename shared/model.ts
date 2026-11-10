@@ -693,11 +693,23 @@ export const RATING_COMMENT_MAX = 400
 export const RATING_STARS = [1, 2, 3, 4, 5] as const
 export type RatingStars = (typeof RATING_STARS)[number]
 
+/**
+ * The five things every booth is scored on, in the order the sheet asks them. Each is 1–5.
+ * Keys are stored; labels live in strings.ts (`v.rate.c.<key>`).
+ */
+export const RATING_CRITERIA = ['design', 'problem', 'creativity', 'future', 'impact'] as const
+export type RatingCriterion = (typeof RATING_CRITERIA)[number]
+
+/** Under this many votes a booth is still ranked, but shown greyed out as "thin". */
+export const RATING_MIN_VOTES = 10
+
 /** `boothRatings/{autoId}` — deliberately anonymous. Admin-readable. */
 export interface BoothRatingDoc {
   boothId: string
   eventId: string
-  /** 1–5. */
+  /** One whole 1–5 score per criterion. Absent on ratings left before the five criteria. */
+  scores?: Record<RatingCriterion, number>
+  /** 1–5: the mean of `scores`, rounded. Kept so older readers still work. */
   stars: number
   /** Absent when the visitor left it blank, which most will. */
   comment?: string
@@ -722,10 +734,15 @@ export interface BoothRatedDoc {
 export interface BoothRatingStatsDoc {
   boothId: string
   count: number
-  /** Total of all scores; the average is `sum / count`. Kept as a sum so it stays exact. */
+  /**
+   * Total of each vote's mean score (the five criteria averaged); the overall average is
+   * `sum / count`. Kept as a sum so it stays exact.
+   */
   sum: number
-  /** How many gave each score, keyed '1' through '5'. */
+  /** How many votes rounded to each score, keyed '1' through '5'. */
   dist: Record<string, number>
+  /** Per criterion: the total of its scores and how many gave each score. */
+  crit?: Partial<Record<RatingCriterion, { sum: number; dist: Record<string, number> }>>
   /** How many of those also wrote something. */
   comments: number
   updatedAt: unknown
@@ -735,6 +752,20 @@ export interface BoothRatingStatsDoc {
 export function ratingAverage(s: { count?: number; sum?: number } | null | undefined): number | null {
   if (!s?.count) return null
   return (s.sum ?? 0) / s.count
+}
+
+/** One criterion's average, or null when nobody has scored it. */
+export function criterionAverage(s: Pick<BoothRatingStatsDoc, 'count' | 'crit'> | null | undefined, key: RatingCriterion): number | null {
+  const c = s?.crit?.[key]
+  if (!s?.count || !c) return null
+  return c.sum / s.count
+}
+
+/** The mean of the five criterion averages, or null when any is missing. */
+export function overallAverage(s: Pick<BoothRatingStatsDoc, 'count' | 'crit'> | null | undefined): number | null {
+  const avgs = RATING_CRITERIA.map((k) => criterionAverage(s, k))
+  if (avgs.some((a) => a == null)) return null
+  return (avgs as number[]).reduce((a, b) => a + b, 0) / avgs.length
 }
 
 // ---------- the festival feedback survey (§4.3) ----------
