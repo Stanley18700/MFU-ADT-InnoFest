@@ -38,6 +38,7 @@
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0",
     "recharts": "^3.10.1",
+    "write-excel-file": "4.1.1",
     "zxing-wasm": "^2.1.0"
   },
   "devDependencies": {

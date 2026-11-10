@@ -38,6 +38,7 @@ export default function Ratings() {
   )
 
   const [boothFilter, setBoothFilter] = useState('')
+  const [busyXlsx, setBusyXlsx] = useState(false)
   const [sort, setSort] = useState<'overall' | RatingCriterion | 'worst' | 'most' | 'name'>('overall')
   const cname = (k: RatingCriterion) => t(`admin.ratings.c.${k}` as 'admin.ratings.c.design')
 
@@ -62,6 +63,8 @@ export default function Ratings() {
         // Ratings left before the five criteria have no `crit`; fall back to the plain average.
         avg: overallAverage(s) ?? ratingAverage(s),
         crit,
+        critDist: Object.fromEntries(RATING_CRITERIA.map((k) => [k, s?.crit?.[k]?.dist ?? {}])) as Record<RatingCriterion, Record<string, number>>,
+        team: b.hostUnit ?? '',
         dist: s?.dist ?? {},
       }
     })
@@ -123,7 +126,13 @@ export default function Ratings() {
             {open ? t('admin.ratings.open', { t: closesLabel }) : t('admin.ratings.closed', { t: closesLabel })}
           </p>
         </div>
-        <CsvButton rows={csvRows} name="booth-ratings" />
+        <div className="flex items-center gap-2">
+          <button type="button" className="btn-quiet btn-sm" disabled={busyXlsx || rows.every((r) => r.count === 0)}
+            onClick={() => { setBusyXlsx(true); void downloadResultsXlsx(rows).finally(() => setBusyXlsx(false)) }}>
+            {t('admin.ratings.xlsx')}
+          </button>
+          <CsvButton rows={csvRows} name="booth-ratings" />
+        </div>
       </header>
 
       <DataError error={stats.error} what="the rating counters" />
@@ -258,6 +267,64 @@ export default function Ratings() {
       </section>
     </div>
   )
+}
+
+type ResultRow = {
+  boothId: string; name: string; team: string; count: number; thin: boolean
+  avg: number | null; rank: number | null; dist: Record<string, number>
+  crit: Record<RatingCriterion, number | null>; critRank: Record<RatingCriterion, number | null>
+  critDist: Record<RatingCriterion, Record<string, number>>
+}
+
+/**
+ * The award-results workbook: an "Overall" tab, then one per criterion, each ranked best first
+ * by that tab's average. Unrated booths go last, unranked. The library is loaded on click, so
+ * it never reaches the visitor screens.
+ */
+/** Tab and column names stay in English whatever language the admin page is in. */
+const XLSX_NAMES: Record<RatingCriterion, string> = {
+  design: 'Design & Development', problem: 'Problem-Solving', creativity: 'Creativity', future: 'Future Technology', impact: 'Positive Impact',
+}
+
+async function downloadResultsXlsx(rows: ResultRow[]) {
+  const cname = (k: RatingCriterion) => XLSX_NAMES[k]
+  const { default: writeXlsxFile } = await import('write-excel-file/browser')
+  const bkk = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', ...o }).format(new Date())
+  const stamp = `${bkk({ year: 'numeric', month: '2-digit', day: '2-digit' })} ${bkk({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}`
+  const bold = (value: string) => ({ value, fontWeight: 'bold' as const })
+  const num = (v: number | null, format?: string) => (v == null ? null : { value: format ? Math.round(v * 100) / 100 : v, type: Number, ...(format ? { format } : {}) })
+
+  const tab = (name: string, avgOf: (r: ResultRow) => number | null, rankOf: (r: ResultRow) => number | null, distOf: (r: ResultRow) => Record<string, number>, withCriteria: boolean) => {
+    const sorted = [...rows].sort((a, b) => (avgOf(b) ?? -1) - (avgOf(a) ?? -1) || b.count - a.count || a.name.localeCompare(b.name))
+    const head = ['Rank', 'Booth ID', 'Booth / project', 'Team', 'Votes', 'Average',
+      ...(withCriteria ? RATING_CRITERIA.map(cname) : []), '1★', '2★', '3★', '4★', '5★', `Few votes (<${RATING_MIN_VOTES})`]
+    return {
+      sheet: name.slice(0, 31),
+      stickyRowsCount: 2,
+      columns: [{ width: 6 }, { width: 12 }, { width: 40 }, { width: 36 }, { width: 7 }, { width: 9 }, ...(withCriteria ? RATING_CRITERIA.map(() => ({ width: 13 })) : []), ...[1, 2, 3, 4, 5].map(() => ({ width: 6 })), { width: 15 }],
+      data: [
+        [bold(`ADT InnoFest 2026 — ${name} — exported ${stamp} (Asia/Bangkok)`)],
+        head.map(bold),
+        ...sorted.map((r) => {
+          const rated = r.count > 0 && avgOf(r) != null
+          const d = distOf(r)
+          return [
+            rated ? num(rankOf(r)) : null, { value: r.boothId }, { value: r.name }, { value: r.team },
+            num(r.count), rated ? num(avgOf(r), '0.00') : null,
+            ...(withCriteria ? RATING_CRITERIA.map((k) => num(r.crit[k], '0.00')) : []),
+            ...[1, 2, 3, 4, 5].map((n) => num(d[String(n)] ?? 0)),
+            { value: r.thin ? 'yes' : 'no' },
+          ]
+        }),
+      ],
+    }
+  }
+
+  const sheets = [
+    tab('Overall', (r) => r.avg, (r) => r.rank, (r) => r.dist, true),
+    ...RATING_CRITERIA.map((k) => tab(cname(k), (r) => r.crit[k], (r) => r.critRank[k], (r) => r.critDist[k], false)),
+  ]
+  await writeXlsxFile(sheets as never).toFile(`innofest-ratings-${stamp.replace(' ', '-').replace(':', '')}.xlsx`)
 }
 
 function AvgRank({ avg, rank, strong }: { avg: number | null; rank: number | null; strong?: boolean }) {

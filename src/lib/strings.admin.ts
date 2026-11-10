@@ -639,6 +639,7 @@ export const adminEn = {
   'admin.ratings.sort.overall': 'Overall, best first',
   'admin.ratings.sort.crit': '{c}, best first',
   'admin.ratings.open': 'Voting open until {t}',
+  'admin.ratings.xlsx': 'Download results (Excel)',
   'admin.ratings.closed': 'Voting closed at {t} — results final',
 
   // ---------- festival feedback survey (pages/admin/FestivalSurvey.tsx) ----------
@@ -1291,6 +1292,7 @@ export const adminTh: Record<keyof typeof adminEn, string> = {
   'admin.ratings.sort.overall': 'ภาพรวม สูงสุดก่อน',
   'admin.ratings.sort.crit': '{c} สูงสุดก่อน',
   'admin.ratings.open': 'เปิดให้คะแนนถึง {t}',
+  'admin.ratings.xlsx': 'ดาวน์โหลดผล (Excel)',
   'admin.ratings.closed': 'ปิดให้คะแนนแล้วเมื่อ {t} — ผลเป็นที่สิ้นสุด',
 
   // ---------- festival feedback survey (pages/admin/FestivalSurvey.tsx) ----------
