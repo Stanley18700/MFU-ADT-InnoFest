@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
 import { authError, signInWithGoogle, signUpWithEmail } from '../../lib/authActions'
 import { Spinner } from '../../components/ui'
+import { useLocale } from '../../lib/locale'
 import { AuthShell, Notice, Divider, Field, GoogleButton } from './parts'
 
 const MIN_PASSWORD = 8
@@ -19,8 +20,9 @@ export default function SignUp() {
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState<'google' | 'email' | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const { t } = useLocale()
 
-  if (!ready) return <Spinner label="Opening your passport…" page />
+  if (!ready) return <Spinner label={t('au.opening')} page />
   if (user) return <Navigate to={from ?? '/'} replace />
 
   async function google() {
@@ -35,8 +37,8 @@ export default function SignUp() {
   async function submit(e: FormEvent) {
     e.preventDefault()
     setErr(null)
-    if (password.length < MIN_PASSWORD) { setErr(`Pick a password of at least ${MIN_PASSWORD} characters.`); return }
-    if (password !== confirm) { setErr('The two passwords do not match.'); return }
+    if (password.length < MIN_PASSWORD) { setErr(t('au.pw.short', { n: MIN_PASSWORD })); return }
+    if (password !== confirm) { setErr(t('au.pw.mismatch')); return }
     setBusy('email')
     try {
       await signUpWithEmail(name, email, password, from === '/exhibit' ? '/exhibit' : '/mission')
@@ -46,37 +48,37 @@ export default function SignUp() {
 
   return (
     <AuthShell
-      title="Create your agent account"
-      lead="One account keeps your recovered files safe all day. Sign in again on a new phone and every file is still there."
-      foot={<>Already have one? <Link to="/signin" state={{ from }} className="link font-semibold text-action">Sign in</Link></>}
+      title={t('au.up.title')}
+      lead={t('au.up.lead')}
+      foot={<>{t('au.up.have')} <Link to="/signin" state={{ from }} className="link font-semibold text-action">{t('au.in.submit')}</Link></>}
     >
       {/* Same reason as SignIn: a redirect failure lands on a fresh page load, with no caller
           holding it, so it belongs beside the button rather than in the form's `err`. */}
       {redirectError && <div className="mt-6"><Notice tone="red">{redirectError}</Notice></div>}
 
       <div className="mt-6">
-        <GoogleButton onClick={google} busy={busy === 'google'} label="Sign up with Google" />
+        <GoogleButton onClick={google} busy={busy === 'google'} label={t('au.google.signup')} />
       </div>
 
-      <Divider>or with an email</Divider>
+      <Divider>{t('au.orEmail')}</Divider>
 
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <Field label="Your name" required maxLength={80} autoComplete="name"
-          placeholder="Shown on your agent ID" value={name} onChange={(e) => setName(e.target.value)} />
-        <Field label="Email" type="email" required autoComplete="email" inputMode="email"
+        <Field label={t('au.up.name')} required maxLength={80} autoComplete="name"
+          placeholder={t('au.up.namePh')} value={name} onChange={(e) => setName(e.target.value)} />
+        <Field label={t('au.email')} type="email" required autoComplete="email" inputMode="email"
           placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)}
-          hint="We send a one-tap link here to confirm the address is yours." />
-        <Field label="Password" type="password" required minLength={MIN_PASSWORD} autoComplete="new-password"
-          placeholder={`At least ${MIN_PASSWORD} characters`} value={password} onChange={(e) => setPassword(e.target.value)} />
-        <Field label="Confirm password" type="password" required autoComplete="new-password"
-          placeholder="Type it once more" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          hint={t('au.up.emailHint')} />
+        <Field label={t('au.password')} type="password" required minLength={MIN_PASSWORD} autoComplete="new-password"
+          placeholder={t('au.up.pwPh', { n: MIN_PASSWORD })} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Field label={t('au.up.confirm')} type="password" required autoComplete="new-password"
+          placeholder={t('au.up.confirmPh')} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
         {err && <Notice tone="red">{err}</Notice>}
         <button className="btn-primary py-3.5 text-lg" disabled={busy !== null}>
-          {busy === 'email' ? 'Creating…' : 'Create account'}
+          {busy === 'email' ? t('au.up.busy') : t('au.up.submit')}
         </button>
         <p className="text-xs text-ink-soft">
-          By continuing you agree to how MFU handles your details — see the{' '}
-          <a className="link" href="/privacy.html" target="_blank" rel="noreferrer">privacy notice</a>.
+          {t('au.up.agree')}{' '}
+          <a className="link" href="/privacy.html" target="_blank" rel="noreferrer">{t('au.up.privacy')}</a>
         </p>
       </form>
     </AuthShell>

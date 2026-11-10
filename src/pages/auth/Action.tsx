@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/auth'
 import { api } from '../../lib/api'
 import { authError } from '../../lib/authActions'
 import { Spinner } from '../../components/ui'
+import { useLocale } from '../../lib/locale'
 import { AuthShell, Notice, Field } from './parts'
 
 type Mode = 'verifyEmail' | 'resetPassword' | 'recoverEmail' | 'verifyAndChangeEmail'
@@ -24,6 +25,7 @@ export default function Action() {
   const [params] = useSearchParams()
   const nav = useNavigate()
   const { reloadUser } = useAuth()
+  const { t } = useLocale()
   const mode = params.get('mode') as Mode | null
   const code = params.get('oobCode') ?? ''
   const continueUrl = params.get('continueUrl')
@@ -76,8 +78,8 @@ export default function Action() {
   async function submitPassword(e: FormEvent) {
     e.preventDefault()
     setErr(null)
-    if (password.length < MIN_PASSWORD) { setErr(`Pick a password of at least ${MIN_PASSWORD} characters.`); return }
-    if (password !== confirm) { setErr('The two passwords do not match.'); return }
+    if (password.length < MIN_PASSWORD) { setErr(t('au.pw.short', { n: MIN_PASSWORD })); return }
+    if (password !== confirm) { setErr(t('au.pw.mismatch')); return }
     setBusy(true)
     try {
       await confirmPasswordReset(auth, code, password)
@@ -93,15 +95,15 @@ export default function Action() {
     nav(path, { replace: true })
   }
 
-  if (phase === 'working') return <Spinner label="Checking your link…" page />
+  if (phase === 'working') return <Spinner label={t('au.checkingLink')} page />
 
   if (phase === 'error') {
     return (
-      <AuthShell back="/signin" title="That link did not work" lead={err ?? undefined}>
+      <AuthShell back="/signin" title={t('au.ac.badTitle')} lead={err ?? undefined}>
         <div className="mt-6 flex flex-col gap-3">
-          <p className="text-sm text-ink-soft">Links are single-use and expire after an hour. Ask for a fresh one.</p>
-          <Link to="/forgot-password" className="btn-gold py-3.5">Send a new reset link</Link>
-          <Link to="/signin" className="btn-quiet">Back to sign in</Link>
+          <p className="text-sm text-ink-soft">{t('au.ac.badLead')}</p>
+          <Link to="/forgot-password" className="btn-gold py-3.5">{t('au.ac.newReset')}</Link>
+          <Link to="/signin" className="btn-quiet">{t('au.ac.backSignIn')}</Link>
         </div>
       </AuthShell>
     )
@@ -109,14 +111,14 @@ export default function Action() {
 
   if (mode === 'resetPassword' && phase === 'form') {
     return (
-      <AuthShell back={null} title="Choose a new password" lead={<>For <b className="text-ink">{email}</b>.</>}>
+      <AuthShell back={null} title={t('au.ac.newPwTitle')} lead={<>{t('au.ac.for')} <b className="text-ink">{email}</b></>}>
         <form onSubmit={submitPassword} className="mt-6 flex flex-col gap-4">
-          <Field label="New password" type="password" required minLength={MIN_PASSWORD} autoComplete="new-password"
-            placeholder={`At least ${MIN_PASSWORD} characters`} value={password} onChange={(e) => setPassword(e.target.value)} />
-          <Field label="Confirm new password" type="password" required autoComplete="new-password"
-            placeholder="Type it once more" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          <Field label={t('au.ac.newPw')} type="password" required minLength={MIN_PASSWORD} autoComplete="new-password"
+            placeholder={t('au.up.pwPh', { n: MIN_PASSWORD })} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Field label={t('au.ac.confirmNew')} type="password" required autoComplete="new-password"
+            placeholder={t('au.up.confirmPh')} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           {err && <Notice tone="red">{err}</Notice>}
-          <button className="btn-primary py-3.5 text-lg" disabled={busy}>{busy ? 'Saving…' : 'Save the new password'}</button>
+          <button className="btn-primary py-3.5 text-lg" disabled={busy}>{busy ? t('au.ac.saving') : t('au.ac.save')}</button>
         </form>
       </AuthShell>
     )
@@ -124,29 +126,29 @@ export default function Action() {
 
   const done = {
     resetPassword: {
-      title: 'Password changed',
-      lead: <>You can sign in with the new password now.</>,
-      cta: <Link to="/signin" state={{ email }} className="btn-gold py-3.5">Sign in</Link>,
+      title: t('au.ac.pwChanged'),
+      lead: <>{t('au.ac.pwChangedLead')}</>,
+      cta: <Link to="/signin" state={{ email }} className="btn-gold py-3.5">{t('au.in.submit')}</Link>,
     },
     verifyEmail: {
-      title: 'Email confirmed',
+      title: t('au.ac.confirmed'),
       // The link is often opened in the mail app's own browser, where nobody is signed in.
       lead: auth.currentUser
-        ? <><b className="text-ink">{email}</b> is yours. Your mission is open.</>
-        : <><b className="text-ink">{email}</b> is confirmed. Sign in here, or go back to the tab where you signed up — it has already moved on.</>,
+        ? <><b className="text-ink">{email}</b> {t('au.ac.confirmedIn')}</>
+        : <><b className="text-ink">{email}</b> {t('au.ac.confirmedOut')}</>,
       cta: auth.currentUser
-        ? <button className="btn-gold py-3.5" onClick={goOn}>Open my mission</button>
-        : <Link to="/signin" state={{ email }} className="btn-gold py-3.5">Sign in</Link>,
+        ? <button className="btn-gold py-3.5" onClick={goOn}>{t('au.ac.open')}</button>
+        : <Link to="/signin" state={{ email }} className="btn-gold py-3.5">{t('au.in.submit')}</Link>,
     },
     verifyAndChangeEmail: {
-      title: 'Email address changed',
-      lead: <>Your account now signs in as <b className="text-ink">{email}</b>. Firebase signs you out everywhere after the swap — sign back in with the new address.</>,
-      cta: <Link to="/signin" state={{ email }} className="btn-gold py-3.5">Sign in</Link>,
+      title: t('au.ac.changed'),
+      lead: <>{t('au.ac.changedLead', { email })}</>,
+      cta: <Link to="/signin" state={{ email }} className="btn-gold py-3.5">{t('au.in.submit')}</Link>,
     },
     recoverEmail: {
-      title: 'Address put back',
-      lead: <>Your account signs in as <b className="text-ink">{email}</b> again. If you did not ask for that change, reset your password now — someone else may know it.</>,
-      cta: <Link to="/forgot-password" state={{ email }} className="btn-gold py-3.5">Reset my password</Link>,
+      title: t('au.ac.restored'),
+      lead: <>{t('au.ac.restoredLead', { email })}</>,
+      cta: <Link to="/forgot-password" state={{ email }} className="btn-gold py-3.5">{t('au.ac.resetMine')}</Link>,
     },
   }[mode as Mode]
 
@@ -154,7 +156,7 @@ export default function Action() {
     <AuthShell back={null} title={done.title} lead={done.lead}>
       <div className="mt-6 flex flex-col gap-3">
         {done.cta}
-        <Link to="/" className="btn-quiet">Back to the start</Link>
+        <Link to="/" className="btn-quiet">{t('au.ac.home')}</Link>
       </div>
     </AuthShell>
   )

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { answerIsEmpty, questionVisible, type SurveyAnswer, type SurveyQuestion } from '../../shared/model'
 import { Select } from './Select'
+import { useLocale } from '../lib/locale'
 
 export type Answers = Record<string, SurveyAnswer>
 
@@ -24,6 +25,7 @@ export function SurveyForm({ questions, answers, onChange, showErrors = false, r
   readOnly?: boolean
   accent?: string
 }) {
+  const { t } = useLocale()
   const set = (id: string, v: SurveyAnswer | undefined) => {
     const next = { ...answers }
     if (v === undefined) delete next[id]
@@ -61,7 +63,7 @@ export function SurveyForm({ questions, answers, onChange, showErrors = false, r
                 <div className={row ? 'mt-2' : 'mt-3'}>
                   <QuestionInput q={q} value={answers[q.id]} onChange={(v) => set(q.id, v)} accent={accent} readOnly={readOnly} compact={row} labels={!row || firstRow} />
                 </div>
-                {missing && <p className="mt-2 text-xs text-danger-text">This one is required.</p>}
+                {missing && <p className="mt-2 text-xs text-danger-text">{t('sf.required')}</p>}
               </fieldset>
             </div>
           </li>
@@ -84,6 +86,7 @@ function QuestionInput({ q, value, onChange, accent, readOnly = false, compact =
    *  rather than a form control, so the preview has to disable that one itself. */
   readOnly?: boolean
 }) {
+  const { t } = useLocale()
   switch (q.kind) {
     case 'short':
       return <input className="field" maxLength={300} value={typeof value === 'string' ? value : ''}
@@ -119,7 +122,7 @@ function QuestionInput({ q, value, onChange, accent, readOnly = false, compact =
           ))}
           {value !== undefined && (
             <button type="button" className="self-start text-xs underline text-ink-soft" onClick={() => onChange(undefined)}>
-              Clear
+              {t('sf.clear')}
             </button>
           )}
         </div>

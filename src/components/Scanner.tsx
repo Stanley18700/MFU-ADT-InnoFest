@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocale } from '../lib/locale'
 
 interface Props {
   onResult: (text: string) => void
@@ -8,7 +9,6 @@ interface Props {
   fallback?: string
 }
 
-const VISITOR_FALLBACK = "Type the 6-character code shown under the booth's QR instead."
 
 type Detector = { detect(source: ImageBitmapSource): Promise<Array<{ rawValue: string }>> }
 declare global {
@@ -19,7 +19,9 @@ declare global {
  * §4.3 — camera via BarcodeDetector where available, zxing-wasm otherwise.
  * Reports `permissionDenied` so the parent can show the manual-entry field.
  */
-export function Scanner({ onResult, paused = false, className = '', fallback = VISITOR_FALLBACK }: Props) {
+export function Scanner({ onResult, paused = false, className = '', fallback: fallbackProp }: Props) {
+  const { t } = useLocale()
+  const fallback = fallbackProp ?? t('cam.fallback')
   const videoRef = useRef<HTMLVideoElement>(null)
   const [state, setState] = useState<'starting' | 'live' | 'denied' | 'unavailable'>('starting')
   const lastRef = useRef<{ text: string; at: number }>({ text: '', at: 0 })
@@ -109,15 +111,15 @@ export function Scanner({ onResult, paused = false, className = '', fallback = V
           {state === 'live' && <span className="a-scanline" />}
         </div>
       </div>
-      {state === 'starting' && <p className="absolute inset-0 grid place-items-center text-sm text-white/80">Starting camera…</p>}
+      {state === 'starting' && <p className="absolute inset-0 grid place-items-center text-sm text-white/80">{t('cam.starting')}</p>}
       {state === 'denied' && (
         <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-white/90">
-          Camera permission was denied. {fallback}
+          {t('cam.denied')} {fallback}
         </p>
       )}
       {state === 'unavailable' && (
         <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-white/90">
-          No camera on this device. {fallback}
+          {t('cam.none')} {fallback}
         </p>
       )}
     </div>

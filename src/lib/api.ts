@@ -280,11 +280,64 @@ export type LookupResult =
       }>
     }
 
+/**
+ * What the server said, in the reader's language.
+ *
+ * Server messages are written once, in English. Most visitors read Thai, so the ones a visitor
+ * or exhibitor can actually meet are translated here by their exact text; anything else falls
+ * back to the English. Bare transport codes ("internal", "deadline-exceeded") are never shown.
+ */
+const SERVER_TH: Record<string, string> = {
+  'Sign in with an email address first': 'กรุณาเข้าสู่ระบบด้วยอีเมลก่อน',
+  'Confirm your email address first — check your inbox for the link': 'กรุณายืนยันอีเมลก่อน เปิดอีเมลของคุณแล้วกดลิงก์ที่เราส่งไป',
+  'Consent is required': 'กรุณาติ๊กช่องยินยอมก่อนดำเนินการต่อ',
+  'Your MFU student ID must be 10 digits': 'รหัสนักศึกษา มฟล. ต้องเป็นตัวเลข 10 หลัก',
+  'This email is already enlisted. Sign in with it instead.': 'อีเมลนี้ลงทะเบียนแล้ว กรุณาเข้าสู่ระบบด้วยอีเมลนี้',
+  'Booth is no longer available.': 'บูธนี้ปิดรับการสแกนแล้ว',
+  'Another agent already uses that email address': 'อีเมลนี้มีผู้ใช้แล้ว',
+  'Only visitors have a student ID here': 'เฉพาะผู้เข้าร่วมงานเท่านั้นที่ใส่รหัสนักศึกษาได้',
+  'MFU333 is only for Mae Fah Luang University students': 'คะแนนกิจกรรมสำหรับนักศึกษา มฟล. เท่านั้น',
+  'This booth is not collecting answers': 'ขณะนี้ยังไม่เปิดรับคำตอบ',
+  'Collect a stamp first': 'กรุณาสแกนบูธอย่างน้อย 1 บูธก่อนตอบแบบประเมิน',
+  'Collect this booth\'s stamp first': 'กรุณาสแกนบูธนี้ก่อน',
+  'Collect this booth’s stamp first': 'กรุณาสแกนบูธนี้ก่อน',
+  'You have already answered this one': 'คุณตอบแบบประเมินนี้แล้ว',
+  'Too many ratings — wait a moment.': 'ให้คะแนนเร็วเกินไป รอสักครู่แล้วลองใหม่',
+  'This is an admin account — admins can already open every booth screen.': 'บัญชีนี้เป็นผู้ดูแลระบบ เปิดหน้าจอของทุกบูธได้อยู่แล้ว',
+  'This account is already registered for another booth. Ask the organizers to move it.': 'บัญชีนี้ลงทะเบียนกับบูธอื่นแล้ว กรุณาแจ้งผู้จัดงานเพื่อย้ายบูธ',
+  'Too many tries. Wait ten minutes, or ask the organizers at the agency desk.': 'ลองหลายครั้งเกินไป รอ 10 นาที หรือติดต่อผู้จัดงานที่กองอำนวยการ',
+  'Type your full name as it appears on the official list.': 'กรุณาพิมพ์ชื่อ-นามสกุลให้ตรงกับรายชื่อ หรือพิมพ์รหัสนักศึกษา',
+  'That project is not on the list.': 'ไม่พบโครงงานนี้ในรายชื่อ',
+  'That booth is not open for registration.': 'บูธนี้ยังไม่เปิดให้ลงทะเบียน',
+  'This project has no team list yet. Ask the organizers at the agency desk.': 'โครงงานนี้ยังไม่มีรายชื่อทีม กรุณาติดต่อผู้จัดงานที่กองอำนวยการ',
+  'That name is not on this project’s team list. Type it exactly as on the official list, in English or Thai, or type your student ID.': 'ไม่พบชื่อนี้ในรายชื่อทีมของโครงงานนี้ ตรวจสอบว่าเลือกโครงงานถูกต้อง แล้วพิมพ์ชื่อให้ตรงกับรายชื่อ หรือพิมพ์รหัสนักศึกษา 10 หลักแทน',
+  'That team member is already registered on another account. Ask the organizers at the agency desk to reset it.': 'ชื่อนี้ถูกลงทะเบียนด้วยบัญชีอื่นแล้ว กรุณาติดต่อผู้จัดงานที่กองอำนวยการเพื่อรีเซ็ต',
+}
+const CODE_TEXT: Record<string, [string, string]> = {
+  internal: ['The system is busy. Wait a moment and try again.', 'ระบบกำลังทำงานหนัก รอสักครู่แล้วลองใหม่'],
+  unavailable: ['No internet connection. Check your signal or Wi-Fi and try again.', 'ไม่มีสัญญาณอินเทอร์เน็ต ตรวจสอบสัญญาณหรือ Wi-Fi แล้วลองใหม่'],
+  'deadline-exceeded': ['The connection is too slow. Check your signal and try again.', 'สัญญาณช้าเกินไป ตรวจสอบสัญญาณแล้วลองใหม่'],
+  unauthenticated: ['You are signed out. Please sign in again.', 'คุณออกจากระบบแล้ว กรุณาเข้าสู่ระบบอีกครั้ง'],
+  'resource-exhausted': ['Too many tries. Wait a moment and try again.', 'ลองหลายครั้งเกินไป รอสักครู่แล้วลองใหม่'],
+}
+
 export function errorMessage(e: unknown): string {
+  const th = typeof document !== 'undefined' && document.documentElement.lang === 'th'
+  const generic = th ? 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง' : 'Something went wrong. Please try again.'
   const err = e as { code?: string; message?: string }
-  if (!err) return 'Something went wrong'
-  const msg = err.message ?? 'Something went wrong'
-  return msg.replace(/^functions\//, '').replace(/^[A-Z_-]+:\s*/i, '')
+  if (!err) return generic
+  const code = (err.code ?? '').replace(/^functions\//, '')
+  const msg = (err.message ?? '').replace(/^functions\//, '').replace(/^[A-Z_-]+:\s*/i, '')
+  // A message that is only the transport code ("internal", "INTERNAL") tells a visitor nothing.
+  const bare = !msg || msg.toLowerCase() === code || /^(internal|unavailable|deadline[- ]exceeded|unauthenticated)$/i.test(msg)
+  if (bare) return CODE_TEXT[code]?.[th ? 1 : 0] ?? generic
+  if (/Failed to fetch|NetworkError|network error/i.test(msg)) return CODE_TEXT.unavailable[th ? 1 : 0]
+  if (!th) return msg
+  if (SERVER_TH[msg]) return SERVER_TH[msg]
+  const req = msg.match(/^"(.*)" is required$/)
+  if (req) return `กรุณาตอบข้อ “${req[1]}”`
+  if (code === 'permission-denied' && /^Requires role/i.test(msg)) return 'บัญชีนี้ไม่มีสิทธิ์ทำรายการนี้'
+  return msg
 }
 
 /**

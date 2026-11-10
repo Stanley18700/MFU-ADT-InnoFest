@@ -163,9 +163,9 @@ const MESSAGES: Record<string, string> = {
   'auth/invalid-credential': 'Wrong email or password.',
   'auth/wrong-password': 'Wrong password.',
   'auth/user-not-found': 'No account for that email yet.',
-  'auth/user-disabled': 'This account has been disabled. Ask at the welcome desk.',
-  'auth/too-many-requests': 'Too many attempts. Wait a minute and try again.',
-  'auth/network-request-failed': 'No connection. Check the wifi and try again.',
+  'auth/user-disabled': 'This account has been disabled. Ask at the Information Desk.',
+  'auth/too-many-requests': 'Too many attempts. Wait a minute and try again, or use “Continue with Google”.',
+  'auth/network-request-failed': 'No internet connection. Check your signal or Wi-Fi and try again.',
   'auth/popup-closed-by-user': 'The Google window closed before sign-in finished.',
   'auth/cancelled-popup-request': 'The Google window closed before sign-in finished.',
   'auth/popup-blocked': 'Your browser blocked the Google window. Allow pop-ups, or try again.',
@@ -194,9 +194,39 @@ const MESSAGES: Record<string, string> = {
   'auth/timeout': 'Google took too long to answer. Check the connection and try again.',
 }
 
+/** The same messages for a visitor reading the app in Thai. A code missing here falls back to English. */
+const MESSAGES_TH: Record<string, string> = {
+  'auth/invalid-email': 'รูปแบบอีเมลไม่ถูกต้อง',
+  'auth/missing-password': 'กรุณากรอกรหัสผ่าน',
+  'auth/weak-password': 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
+  'auth/email-already-in-use': 'อีเมลนี้มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบ หรือตั้งรหัสผ่านใหม่',
+  'auth/invalid-credential': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+  'auth/wrong-password': 'รหัสผ่านไม่ถูกต้อง',
+  'auth/user-not-found': 'ยังไม่มีบัญชีที่ใช้อีเมลนี้ กรุณาสมัครใหม่',
+  'auth/user-disabled': 'บัญชีนี้ถูกระงับ กรุณาติดต่อกองอำนวยการ',
+  'auth/too-many-requests': 'ลองหลายครั้งเกินไป รอสักครู่แล้วลองใหม่ หรือใช้ “เข้าสู่ระบบด้วย Google”',
+  'auth/network-request-failed': 'ไม่มีสัญญาณอินเทอร์เน็ต ตรวจสอบสัญญาณหรือ Wi-Fi แล้วลองใหม่',
+  'auth/popup-closed-by-user': 'หน้าต่าง Google ถูกปิดก่อนเข้าสู่ระบบเสร็จ กรุณาลองอีกครั้ง',
+  'auth/cancelled-popup-request': 'หน้าต่าง Google ถูกปิดก่อนเข้าสู่ระบบเสร็จ กรุณาลองอีกครั้ง',
+  'auth/popup-blocked': 'เบราว์เซอร์บล็อกหน้าต่าง Google กรุณาอนุญาตป๊อปอัป แล้วลองอีกครั้ง',
+  'auth/account-exists-with-different-credential': 'อีเมลนี้สมัครด้วยรหัสผ่านไว้แล้ว กรุณาเข้าสู่ระบบด้วยอีเมลและรหัสผ่าน',
+  'auth/requires-recent-login': 'เพื่อความปลอดภัย กรุณาเข้าสู่ระบบอีกครั้งก่อนเปลี่ยนข้อมูลนี้',
+  'auth/expired-action-code': 'ลิงก์นี้หมดอายุแล้ว กรุณาขอลิงก์ใหม่',
+  'auth/invalid-action-code': 'ลิงก์นี้ใช้ไม่ได้ อาจถูกใช้ไปแล้ว กรุณาขอลิงก์ใหม่',
+  'auth/missing-initial-state': 'เบราว์เซอร์ในแอปนี้ทำให้เข้าสู่ระบบไม่สำเร็จ กรุณาเปิดเว็บใน Chrome หรือ Safari (เมนู ⋯ แล้วเลือก “เปิดในเบราว์เซอร์”) แล้วเข้าสู่ระบบอีกครั้ง',
+  'auth/web-storage-unsupported': 'เบราว์เซอร์นี้เข้าสู่ระบบไม่ได้ กรุณาเปิดเว็บใน Chrome หรือ Safari หรือปิดโหมดส่วนตัว แล้วลองอีกครั้ง',
+  'auth/redirect-cancelled-by-user': 'ยกเลิกการเข้าสู่ระบบก่อนเสร็จ กรุณาลองอีกครั้ง',
+  'auth/redirect-operation-pending': 'กำลังเข้าสู่ระบบอยู่ กรุณารอสักครู่',
+  'auth/timeout': 'Google ตอบช้าเกินไป ตรวจสอบสัญญาณแล้วลองอีกครั้ง',
+}
+
+const thai = () => typeof document !== 'undefined' && document.documentElement.lang === 'th'
+
 export function authError(e: unknown): string {
   const err = e as { code?: string; message?: string }
+  if (err?.code && thai() && MESSAGES_TH[err.code]) return MESSAGES_TH[err.code]
   if (err?.code && MESSAGES[err.code]) return MESSAGES[err.code]
+  if (thai()) return 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
   if (err?.message) return err.message.replace(/^Firebase:\s*/, '').replace(/\s*\(auth\/[^)]+\)\.?$/, '')
   return 'Something went wrong. Try again.'
 }

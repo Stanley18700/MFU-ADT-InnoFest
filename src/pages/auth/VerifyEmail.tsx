@@ -5,6 +5,7 @@ import { useAuth } from '../../lib/auth'
 import { authError, sendVerification } from '../../lib/authActions'
 import { auth } from '../../lib/firebase'
 import { Spinner } from '../../components/ui'
+import { useLocale } from '../../lib/locale'
 import { AuthShell, Notice } from './parts'
 
 const COOLDOWN = 45
@@ -26,6 +27,7 @@ export default function VerifyEmail() {
   const [waitNote, setWaitNote] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const checking = useRef(false)
+  const { t } = useLocale()
 
   const check = useCallback(async () => {
     if (checking.current) return
@@ -39,7 +41,7 @@ export default function VerifyEmail() {
     return () => clearInterval(id)
   }, [user, emailVerified, check])
 
-  if (!ready) return <Spinner label="Checking your account…" page />
+  if (!ready) return <Spinner label={t('au.checkingAccount')} page />
   if (!user) return <Navigate to="/signin" replace />
   if (emailVerified) return <Navigate to={from ?? '/'} replace />
 
@@ -47,7 +49,7 @@ export default function VerifyEmail() {
     setBusy(true); setErr(null); setNote(null)
     try {
       await sendVerification(auth.currentUser!, from === '/exhibit' ? '/exhibit' : '/mission')
-      setNote('Sent. Give it a minute, then check your spam folder too.')
+      setNote(t('au.ve.sent'))
       start()
     } catch (e) { setErr(authError(e)) } finally { setBusy(false) }
   }
@@ -61,7 +63,7 @@ export default function VerifyEmail() {
     try {
       await reloadUser()
       if (!auth.currentUser?.emailVerified) {
-        setWaitNote(`Not confirmed yet. Open the email to ${user!.email} and tap the link in it — check Spam or Promotions too. It can take a minute to arrive.`)
+        setWaitNote(t('au.ve.notYet', { email: user!.email ?? '' }))
       }
     } catch (e) { setErr(authError(e)) } finally { setBusy(false) }
   }
@@ -74,28 +76,29 @@ export default function VerifyEmail() {
   return (
     <AuthShell
       back={null}
-      title="Confirm your email"
-      lead={<>We sent a link to <b className="text-ink">{user.email}</b>. Tap it and your mission begins.</>}
+      title={t('au.ve.title')}
+      lead={<>{t('au.ve.lead1')} <b className="text-ink">{user.email}</b> {t('au.ve.lead2')}</>}
     >
       <div className="mt-6 flex flex-col gap-4">
         <div className="flex items-center gap-3 rounded-[20px] bg-sky-100 px-4 py-3 text-sm text-ink-soft">
           <span aria-hidden className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#1D5BFF]/20 border-t-[#1D5BFF]" />
-          Waiting for you to tap the link — this page moves on by itself.
+          {t('au.ve.waiting')}
         </div>
 
         {note && <Notice tone="green">{note}</Notice>}
         {waitNote && <Notice tone="amber">{waitNote}</Notice>}
         {err && <Notice tone="red">{err}</Notice>}
 
-        <button className="btn-primary py-3.5" disabled={busy} onClick={continueNow}>{busy ? 'Checking…' : 'I have tapped it — continue'}</button>
+        <button className="btn-primary py-3.5" disabled={busy} onClick={continueNow}>{busy ? t('au.ve.checking') : t('au.ve.continue')}</button>
         <button className="btn-ghost" onClick={resend} disabled={busy || left > 0}>
-          {busy ? 'Sending…' : left > 0 ? `Send it again in ${left}s` : 'Send the link again'}
+          {busy ? t('au.sending') : left > 0 ? t('au.ve.againIn', { s: left }) : t('au.ve.again')}
         </button>
 
         <p className="pt-2 text-xs text-ink-soft">
-          Typed the address wrong?{' '}
-          <button className="btn-quiet btn-sm mx-1" onClick={useAnother}>Start again with another email</button>
+          {t('au.ve.wrong')}{' '}
+          <button className="btn-quiet btn-sm mx-1" onClick={useAnother}>{t('au.ve.restart')}</button>
         </p>
+        <p className="text-xs text-ink-soft">{t('au.ve.tip')}</p>
       </div>
     </AuthShell>
   )

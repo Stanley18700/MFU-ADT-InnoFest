@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useLocale } from '../../lib/locale'
 import { useEvent } from '../../lib/data'
 import { eventDateLine } from '../../lib/eventText'
 import { AGround, AHeader, Eyebrow } from '../../components/agency'
@@ -73,10 +74,11 @@ export function AuthShell({ title, lead, children, foot, back = '/', eventLine =
 }
 
 export function GoogleButton({ onClick, busy, label }: { onClick: () => void; busy?: boolean; label: string }) {
+  const { t } = useLocale()
   return (
     <button type="button" onClick={onClick} disabled={busy} className="a-btn a-btn-plain a-cut">
       <GoogleMark />
-      {busy ? 'Opening Google…' : label}
+      {busy ? t('au.google.opening') : label}
     </button>
   )
 }

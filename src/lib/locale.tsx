@@ -24,7 +24,10 @@ function initialLocale(): Locale {
     const saved = localStorage.getItem(KEY)
     if (isLocale(saved)) return saved
   } catch { /* private window, or site data blocked */ }
-  return navigator.language?.toLowerCase().startsWith('th') ? 'th' : 'en'
+  // Thai anywhere in the phone's language list, not only first: many Thai visitors run their
+  // phone in English with Thai as the second language, and they are most of the hall.
+  const langs = [navigator.language, ...(navigator.languages ?? [])].filter(Boolean).map((l) => l.toLowerCase())
+  return langs.some((l) => l.startsWith('th')) ? 'th' : 'en'
 }
 
 interface LocaleState {
