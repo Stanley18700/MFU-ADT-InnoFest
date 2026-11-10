@@ -41,14 +41,8 @@ if (args.includes('--emulator')) {
 const here = dirname(fileURLToPath(import.meta.url))
 process.env.GCLOUD_PROJECT ??= (() => { try { return JSON.parse(readFileSync(resolve(here, '..', '.firebaserc'), 'utf8')).projects.default } catch { return 'mfu-passport' } })()
 
-const { db, FieldValue, Timestamp, bucketRef } = await import('../functions/lib/lib.js')
-const { STATS_SHARDS, hourOf } = await import('../functions/lib/shared/model.js')
-/** Same as triggers.ts `key()`: Firestore field names cannot hold '.', '/', etc. */
-const key = (s) => s.replace(/[.~*/[\]]/g, '_').slice(0, 60)
-
-/** Nested map from a path: ['a','b','c'], v -> { a: { b: { c: v } } }. Never dotted keys (see triggers.ts). */
-const nest = (path, v) => path.reduceRight((acc, k) => ({ [k]: acc }), v)
-const get = (o, path) => path.reduce((x, k) => (x == null ? undefined : x[k]), o)
+const { db, FieldValue, Timestamp } = await import('../functions/lib/lib.js')
+const { ledger, takeScan, checkedWrites, SHARD } = await import('./undo-scans.mjs')
 
 async function main() {
   const uidArg = arg('uid'), passport = arg('passport')
@@ -77,16 +71,8 @@ async function main() {
   if (redeemed.length) throw new Error(`Already collected: ${redeemed.map((d) => d.data().tierId).join(', ')} — undoing a hand-over needs the prize desk's void, not this script`)
 
   // ---- what each counter loses, aggregated per document ----
-  const dec = new Map() // path -> { ref, fields: [[fieldPath[], n]] }
-  const take = (ref, path, n) => {
-    if (!n) return
-    const e = dec.get(ref.path) ?? { ref, fields: [] }
-    const f = e.fields.find(([p]) => p.join('\u0000') === path.join('\u0000'))
-    if (f) f[1] += n; else e.fields.push([path, n])
-    dec.set(ref.path, e)
-  }
-  const shard = db.doc('stats/event/shards/0')
-  const demo = db.doc('stats/demographics/shards/0')
+  const dec = ledger()
+  const shard = SHARD
   let points = 0
   console.log(`scans (${scans.size}) — each deleted with its countedScans marker:`)
   for (const s of scans.docs) {
@@ -96,48 +82,19 @@ async function main() {
     console.log(`  ${s.id.padEnd(40)} +${x.pointsAwarded} pts  ${x.day}  ${at?.toISOString() ?? '?'}${counted ? '' : '  (never counted — no counters to undo)'}`)
     if (!counted || !at) continue
     points += x.pointsAwarded
-    const inst = x.institution || 'Unknown'
-    const school = x.institution === 'MFU' ? x.school || 'Unknown school' : null
-    take(shard, ['stamps'], 1)
-    take(shard, ['points'], x.pointsAwarded)
-    take(shard, ['byDay', x.day, 'stamps'], 1)
-    take(demo, ['crossSchool', key(school ?? inst), x.boothId], 1)
-    const b = db.doc(`stats/booths/items/${x.boothId}`)
-    take(b, ['stamps'], 1)
-    if (u.refBooth === x.boothId) take(b, ['invitedCame'], 1)
-    take(b, ['byVisitorType', x.visitorType ?? 'guest'], 1)
-    take(b, ['byDay', x.day], 1)
-    take(b, ['byHour', `${x.day}T${hourOf(at)}`], 1)
-    const { ref: bucket } = bucketRef(x.eventId, at)
-    take(bucket, ['total'], 1)
-    take(bucket, ['perBooth', x.boothId], 1)
+    takeScan(dec.take, x, at, u)
   }
-  if ((u.stampCount ?? 0) > 0) take(shard, ['visitorsWithStamps'], 1)
+  if ((u.stampCount ?? 0) > 0) dec.take(shard, ['visitorsWithStamps'], 1)
   const lowest = Math.min(...tiers.docs.map((t) => t.data().thresholdPoints))
   const lowestIds = new Set(tiers.docs.filter((t) => t.data().thresholdPoints === lowest).map((t) => t.id))
-  if (unlocks.docs.some((d) => lowestIds.has(d.data().tierId))) take(shard, ['tierReached'], 1)
+  if (unlocks.docs.some((d) => lowestIds.has(d.data().tierId))) dec.take(shard, ['tierReached'], 1)
 
   console.log(`\ntierUnlocks (${unlocks.size}): ${unlocks.docs.map((d) => `${d.data().tierId} (not collected)`).join(', ') || 'none'}`)
   console.log(`boothRated markers (${rated.size}): ${rated.docs.map((d) => d.data().boothId).join(', ') || 'none'}`)
 
   // ---- check against current values; sharded totals are summed across shards ----
   console.log('\ncounters:')
-  const sums = {}
-  for (const base of ['stats/event/shards', 'stats/demographics/shards']) {
-    const docs = (await db.getAll(...Array.from({ length: STATS_SHARDS }, (_, i) => db.doc(`${base}/${i}`)))).map((d) => d.data() ?? {})
-    sums[base] = (path) => docs.reduce((n, d) => n + (Number(get(d, path)) || 0), 0)
-  }
-  const writes = []
-  for (const { ref, fields } of dec.values()) {
-    const base = ref.path.replace(/\/[^/]+$/, '')
-    const cur = sums[base] ? null : (await ref.get()).data() ?? {}
-    for (const [path, n] of fields) {
-      const have = sums[base] ? sums[base](path) : Number(get(cur, path)) || 0
-      const ok = have >= n
-      console.log(`  ${ok ? (COMMIT ? '-' : 'would -') : 'SKIP'.padEnd(COMMIT ? 1 : 7)} ${String(n).padStart(3)}  ${ref.path} ${path.join('.')}  (now ${have}${ok ? ` -> ${have - n}` : ', already lower — left alone'})`)
-      if (ok) writes.push([ref, nest(path, FieldValue.increment(-n))])
-    }
-  }
+  const writes = await checkedWrites(dec, COMMIT)
   console.log(`\nusers/${uid}: points ${u.points ?? 0} -> 0 (scans account for ${points}), stampCount ${u.stampCount ?? 0} -> 0, stampedBoothIds -> [], daysAttended -> []`)
 
   if (!COMMIT) { console.log('\nDry run — nothing was written. Re-run with --commit to apply.'); return }
