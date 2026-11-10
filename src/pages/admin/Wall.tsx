@@ -12,7 +12,7 @@ import type { DrawName } from './Draw'
 /** Big enough to scan from the middle of a hall, small enough to leave the board room. */
 function qrPx() {
   if (typeof window === 'undefined') return 260
-  return Math.round(Math.max(180, Math.min(window.innerWidth * 0.19, window.innerHeight * 0.36)))
+  return Math.round(Math.max(180, Math.min(window.innerWidth * 0.17, window.innerHeight * 0.31)))
 }
 
 const STEPS: Array<[string, string]> = [
@@ -22,39 +22,38 @@ const STEPS: Array<[string, string]> = [
 ]
 
 /**
- * The uplink beams: hair-thin columns of one cyan, each standing on a building of the campus
- * picture and fading out high above it. Positions are in % of the PICTURE (left, foot above its
- * bottom edge, height), so a beam stays on its rooftop at any screen shape. Last is the delay.
+ * The uplink streams: dashed threads of pale cyan light climbing out of the campus, as on the
+ * closing-screen mock-up. Each is placed in % of the campus PICTURE (left, foot above its bottom
+ * edge, height), so it stays on its rooftop at any screen shape; then a speed and a delay so no
+ * two climb in step.
  */
-const RAYS: Array<[number, number, number, number]> = [
-  [12, 27, 78, 0],      // the small hall on the left
-  [22, 30, 118, 1.6],   // the long building
-  [30.5, 32, 66, 0.7],  // the tiered roof beside it
-  [39.5, 38, 104, 2.3], // left wing of the main court
-  [49.3, 50, 92, 0.3],  // the hall at the head of the court
-  [59, 38, 110, 1.9],   // right wing of the main court
-  [62.2, 46, 60, 1.1],  // the block behind it
-  [76, 20, 84, 2.7],    // the lake
-  [86.5, 39, 98, 0.9],  // the pavilion on the right
+const RAYS: Array<[number, number, number, number, number]> = [
+  [4.5, 30, 72, 7, 0.4], [9, 22, 106, 9, 2.1], [12, 27, 64, 6, 1.2], [17.5, 36, 90, 8, 3],
+  [22, 30, 60, 10, 0.8], [26.5, 24, 40, 6.5, 2.6], [30.5, 32, 58, 8.5, 1.7], [36, 42, 48, 7, 0.2],
+  [39.5, 38, 52, 9.5, 2.2], [44.5, 46, 44, 7.5, 1], [49.3, 50, 40, 9, 0], [54, 44, 46, 6.5, 2.8],
+  [59, 38, 52, 10, 1.4], [62.2, 46, 44, 7.5, 0.6], [67.5, 34, 46, 6, 2.4], [72, 28, 62, 8.5, 1.9],
+  [76, 20, 56, 7, 0.9], [81, 33, 95, 9.5, 3.2], [86.5, 39, 86, 8, 0.3], [91, 30, 68, 6.5, 1.5],
+  [95.5, 26, 94, 8.5, 2.5],
 ]
 
 /**
- * The hall screen's ground: a pale sky, the agency grid, the campus and Doi Tung in the agency
- * blue across the lower half, and thin uplink rays rising out of the buildings.
+ * The hall screen's ground, free of the app's design system on purpose (10 Nov): a pale sky with
+ * a soft halo, the faintest grid, the campus and Doi Tung washed in light across the foot, and
+ * the uplink streams rising out of it.
  */
 function HallGround() {
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-20 overflow-hidden bg-[linear-gradient(180deg,#F8FBFF_0%,#EEF4FF_45%,#DCE8FF_100%)]">
-      <div className="a-grid" />
-      <div className="absolute inset-0 bg-[radial-gradient(60%_45%_at_50%_62%,rgba(0,200,255,.22),transparent_70%)]" />
-      {/* One box the shape of the picture: the beams are placed inside it, on the buildings. */}
-      <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[104vw] -translate-x-1/2">
+    <div aria-hidden className="hall-ground pointer-events-none fixed inset-0 -z-20 overflow-hidden">
+      <div className="hall-grid absolute inset-0" />
+      <div className="hall-halo absolute inset-0" />
+      {/* One box the shape of the picture: the streams are placed inside it, on the buildings. */}
+      <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[108vw] -translate-x-1/2">
         <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute inset-0 h-full w-full" />
-        {RAYS.map(([x, foot, h, d]) => (
-          <span key={x} className="hall-ray" style={{ left: `${x}%`, bottom: `${foot}%`, height: `${h}%`, animationDelay: `${d}s` }} />
+        {RAYS.map(([x, foot, h, speed, d]) => (
+          <span key={x} className="hall-ray" style={{ left: `${x}%`, bottom: `${foot}%`, height: `${h}%`, animationDuration: `${speed}s, ${speed * 0.9}s`, animationDelay: `-${d}s, -${d * 1.3}s` }} />
         ))}
       </div>
-      <div className="absolute inset-x-0 bottom-0 h-[12vh] bg-gradient-to-t from-white/70 to-transparent" />
+      <div className="hall-mist absolute inset-x-0 bottom-0 h-[30vh]" />
     </div>
   )
 }
@@ -201,66 +200,56 @@ export default function Wall() {
         </section>
       ) : (
       /*
-       * An entrance screen, not a dashboard: what this is, how to start, and the QR — over the
-       * campus at the foot of Doi Tung with the uplink rays rising out of it. Bilingual on the
-       * screen itself, because the hall is mostly Thai visitors and the screen has no toggle
-       * anybody can reach.
+       * An entrance screen, not a dashboard: one centred composition — the line, the QR with the
+       * three steps on its left and the live numbers on its right — floating over the campus.
+       * Bilingual on the screen itself, because the hall is mostly Thai visitors.
        */
-      <section className="relative grid min-h-0 flex-1 grid-cols-[1.15fr_0.85fr] items-center gap-[4vw] pb-[1vh]">
-        <div className="flex min-h-0 flex-col justify-center">
-          <div><span className="wall-badge a-hd inline-block px-[1.3vw] py-[0.7vh] text-[1.25vw] font-bold">RECOVER THE FUTURE · กู้คืนอนาคต</span></div>
-          <h1 className="a-hd m-0 mt-[2.4vh] text-[5.2vw] font-bold leading-[0.98] tracking-[-0.01em] text-[#0A1433]">
-            Scan. Collect.<br /><span className="wall-grad">Get rewards.</span>
-          </h1>
-          <p className="m-0 mt-[1.8vh] text-[1.9vw] font-semibold leading-snug text-[#0A1433] [text-shadow:0_0_0.6vw_#fff,0_0_0.3vw_#fff]">สแกน QR ที่บูธ สะสมคะแนน รับรางวัล</p>
+      <section className="relative flex min-h-0 flex-1 flex-col items-center justify-center text-center">
+        <span className="hall-badge a-mono inline-block px-[1.3vw] py-[0.55vh] text-[1.05vw] font-semibold tracking-[.18em]">RECOVER THE FUTURE · กู้คืนอนาคต</span>
+        <h1 className="a-hd m-0 mt-[1.6vh] text-[4.9vw] font-bold leading-[1.02] tracking-[-0.015em] text-[#0B1437]">
+          Scan. Collect. <span className="hall-grad">Get rewards.</span>
+        </h1>
+        <p className="m-0 mt-[1vh] text-[1.75vw] font-semibold text-[#1B2A5C]">สแกน QR ที่บูธ · สะสมคะแนน · รับรางวัล</p>
 
-          <ol className="m-0 mt-[3.2vh] flex list-none flex-wrap gap-[1vw] p-0">
+        <div className="mt-[3.4vh] grid w-full grid-cols-[1fr_auto_1fr] items-center gap-[3vw]">
+          <ol className="m-0 flex list-none flex-col items-end gap-[1.5vh] p-0">
             {STEPS.map(([en, th], i) => (
-              <li key={en} className="wall-chip flex items-center gap-[0.9vw] px-[1.1vw] py-[1.1vh]">
-                <span className="fig wall-step-n grid h-[2.6vw] w-[2.6vw] shrink-0 place-items-center text-[1.3vw] !text-white">{i + 1}</span>
-                <span className="leading-tight"><span className="block text-[1.15vw] font-semibold text-[#0A1433]">{th}</span><span className="block text-[0.85vw] text-[#33415F]">{en}</span></span>
+              <li key={en} className="hall-card flex w-[23vw] items-center gap-[1vw] px-[1.2vw] py-[1.3vh] text-left">
+                <span className="hall-num a-hd grid h-[3vw] w-[3vw] shrink-0 place-items-center text-[1.5vw] font-bold text-white">{i + 1}</span>
+                <span className="leading-tight"><span className="block text-[1.3vw] font-semibold text-[#0B1437]">{th}</span><span className="block text-[0.9vw] text-[#4A5A85]">{en}</span></span>
               </li>
             ))}
           </ol>
-        </div>
 
-        <div className="flex min-h-0 flex-col items-center justify-center">
           {/* The one thing a visitor at the door has to be able to act on. */}
-          <div className="wall-qrcard flex flex-col items-center px-[2.4vw] pb-[2.2vh] pt-[2.4vh]">
-            <div className="a-hd text-center text-[1.7vw] font-bold leading-tight text-[#0A1433]">สแกนเพื่อเริ่มภารกิจ</div>
-            <div className="mb-[2.2vh] text-center text-[1.05vw] font-semibold text-[#1D5BFF]">Scan to start the mission</div>
+          <div className="hall-qr relative flex flex-col items-center px-[2vw] pb-[1.8vh] pt-[2vh]">
+            <div className="a-hd text-[1.6vw] font-bold leading-tight text-[#0B1437]">สแกนเพื่อเริ่มภารกิจ</div>
+            <div className="mb-[1.8vh] text-[0.95vw] font-semibold tracking-[.04em] text-[#2B5BFF]">Scan to start the mission</div>
             <div className="relative">
-              <span aria-hidden className="qr-brackets" style={{ inset: '-1.1vw', ['--l' as string]: '2.6vw', ['--w' as string]: '0.35vw' }} />
+              <span aria-hidden className="qr-brackets" style={{ inset: '-0.9vw', ['--l' as string]: '2.2vw', ['--w' as string]: '0.3vw' }} />
               <div className="relative overflow-hidden bg-white"><QR value={APP_ORIGIN} size={qrSize} /><span aria-hidden className="qr-sweep-loop" /></div>
             </div>
-            <div className="fig mt-[2.4vh] text-[1.35vw] text-[#1450E6]">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
+            <div className="a-mono mt-[1.8vh] text-[1.2vw] font-semibold text-[#1746E0]">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
+          </div>
+
+          <div className="flex flex-col items-start gap-[1.5vh]">
+            {([['Agents', 'ผู้เข้าร่วม', ev.totals.visitors], ['Booth scans', 'การสแกนบูธ', ev.totals.stamps], ['Rewards given', 'มอบรางวัลแล้ว', ev.totals.redeemed]] as const).map(([en, th, v]) => (
+              <div key={en} className="hall-card flex w-[23vw] items-baseline gap-[1vw] px-[1.4vw] py-[1.3vh] text-left">
+                <span className="hall-grad a-mono min-w-[7.5vw] text-[2.5vw] font-semibold leading-none">{show(v)}</span>
+                <span className="leading-tight"><span className="block text-[1.15vw] font-semibold text-[#0B1437]">{th}</span><span className="block text-[0.85vw] text-[#4A5A85]">{en}</span></span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
       )}
 
-      {/* The live strip along the foot: three counters, then the busiest booths once there are any. */}
+      {/* One quiet line over the campus: the busiest booths once there are any, else the day. */}
       {!reveal && (
-        <footer className="relative flex shrink-0 items-stretch gap-[1vw]">
-          {([['Agents', 'ผู้เข้าร่วม', ev.totals.visitors], ['Booth scans', 'การสแกนบูธ', ev.totals.stamps], ['Rewards given', 'มอบรางวัลแล้ว', ev.totals.redeemed]] as const).map(([en, th, v]) => (
-            <div key={en} className="wall-stat px-[1.4vw] py-[1vh]">
-              <div className="fig text-[2.6vw] leading-none text-[#1D5BFF]">{show(v)}</div>
-              <div className="mt-[0.5vh] text-[0.85vw] font-semibold text-[#0A1433]">{th} <span className="font-normal text-[#33415F]">· {en}</span></div>
-            </div>
-          ))}
-          {top.length > 0 && (
-            <div className="wall-stat min-w-0 flex-1 px-[1.4vw] py-[1vh]">
-              <div className="a-mono text-[0.8vw] font-semibold tracking-[.16em] text-[#1450E6]">BUSIEST BOOTHS · บูธยอดนิยมตอนนี้</div>
-              <ol className="m-0 mt-[0.8vh] flex list-none gap-[0.8vw] overflow-hidden p-0">
-                {top.map((b, i) => (
-                  <li key={b.id} className="flex min-w-0 flex-1 items-center gap-[0.5vw] text-[0.95vw]">
-                    <span className={`fig shrink-0 px-[0.45vw] py-[0.2vh] text-[0.85vw] ${i === 0 ? 'bg-[#FFC93C] text-[#0A1433]' : 'bg-[#0A1433] text-white'}`}>{b.shortName || i + 1}</span>
-                    <span className="min-w-0 truncate text-[#0A1433]">{pick(b.nameEn, b.nameTh)}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+        <footer className="a-mono relative shrink-0 truncate pb-[0.4vh] text-center text-[0.95vw] font-medium tracking-[.2em] text-[#1B2A5C]">
+          {top.length > 0
+            ? <>BUSIEST NOW · {top.map((b) => b.shortName || pick(b.nameEn, b.nameTh)).join(' · ')}</>
+            : <>ADT INNOFEST 2026 · IDEAS → SOLUTIONS → A BETTER TOMORROW</>}
         </footer>
       )}
 

@@ -1691,21 +1691,27 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 .bt-card .btn-sm { padding-inline: 10px; }
 .admin-console .on-stage .card.bt-card:has(details[open]) { z-index: 20; }
 
-/* ── Hall screen: campus ground with uplink rays (10 Nov) ── */
-.hall-campus { opacity: .8; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 22%); mask-image: linear-gradient(to bottom, transparent 0%, #000 22%); }
-.hall-ray { position: absolute; width: 0.13vw; min-width: 2px; margin-left: -0.065vw; border-radius: 999px;
-  /* One colour the whole way up; only the last stretch fades out. */
-  background: linear-gradient(to top, #19C8FF 0%, #19C8FF 62%, rgba(25,200,255,0) 100%);
-  filter: drop-shadow(0 0 0.3vw rgba(25,200,255,.95)) drop-shadow(0 0 1vw rgba(25,200,255,.5));
-  animation: hall-ray 4.6s ease-in-out infinite; }
-/* Where it leaves the roof: a small pool of the same light. */
-.hall-ray::after { content: ""; position: absolute; left: 50%; bottom: -0.25vw; width: 1.5vw; height: 0.5vw; border-radius: 50%;
-  transform: translateX(-50%); background: radial-gradient(closest-side, rgba(25,200,255,.95), rgba(25,200,255,0)); }
-@keyframes hall-ray { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .hall-ray { animation: none; } }
-.wall-grad { background: linear-gradient(90deg, #1D5BFF, #00A3D9 70%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.wall-chip, .wall-stat { background: rgba(255,255,255,.86); border: 1px solid #C9D9F7; box-shadow: 0 0.3vw 1.2vw rgba(29,91,255,.10); backdrop-filter: blur(6px);
-  clip-path: polygon(0.7vw 0, 100% 0, 100% calc(100% - 0.7vw), calc(100% - 0.7vw) 100%, 0 100%, 0 0.7vw); }
-.wall-qrcard { background: linear-gradient(#fff, #fff) padding-box, linear-gradient(135deg, #1D5BFF, #00A3D9 55%, #7A5CFF) border-box; border: 0.25vw solid transparent;
-  box-shadow: 0 1.2vw 3vw rgba(29,91,255,.22), 0 0 0 0.6vw rgba(255,255,255,.5);
-  clip-path: polygon(1.2vw 0, 100% 0, 100% calc(100% - 1.2vw), calc(100% - 1.2vw) 100%, 0 100%, 0 1.2vw); }
+/* ── Hall screen (10 Nov): its own look, free of the design system on purpose ── */
+.hall-ground { background: linear-gradient(180deg, #FDFEFF 0%, #F3F6FF 38%, #E6ECFF 70%, #D9E3FF 100%); }
+.hall-grid { background-image: linear-gradient(rgba(60,100,220,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(60,100,220,.07) 1px, transparent 1px);
+  background-size: 2.6vw 2.6vw; -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.35) 55%, transparent 85%); mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.35) 55%, transparent 85%); }
+.hall-halo { background: radial-gradient(42% 46% at 50% 46%, rgba(255,255,255,.95), rgba(255,255,255,0) 72%),
+  radial-gradient(58% 50% at 50% 60%, rgba(150,150,255,.30), rgba(150,150,255,0) 70%),
+  radial-gradient(40% 36% at 50% 78%, rgba(60,200,255,.22), rgba(60,200,255,0) 72%); }
+.hall-campus { opacity: .66; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); }
+.hall-mist { background: linear-gradient(to top, rgba(255,255,255,.92) 0%, rgba(255,255,255,.45) 45%, rgba(255,255,255,0) 100%); }
+/* A dashed thread of light: the dashes climb, the whole thread breathes, both ends fade. */
+.hall-ray { position: absolute; width: 0.12vw; min-width: 2px; margin-left: -0.06vw;
+  background-image: repeating-linear-gradient(to top, #35C4FF 0, #35C4FF 0.5vw, transparent 0.5vw, transparent 0.82vw); background-size: 100% 0.82vw;
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 12%, #000 55%, transparent 100%); mask-image: linear-gradient(to top, transparent 0%, #000 12%, #000 55%, transparent 100%);
+  filter: drop-shadow(0 0 0.3vw rgba(53,196,255,.9)) drop-shadow(0 0 0.9vw rgba(53,196,255,.45));
+  animation: hall-climb linear infinite, hall-breathe ease-in-out infinite; }
+@keyframes hall-climb { from { background-position-y: 0; } to { background-position-y: -8.2vw; } }
+@keyframes hall-breathe { 0%, 100% { opacity: .45; } 50% { opacity: .95; } }
+@media (prefers-reduced-motion: reduce) { .hall-ray { animation: none; opacity: .7; } }
+.hall-grad { background: linear-gradient(90deg, #2A45FF 0%, #1F7BFF 52%, #17B4F2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hall-badge { color: #0B1437; background: linear-gradient(90deg, #FFD65A, #FFC02E); border-radius: 0.35vw; box-shadow: 0 0.3vw 1.2vw rgba(255,192,46,.35); }
+.hall-card { background: rgba(255,255,255,.78); border: 1px solid rgba(255,255,255,.95); border-radius: 1vw;
+  box-shadow: 0 0.5vw 1.8vw rgba(42,69,255,.12), inset 0 0 0 1px rgba(120,150,255,.16); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.hall-num { border-radius: 0.8vw; background: linear-gradient(135deg, #2A45FF, #17B4F2); box-shadow: 0 0.3vw 1vw rgba(42,69,255,.35); }
+.hall-qr { background: #fff; border-radius: 1.6vw; box-shadow: 0 0 0 0.22vw rgba(255,255,255,.9), 0 0 0 0.36vw rgba(53,150,255,.35), 0 1.6vw 4vw rgba(42,69,255,.26), 0 0 6vw rgba(53,196,255,.28); }
