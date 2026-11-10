@@ -638,6 +638,8 @@ export const adminEn = {
   'admin.ratings.top5': 'Top 5 per criterion',
   'admin.ratings.sort.overall': 'Overall, best first',
   'admin.ratings.sort.crit': '{c}, best first',
+  'admin.ratings.open': 'Voting open until {t}',
+  'admin.ratings.closed': 'Voting closed at {t} — results final',
 
   // ---------- festival feedback survey (pages/admin/FestivalSurvey.tsx) ----------
   'admin.fsurvey.title': 'Festival feedback',
@@ -1288,6 +1290,8 @@ export const adminTh: Record<keyof typeof adminEn, string> = {
   'admin.ratings.top5': '5 อันดับแรกในแต่ละด้าน',
   'admin.ratings.sort.overall': 'ภาพรวม สูงสุดก่อน',
   'admin.ratings.sort.crit': '{c} สูงสุดก่อน',
+  'admin.ratings.open': 'เปิดให้คะแนนถึง {t}',
+  'admin.ratings.closed': 'ปิดให้คะแนนแล้วเมื่อ {t} — ผลเป็นที่สิ้นสุด',
 
   // ---------- festival feedback survey (pages/admin/FestivalSurvey.tsx) ----------
   'admin.fsurvey.title': 'แบบประเมินงาน',

@@ -45,6 +45,8 @@ export const fxEvent = {
   startsAt: { toMillis: () => Date.parse('2026-11-11T08:00:00+07:00') }, endsAt: { toMillis: () => Date.parse('2026-11-11T17:00:00+07:00') },
   qrPeriodSeconds: 20, days: ['2026-11-11'], passportPrefix: 'ADT-IF', zonePoints: { entrance: 1, middle: 1, far: 1 },
   prizeSessions: [{ id: 'day', label: 'All day', startMinute: 8 * 60, endMinute: 17 * 60 }],
+  // ?rating=closed: voting already over. ?rating=closing: open in the app, refused by the "server".
+  ...(qs.get('rating') === 'closed' ? { ratingClosesAt: Date.now() - 60_000 } : qs.get('rating') ? { ratingClosesAt: Date.now() + 3600_000 } : {}),
 }
 export const fxTiers = [
   { id: 'mfu333', eventId: 'innofest-2026', name: 'Activity points · คะแนนกิจกรรม', thresholdPoints: 50, reward: 'ADT: School activity points · other schools: Extracurricular points', stockTotal: 5000, stockRemaining: 5000, grantsDrawEntry: false, active: true, sortOrder: 1 },
@@ -132,7 +134,9 @@ export async function fxCall(name: string, _data: unknown): Promise<unknown> {
       if (kind === 'invalid' || kind === 'expired' || kind === 'rate_limited') return { status: kind }
       return { status: 'success', boothId: b.id, pointsAwarded: 1, points: FX.points + 1, stampCount: FX.points + 1, unlockedTierIds: FX.points + 1 === 50 ? ['mfu333'] : [], serverTime: Date.now() }
     }
-    case 'rateBooth': return { ok: true, already: false }
+    case 'rateBooth':
+      if (qs.get('rating') === 'closing') throw Object.assign(new Error('Rating has closed'), { code: 'functions/failed-precondition' })
+      return { ok: true, already: false }
     case 'publicBooth': {
       const x = fxBooths[0]
       return { found: true, booth: { id: x.id, nameEn: x.nameEn, nameTh: x.nameTh, shortName: x.shortName, location: x.location, zone: x.zone, hostUnit: x.hostUnit, descriptionEn: x.descriptionEn ?? '', descriptionTh: (x as { descriptionTh?: string }).descriptionTh ?? '', photoUrl: null } }

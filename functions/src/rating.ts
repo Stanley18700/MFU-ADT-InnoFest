@@ -14,7 +14,7 @@
  */
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { db, FieldValue, requireAuth, str, getActiveEvent, rateLimit } from './lib'
-import { BoothRatedDoc, BoothRatingDoc, RATING_COMMENT_MAX, RATING_CRITERIA, RatingCriterion, dayOf } from './shared/model'
+import { BoothRatedDoc, BoothRatingDoc, RATING_COMMENT_MAX, RATING_CRITERIA, RatingCriterion, dayOf, ratingOpen } from './shared/model'
 
 /**
  * Leave a rating for a booth already in your passport: `{ boothId, scores: { design, problem,
@@ -28,6 +28,10 @@ export const rateBooth = onCall(async (req) => {
   const uid = requireAuth(req)
   const ev = await getActiveEvent()
   const boothId = str(req.data?.boothId, 'boothId', { max: 60 })
+  // Winners are announced at 14:00; votes stop at the cutoff, by this server's clock.
+  if (!ratingOpen(Date.now(), ev.ratingClosesAt)) {
+    throw new HttpsError('failed-precondition', 'Rating has closed')
+  }
 
   // Not `num()`: that accepts 3.5 and 0, and a score has to be one of five whole values.
   const raw = req.data?.scores

@@ -46,6 +46,15 @@ const boothId = 'smoke-booth'
 await fetch(`${FS}/scans?documentId=${uid}_${boothId}`, { method: 'POST', headers: OWNER, body: JSON.stringify({ fields: { visitorId: { stringValue: uid }, boothId: { stringValue: boothId } } }) })
 ok('stamp row in place', !!(await get(`scans/${uid}_${boothId}`)))
 
+/*
+ * The cutoff is driven through the event document's `ratingClosesAt` override (the same knob an
+ * admin has), so production code has no test-only clock. Open for the first part of the test,
+ * whatever today's date is.
+ */
+const EVENT = 'adt-innofest-2026'
+const setClosesAt = (iso) => fetch(`${FS}/events/${EVENT}?updateMask.fieldPaths=ratingClosesAt`, { method: 'PATCH', headers: OWNER, body: JSON.stringify({ fields: { ratingClosesAt: { timestampValue: iso } } }) })
+await setClosesAt(new Date(Date.now() + 3600_000).toISOString())
+
 const good = { design: 5, problem: 4, creativity: 4, future: 3, impact: 5 } // mean 4.2 → 4
 const rate = call('rateBooth')
 await throws('old single-score call is refused', () => rate({ boothId, stars: 4 }), 'invalid-argument')
@@ -55,7 +64,7 @@ await throws('a 0 is refused', () => rate({ boothId, scores: { ...good, future: 
 await throws('an unknown key is refused', () => rate({ boothId, scores: { ...good, award: 5 } }), 'unknown')
 
 const first = await rate({ boothId, scores: good, comment: 'Great demo' })
-ok('first rating saved', first.ok && first.already === false)
+ok('before the cutoff: first rating saved', first.ok && first.already === false)
 const again = await rate({ boothId, scores: good })
 ok('second rating is "already"', again.ok && again.already === true)
 
@@ -65,6 +74,16 @@ ok('the row carries no visitor id', !JSON.stringify(rows[0]).includes(uid))
 const s = await get(`stats/ratings/items/${boothId}`)
 ok('count and overall sum', s.count === 1 && Math.abs(s.sum - 4.2) < 1e-9 && s.dist['4'] === 1 && s.comments === 1, JSON.stringify(s))
 ok('per-criterion sums and dists, nested not dotted', s.crit?.design?.sum === 5 && s.crit?.future?.dist?.['3'] === 1 && !Object.keys(s).some((k) => k.includes('.')), JSON.stringify(s.crit))
+
+// ---- after the cutoff ----
+const late = 'late-booth'
+await fetch(`${FS}/scans?documentId=${uid}_${late}`, { method: 'POST', headers: OWNER, body: JSON.stringify({ fields: { visitorId: { stringValue: uid }, boothId: { stringValue: late } } }) })
+await setClosesAt(new Date(Date.now() - 60_000).toISOString())
+// rateBooth reads the event through a 30-second per-instance cache (functions/src/lib.ts).
+console.log('  …waiting 31s for the event cache')
+await new Promise((r) => setTimeout(r, 31_000))
+await throws('after the cutoff: a rating is refused', () => rate({ boothId: late, scores: good }), 'Rating has closed')
+ok('after the cutoff: nothing was stored', !(await get(`boothRated/${uid}_${late}`)) && !(await get(`stats/ratings/items/${late}`)))
 
 console.log(fail ? `\n${fail} FAILED` : '\nall passed')
 process.exit(fail ? 1 : 0)

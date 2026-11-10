@@ -303,6 +303,7 @@ const SERVER_TH: Record<string, string> = {
   'Collect this booth’s stamp first': 'กรุณาสแกนบูธนี้ก่อน',
   'You have already answered this one': 'คุณตอบแบบประเมินนี้แล้ว',
   'Too many ratings — wait a moment.': 'ให้คะแนนเร็วเกินไป รอสักครู่แล้วลองใหม่',
+  'Rating has closed': 'ปิดการให้คะแนนแล้ว',
   'This is an admin account — admins can already open every booth screen.': 'บัญชีนี้เป็นผู้ดูแลระบบ เปิดหน้าจอของทุกบูธได้อยู่แล้ว',
   'This account is already registered for another booth. Ask the organizers to move it.': 'บัญชีนี้ลงทะเบียนกับบูธอื่นแล้ว กรุณาแจ้งผู้จัดงานเพื่อย้ายบูธ',
   'Too many tries. Wait ten minutes, or ask the organizers at the agency desk.': 'ลองหลายครั้งเกินไป รอ 10 นาที หรือติดต่อผู้จัดงานที่กองอำนวยการ',

@@ -109,6 +109,8 @@ export interface EventDoc {
   stampMarkBottom?: string
   archivedAt?: unknown
   createdAt?: unknown
+  /** Overrides RATING_CLOSES_AT for this event, so an admin can move the cutoff without a deploy. */
+  ratingClosesAt?: unknown
 }
 
 /** The frozen totals kept at `archives/{eventId}` when an event is archived and purged. */
@@ -702,6 +704,27 @@ export type RatingCriterion = (typeof RATING_CRITERIA)[number]
 
 /** Under this many votes a booth is still ranked, but shown greyed out as "thin". */
 export const RATING_MIN_VOTES = 10
+
+/**
+ * Booth rating closes here: the winners are announced at 14:00 on the day, so voting stops at
+ * 13:30. Scanning and points are not affected. The server's clock is the authority; the app
+ * only uses the phone's clock to stop asking. An event doc's `ratingClosesAt` wins over this.
+ */
+export const RATING_CLOSES_AT = '2026-11-11T13:30:00+07:00'
+
+/** The cutoff in ms: the event's override (a Timestamp, Date, ms or ISO string) or the constant. */
+export function ratingClosesAtMs(override?: unknown): number {
+  const o = override as { toMillis?: () => number } | Date | number | string | null | undefined
+  if (o && typeof o === 'object' && 'toMillis' in o && typeof o.toMillis === 'function') return o.toMillis()
+  if (o instanceof Date) return o.getTime()
+  if (typeof o === 'number') return o
+  if (typeof o === 'string' && !Number.isNaN(Date.parse(o))) return Date.parse(o)
+  return Date.parse(RATING_CLOSES_AT)
+}
+
+export function ratingOpen(now = Date.now(), override?: unknown): boolean {
+  return now < ratingClosesAtMs(override)
+}
 
 /** `boothRatings/{autoId}` — deliberately anonymous. Admin-readable. */
 export interface BoothRatingDoc {

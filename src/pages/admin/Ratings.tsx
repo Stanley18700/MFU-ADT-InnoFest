@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { collection, limit, orderBy, query } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
-import { useBooths, useCollection } from '../../lib/data'
+import { useBooths, useCollection, useEvent } from '../../lib/data'
 import { CsvButton, DataError, fmt } from '../../components/ui'
 import { Select } from '../../components/Select'
 import { ts } from '../../lib/eventText'
 import { useLocale } from '../../lib/locale'
-import { RATING_CRITERIA, RATING_MIN_VOTES, criterionAverage, overallAverage, ratingAverage, type BoothRatingDoc, type BoothRatingStatsDoc, type RatingCriterion } from '../../../shared/model'
+import { RATING_CRITERIA, RATING_MIN_VOTES, criterionAverage, ratingClosesAtMs, ratingOpen, overallAverage, ratingAverage, type BoothRatingDoc, type BoothRatingStatsDoc, type RatingCriterion } from '../../../shared/model'
 
 /** Newest first, and capped: a comment feed is for reading, and nobody reads past a few hundred. */
 const COMMENT_PAGE = 300
@@ -24,8 +24,13 @@ const COMMENT_PAGE = 300
  * and that is a property of the data, not of this page.
  */
 export default function Ratings() {
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const booths = useBooths(true)
+  const event = useEvent()
+  const closesAt = ratingClosesAtMs(event.ratingClosesAt)
+  // "13:30, 11 Nov" in Chiang Rai time, whatever the admin's laptop is set to.
+  const closesLabel = new Date(closesAt).toLocaleString(locale === 'th' ? 'th-TH' : 'en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+  const open = ratingOpen(Date.now(), event.ratingClosesAt)
   const stats = useCollection<BoothRatingStatsDoc>(collection(db, 'stats/ratings/items'), [], 'the rating counters')
   const comments = useCollection<BoothRatingDoc>(
     query(collection(db, 'boothRatings'), orderBy('ratedAt', 'desc'), limit(COMMENT_PAGE)),
@@ -114,6 +119,9 @@ export default function Ratings() {
         <div>
           <h1 className="text-2xl font-bold">{t('admin.ratings.title')}</h1>
           <p className="mt-1 text-sm text-ink-soft">{t('admin.ratings.lead')}</p>
+          <p className={`mt-1 text-sm font-semibold ${open ? 'text-[#1D5BFF]' : 'text-ink'}`}>
+            {open ? t('admin.ratings.open', { t: closesLabel }) : t('admin.ratings.closed', { t: closesLabel })}
+          </p>
         </div>
         <CsvButton rows={csvRows} name="booth-ratings" />
       </header>

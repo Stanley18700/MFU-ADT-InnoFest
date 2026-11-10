@@ -6,7 +6,7 @@ import { db } from '../../lib/firebase'
 import { useAuth } from '../../lib/auth'
 import { api } from '../../lib/api'
 import { useBooths, useDoc, useEvent, useTiers } from '../../lib/data'
-import { RATING_COMMENT_MAX, RATING_CRITERIA, tierEligible, type RatingCriterion } from '../../../shared/model'
+import { RATING_COMMENT_MAX, RATING_CRITERIA, ratingOpen, tierEligible, type RatingCriterion } from '../../../shared/model'
 import { EVENT_SURVEY_ID } from '../../../shared/model'
 import { useFestivalSurvey } from '../../lib/festivalSurvey'
 import { useLocale } from '../../lib/locale'
@@ -29,7 +29,9 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
    * the moment there is nothing left to ask — a score sent, a booth already rated, or a call
    * that failed — so the lock can never outlive a reason for it.
    */
-  const [done, setDone] = useState(false)
+  // After the cutoff (winners are announced at 14:00) there is nothing to ask: no sheet, no lock.
+  const rateOpen = ratingOpen(Date.now(), event.ratingClosesAt)
+  const [done, setDone] = useState(!rateOpen)
   const top = Math.max(0, ...tiers.map((x) => x.thresholdPoints))
 
   const head = (eyebrow: string) => (
@@ -76,7 +78,7 @@ export function ScanResultView({ result, onRetry }: { result: ScanResult; onRetr
           )}
           <Transmission tone="ink" text={claimableUnlocked > 0 ? t('h.res.unlocked') : t('h.res.ok')} />
           {/* Asked only once the stamp is safely in the passport, and never in the way of it. */}
-          <RatingCard boothId={result.boothId} onDone={() => setDone(true)} />
+          {rateOpen && <RatingCard boothId={result.boothId} onDone={() => setDone(true)} />}
           <div className="mt-3 flex flex-col gap-3">
             <PrimaryBtn to="/mission/files" disabled={!done}>{t('v.res.myStamps')}</PrimaryBtn>
             <GhostBtn onClick={onRetry} disabled={!done} icon={AIcon.scan}>{t('v.res.scanAnother')}</GhostBtn>
@@ -213,6 +215,7 @@ function RatingCard({ boothId, onDone }: { boothId: string; onDone: () => void }
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [closed, setClosed] = useState(false)
   // Guards the double tap and the tap that lands while the first call is still open.
   const inFlight = useRef(false)
 
@@ -243,7 +246,9 @@ function RatingCard({ boothId, onDone }: { boothId: string; onDone: () => void }
       onDone()
     } catch (e) {
       console.warn('rateBooth failed', e)
-      setFailed(true)
+      // Voting closed while the sheet was open: nothing went wrong, so say nothing — just let them go.
+      if ((e as { message?: string })?.message?.includes('Rating has closed')) setClosed(true)
+      else setFailed(true)
       onDone()
     } finally {
       setBusy(false)
@@ -251,7 +256,7 @@ function RatingCard({ boothId, onDone }: { boothId: string; onDone: () => void }
     }
   }
 
-  if (skip || loading || !ready) return null
+  if (skip || loading || !ready || closed) return null
 
   if (failed) {
     return <div className="w-full"><Notice tone="amber">{t('v.rate.failed')}</Notice></div>
