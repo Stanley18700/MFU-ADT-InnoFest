@@ -167,14 +167,17 @@ write('timeline.csv', buckets
   .map((b) => ({ day: b.day, time: new Date(b.startsAt.toMillis()).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ }), stamps: b.total })))
 
 /* ---------- 4. ratings ---------- */
+// Same keys, same order as RATING_CRITERIA in shared/model.ts.
+const CRITERIA = ['design', 'problem', 'creativity', 'future', 'impact']
 write('booth-ratings.csv', booths.map((b) => {
   const s = ratingStats.find((x) => x.id === b.id)
-  return { booth: b.nameEn, boothId: b.id, responses: s?.count ?? 0, average: s?.count ? (s.sum / s.count).toFixed(2) : '', '1': s?.dist?.['1'] ?? 0, '2': s?.dist?.['2'] ?? 0, '3': s?.dist?.['3'] ?? 0, '4': s?.dist?.['4'] ?? 0, '5': s?.dist?.['5'] ?? 0, comments: s?.comments ?? 0 }
+  const crit = Object.fromEntries(CRITERIA.map((k) => [`${k}_avg`, s?.count && s.crit?.[k] ? (s.crit[k].sum / s.count).toFixed(2) : '']))
+  return { booth: b.nameEn, boothId: b.id, responses: s?.count ?? 0, average: s?.count ? (s.sum / s.count).toFixed(2) : '', ...crit, '1': s?.dist?.['1'] ?? 0, '2': s?.dist?.['2'] ?? 0, '3': s?.dist?.['3'] ?? 0, '4': s?.dist?.['4'] ?? 0, '5': s?.dist?.['5'] ?? 0, comments: s?.comments ?? 0 }
 }).sort((a, b) => b.responses - a.responses))
 
 write('booth-rating-comments.csv', ratings.filter((r) => r.comment)
   .sort((a, b) => (a.ratedAt?.toMillis?.() ?? 0) - (b.ratedAt?.toMillis?.() ?? 0))
-  .map((r) => ({ when: when(r.ratedAt), day: r.day ?? '', booth: booths.find((b) => b.id === r.boothId)?.nameEn ?? r.boothId, stars: r.stars, comment: r.comment })))
+  .map((r) => ({ when: when(r.ratedAt), day: r.day ?? '', booth: booths.find((b) => b.id === r.boothId)?.nameEn ?? r.boothId, stars: r.stars, ...Object.fromEntries(CRITERIA.map((k) => [k, r.scores?.[k] ?? ''])), comment: r.comment })))
 
 /* ---------- 5. survey, shaped like a Google Forms export ---------- */
 const questions = survey?.questions ?? []

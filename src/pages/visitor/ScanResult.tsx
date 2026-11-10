@@ -6,7 +6,7 @@ import { db } from '../../lib/firebase'
 import { useAuth } from '../../lib/auth'
 import { api } from '../../lib/api'
 import { useBooths, useDoc, useEvent, useTiers } from '../../lib/data'
-import { RATING_COMMENT_MAX, tierEligible } from '../../../shared/model'
+import { RATING_COMMENT_MAX, RATING_CRITERIA, tierEligible, type RatingCriterion } from '../../../shared/model'
 import { EVENT_SURVEY_ID } from '../../../shared/model'
 import { useFestivalSurvey } from '../../lib/festivalSurvey'
 import { useLocale } from '../../lib/locale'
@@ -207,8 +207,8 @@ function RatingCard({ boothId, onDone }: { boothId: string; onDone: () => void }
   const { user } = useAuth()
   const { data: rated, loading, error } = useDoc(user ? doc(db, 'boothRated', `${user.uid}_${boothId}`) : null, [user?.uid, boothId])
 
-  const [stars, setStars] = useState(0)
-  const [hover, setHover] = useState(0)
+  const [scores, setScores] = useState<Partial<Record<RatingCriterion, number>>>({})
+  const complete = RATING_CRITERIA.every((k) => scores[k])
   const [comment, setComment] = useState('')
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -233,12 +233,12 @@ function RatingCard({ boothId, onDone }: { boothId: string; onDone: () => void }
   }, [])
 
   const send = async () => {
-    if (inFlight.current || stars === 0) return
+    if (inFlight.current || !complete) return
     inFlight.current = true
     setBusy(true)
     const text = comment.trim()
     try {
-      await api.rateBooth({ boothId, stars, ...(text ? { comment: text } : {}) })
+      await api.rateBooth({ boothId, scores: scores as Record<RatingCriterion, number>, ...(text ? { comment: text } : {}) })
       setSent(true)
       onDone()
     } catch (e) {
@@ -258,10 +258,12 @@ function RatingCard({ boothId, onDone }: { boothId: string; onDone: () => void }
   }
 
   if (sent) {
+    const avg = RATING_CRITERIA.reduce((n, k) => n + (scores[k] ?? 0), 0) / RATING_CRITERIA.length
+    const stars = Math.round(avg)
     return (
       <div className="a-cut a-solid a-fill-tint flex items-center justify-between gap-3 px-4 py-3">
         <span className="a-hd text-[17px] font-bold">{t('v.rate.thanks')}</span>
-        <span className="flex gap-1" role="img" aria-label={t('v.rate.rated', { n: stars })}>{[1, 2, 3, 4, 5].map((n) => <span key={n}>{AIcon.star(n <= stars, 22)}</span>)}</span>
+        <span className="flex gap-1" role="img" aria-label={t('v.rate.ratedAvg', { n: avg.toFixed(1) })}>{[1, 2, 3, 4, 5].map((n) => <span key={n}>{AIcon.star(n <= stars, 22)}</span>)}</span>
       </div>
     )
   }
@@ -273,78 +275,81 @@ function RatingCard({ boothId, onDone }: { boothId: string; onDone: () => void }
    * front of the visitor, where a question that must be answered belongs. The thanks and the
    * failure above stay inline: once there is nothing left to ask, an overlay is just in the way.
    */
-  return <RatingSheet {...{ stars, setStars, hover, setHover, comment, setComment, busy, send }} />
+  return <RatingSheet {...{ scores, setScore: (k: RatingCriterion, n: number) => setScores((s) => ({ ...s, [k]: n })), complete, comment, setComment, busy, send }} />
 }
 
 function RatingSheet({
-  stars, setStars, hover, setHover, comment, setComment, busy, send,
+  scores, setScore, complete, comment, setComment, busy, send,
 }: {
-  stars: number; setStars: (n: number) => void
-  hover: number; setHover: (n: number) => void
+  scores: Partial<Record<RatingCriterion, number>>; setScore: (k: RatingCriterion, n: number) => void
+  complete: boolean
   comment: string; setComment: (s: string) => void
   busy: boolean; send: () => Promise<void>
 }) {
   const { t } = useLocale()
   useBodyScrollLock(true)
-  const shown = hover || stars
   return (
     <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-[rgb(10_19_64/.5)] p-3">
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('v.rate.title')}
-        className="a-cut a-cut-xl a-edge-neon sheet-in max-h-[90dvh] w-full max-w-md overflow-y-auto px-5 pt-5 text-left"
-        style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+        className="a-cut a-cut-xl a-edge-neon sheet-in max-h-[92dvh] w-full max-w-md overflow-y-auto px-5 pt-3 text-left"
+        style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}
       >
-        <h2 className="a-hd m-0 text-[22px] font-bold">{t('v.rate.title')}</h2>
-        <p className="mb-0 mt-1 text-sm text-[#33415F]">{t('v.rate.lead')}</p>
+        <h2 className="a-hd m-0 text-[20px] font-bold">{t('v.rate.title')}</h2>
+        <p className="mb-0 mt-0.5 text-sm text-[#33415F]">{t('v.rate.lead')}</p>
 
-        <div
-          className="mt-4 flex justify-center gap-1.5"
-          role="radiogroup"
-          aria-label={t('v.rate.aria')}
-          onMouseLeave={() => setHover(0)}
-        >
-          {[1, 2, 3, 4, 5].map((n) => {
-            const on = n <= shown
+        {/* Five rows, label over stars: the stars get the full width, so each target stays ~44px+
+            on the narrowest phone and the whole sheet still fits without scrolling. */}
+        <div className="mt-2 space-y-1">
+          {RATING_CRITERIA.map((k) => {
+            const label = t(`v.rate.c.${k}` as 'v.rate.c.design')
+            const v = scores[k] ?? 0
             return (
-              <button
-                key={n}
-                type="button"
-                role="radio"
-                aria-checked={stars === n}
-                aria-label={n === 1 ? t('v.rate.star', { n }) : t('v.rate.stars', { n })}
-                disabled={busy}
-                onMouseEnter={() => setHover(n)}
-                onFocus={() => setHover(n)}
-                onClick={() => setStars(n)}
-                // A big target and a big glyph: a phone held one-handed, outdoors, in a queue.
-                className={`a-cut a-cut-s grid h-14 w-14 cursor-pointer place-items-center border-0 bg-transparent transition-transform active:scale-90 disabled:opacity-50 ${on ? 'a-edge-neon' : 'a-edge-strong'}`}
-                style={{
-                  // Always the SOLID star. Outline-against-filled is the distinction that
-                  // disappears in sunlight; a lit blue star against a flat grey one does not.
-                  color: on ? '#1D5BFF' : '#9AA6BF',
-                  ['--fill' as string]: on ? '#EEF3FF' : '#F7F9FC',
-                  filter: on ? 'drop-shadow(0 0 6px rgb(0 200 255 / .45))' : undefined,
-                }}
-              >
-                {/*
-                  * The size lives on the SPAN, not the button. `input, select, textarea, button
-                  * { font: inherit }` (index.css) is unlayered, so it beats every layered
-                  * `text-*` utility and silently resets a button's font-size to 16px — which is
-                  * why these stars were tiny however large the class said they were.
-                  */}
-                <span aria-hidden className="text-[38px] leading-none">★</span>
-              </button>
+              <div key={k}>
+                <div className="text-[13px] font-semibold text-[#1B2748]">{label}</div>
+                <div className="flex gap-1" role="radiogroup" aria-label={t('v.rate.critAria', { c: label })}>
+                  {[1, 2, 3, 4, 5].map((n) => {
+                    const on = n <= v
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        role="radio"
+                        aria-checked={v === n}
+                        aria-label={n === 1 ? t('v.rate.star', { n }) : t('v.rate.stars', { n })}
+                        disabled={busy}
+                        onClick={() => setScore(k, n)}
+                        className={`a-cut a-cut-s grid h-11 flex-1 cursor-pointer place-items-center border-0 bg-transparent transition-transform active:scale-90 disabled:opacity-50 ${on ? 'a-edge-neon' : 'a-edge-strong'}`}
+                        style={{
+                          // Always the SOLID star. Outline-against-filled is the distinction that
+                          // disappears in sunlight; a lit blue star against a flat grey one does not.
+                          color: on ? '#1D5BFF' : '#9AA6BF',
+                          ['--fill' as string]: on ? '#EEF3FF' : '#F7F9FC',
+                          filter: on ? 'drop-shadow(0 0 5px rgb(0 200 255 / .4))' : undefined,
+                        }}
+                      >
+                        {/*
+                          * The size lives on the SPAN, not the button. `input, select, textarea, button
+                          * { font: inherit }` (index.css) is unlayered, so it beats every layered
+                          * `text-*` utility and silently resets a button's font-size to 16px.
+                          */}
+                        <span aria-hidden className="text-[26px] leading-none">★</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             )
           })}
         </div>
 
-        <label className="mt-4 block">
+        <label className="mt-2 block">
           <span className="a-lbl">{t('v.rate.comment')}</span>
           <textarea
             className="a-field"
-            rows={2}
+            rows={1}
             maxLength={RATING_COMMENT_MAX}
             value={comment}
             disabled={busy}
@@ -353,8 +358,8 @@ function RatingSheet({
           />
         </label>
 
-        <PrimaryBtn className="mt-5" onClick={() => void send()} disabled={busy || stars === 0} loading={busy}>
-          {busy ? t('v.rate.sending') : stars === 0 ? t('v.rate.pick') : t('v.rate.send')}
+        <PrimaryBtn className="mt-2.5" onClick={() => void send()} disabled={busy || !complete} loading={busy}>
+          {busy ? t('v.rate.sending') : !complete ? t('v.rate.pickAll') : t('v.rate.send')}
         </PrimaryBtn>
       </div>
     </div>
