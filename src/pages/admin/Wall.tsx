@@ -32,7 +32,7 @@ function HallGround() {
       <div className="hall-grid absolute inset-0" />
       <div className="hall-halo absolute inset-0" />
       {/* One box the shape of the picture: the streams are placed inside it, on the buildings. */}
-      <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[108vw] -translate-x-1/2">
+      <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[124vw] -translate-x-1/2">
         <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute inset-0 h-full w-full" />
       </div>
       <div className="hall-mist absolute inset-x-0 bottom-0 h-[30vh]" />
