@@ -96,7 +96,8 @@ export default function Ratings() {
   const withText = feed.filter((c) => c.comment)
 
   const f2 = (v: number | null) => (v == null ? '' : v.toFixed(2))
-  const csvRows = rows.map((r) => ({
+  const csvRows = rows.map((r, i) => ({
+    no: i + 1,
     booth: r.name, boothId: r.boothId,
     votes: r.count,
     ...Object.fromEntries(RATING_CRITERIA.flatMap((k) => [[`${k}_avg`, f2(r.crit[k])], [`${k}_rank`, r.critRank[k] ?? '']])),
@@ -150,6 +151,7 @@ export default function Ratings() {
           <table className="w-full min-w-[60rem] text-sm">
             <thead className="text-left text-xs uppercase tracking-wide text-ink-soft">
               <tr>
+                <th className="w-8 py-2 pr-2 text-right">#</th>
                 <th className="py-2 pr-3">{t('admin.ratings.booth')}</th>
                 <th className="py-2 pr-3 text-right">{t('admin.ratings.n')}</th>
                 {RATING_CRITERIA.map((k) => (
@@ -160,8 +162,9 @@ export default function Ratings() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {rows.map((r, i) => (
                 <tr key={r.boothId} className={`border-t rule ${r.thin ? 'opacity-50' : ''}`}>
+                  <td className="fig w-8 py-2 pr-2 text-right text-ink-soft">{i + 1}</td>
                   <td className="py-2 pr-3">
                     {r.name}
                     {r.thin && r.count > 0 && <span className="ml-2 text-xs text-ink-soft">({t('admin.ratings.thin')})</span>}
@@ -188,9 +191,9 @@ export default function Ratings() {
                 ? <p className="mt-2 text-sm text-ink-soft">–</p>
                 : (
                   <ol className="mt-2 space-y-1 text-sm">
-                    {list.map((r) => (
+                    {list.map((r, i) => (
                       <li key={r.boothId} className={`flex justify-between gap-2 ${r.thin ? 'opacity-50' : ''}`}>
-                        <span className="min-w-0 truncate" title={r.name}><span className="fig text-ink-soft">{r.critRank[k]}.</span> {r.name}</span>
+                        <span className="min-w-0 truncate" title={r.name}><span className="fig text-ink-soft">{i + 1}.</span> {r.name}</span>
                         <span className="fig shrink-0">{r.crit[k]!.toFixed(2)}</span>
                       </li>
                     ))}
