@@ -6,14 +6,43 @@ import { ms, useBooths, useBoothStats, useCollection, useEvent, useEventStats } 
 import { Crest, DataErrors, Icon, fmt } from '../../components/ui'
 import { QR } from '../../components/QR'
 import { fullscreenElement, isStandalone, onFullscreenChange, requestFullscreen } from '../../lib/fullscreen'
-import { StageGround } from '../../components/OrganizerPage'
 import { useLocale } from '../../lib/locale'
 import type { DrawName } from './Draw'
 
 /** Big enough to scan from the middle of a hall, small enough to leave the board room. */
 function qrPx() {
   if (typeof window === 'undefined') return 260
-  return Math.round(Math.max(180, Math.min(window.innerWidth * 0.17, window.innerHeight * 0.30)))
+  return Math.round(Math.max(180, Math.min(window.innerWidth * 0.19, window.innerHeight * 0.36)))
+}
+
+const STEPS: Array<[string, string]> = [
+  ['Sign up — Google is fastest', 'ลงทะเบียน'],
+  ['Scan the QR at each booth', 'สแกน QR ที่บูธ'],
+  ['Collect points, get rewards', 'สะสมคะแนน รับรางวัล'],
+]
+
+/** Where the uplink rays rise from the campus: left edge in %, height in vh, delay in s. */
+const RAYS: Array<[number, number, number]> = [
+  [6, 34, 0], [13, 22, 1.6], [21, 40, 0.8], [29, 18, 2.4], [37, 30, 1.2], [46, 44, 0.3],
+  [54, 26, 2], [62, 38, 0.6], [70, 20, 1.8], [78, 34, 1], [86, 24, 2.6], [94, 36, 0.4],
+]
+
+/**
+ * The hall screen's ground: a pale sky, the agency grid, the campus and Doi Tung in the agency
+ * blue across the lower half, and thin uplink rays rising out of the buildings.
+ */
+function HallGround() {
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-20 overflow-hidden bg-[linear-gradient(180deg,#F8FBFF_0%,#EEF4FF_45%,#DCE8FF_100%)]">
+      <div className="a-grid" />
+      <div className="absolute inset-0 bg-[radial-gradient(60%_45%_at_50%_62%,rgba(0,200,255,.22),transparent_70%)]" />
+      <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute bottom-0 left-1/2 w-[112vw] max-w-none -translate-x-1/2" />
+      {RAYS.map(([x, h, d]) => (
+        <span key={x} className="hall-ray" style={{ left: `${x}%`, height: `${h}vh`, animationDelay: `${d}s` }} />
+      ))}
+      <div className="absolute inset-x-0 bottom-0 h-[22vh] bg-gradient-to-t from-white/80 to-transparent" />
+    </div>
+  )
 }
 
 /** How long the draw holds the screen before the live stats come back. */
@@ -89,7 +118,6 @@ export default function Wall() {
   }, [goFull])
 
   const board = booths.map((b) => ({ ...b, stamps: bstats.find((s) => s.id === b.id)?.stamps ?? 0 })).sort((a, b) => b.stamps - a.stamps)
-  const max = Math.max(1, ...board.map((b) => b.stamps))
   /*
    * Five, not seventy-eight. The full ranking belongs to the admin dashboard; here it ran off the
    * bottom of the screen and under the footer, and seventy rows reading 0 is the opposite of the
@@ -105,30 +133,32 @@ export default function Wall() {
    */
   const show = (n: number) => fmt(Math.max(0, n))
 
+  // The hall clock, Bangkok time, as on the mock-up: big enough to read from the door.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 10_000); return () => clearInterval(id) }, [])
+  const clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now)
+  const dateLine = `${new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(now).replace(/,/g, '').toUpperCase()} · INDOOR STADIUM`
+
   return (
     <>
-    {/* The landing screen's own sky, clouds, rocket and paper campus — the first thing a visitor
-        sees at the door should look like the poster and the app they are about to open, not like
-        an operations dashboard. */}
-    <StageGround />
-    <div aria-hidden className="wall-glow pointer-events-none fixed inset-0 -z-10" />
-    <main className="on-stage relative flex h-dvh flex-col overflow-hidden p-[3.5vw] text-ink">
-      <header className="flex shrink-0 items-start justify-between gap-[2vw]">
-        <div className="flex items-center gap-[1vw]">
-          <div className="flex items-center gap-[0.8vw] rounded-[0.6vw] bg-white px-[1vw] py-[0.6vw] shadow-sm"><img src="/brand/mfu28.png" alt="" className="h-[2.6vw] w-auto" /><span className="h-[1.8vw] w-px bg-[#C9D4EA]" /><img src="/brand/adt-mark.png" alt="" className="h-[1.9vw] w-auto" /></div>
-          <div className="a-mono flex items-center gap-[0.6vw] text-[1vw] font-semibold tracking-[.16em] text-[#1450E6]"><span className="mc-pulse" aria-hidden />{t('wall.tx').toUpperCase()} · HANDLER // 0</div>
+    <HallGround />
+    <main className="on-stage relative flex h-dvh flex-col overflow-hidden px-[3.2vw] pb-[2.4vh] pt-[2.6vh] text-ink">
+      <header className="relative flex shrink-0 items-start justify-between gap-[2vw]">
+        <div className="flex items-center gap-[1vw] rounded-[0.5vw] bg-white/85 px-[1.1vw] py-[0.7vh] shadow-[0_0.3vw_1.4vw_rgba(29,91,255,.12)] backdrop-blur">
+          <img src="/brand/mfu28.png" alt="" className="h-[2.9vw] w-auto" />
+          <span className="h-[2vw] w-px bg-[#C9D4EA]" />
+          <img src="/brand/adt-mark.png" alt="" className="h-[2vw] w-auto" />
+          <span className="h-[2vw] w-px bg-[#C9D4EA]" />
+          <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="h-[3.2vw] w-auto" />
         </div>
-        {/* Both controls vanish in full screen, which is where this screen spends the festival. */}
-        {!fs && (
-          <div className="flex shrink-0 items-center gap-[0.8vw]">
-            <Link to="/admin" className="btn-quiet inline-flex items-center gap-[0.5vw] px-[1.2vw] py-[0.7vh] text-[1.1vw]">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="h-[1.1vw] w-[1.1vw]"><path d="M19 12H5M11 18l-6-6 6-6" /></svg>{t('wall.adminConsole')}
-            </Link>
-            <button className="btn-quiet inline-flex items-center gap-[0.5vw] px-[1.2vw] py-[0.7vh] text-[1.1vw]" onClick={goFull}>
-              {Icon.fullscreen}Full screen
-            </button>
-          </div>
-        )}
+        <div className="absolute left-1/2 top-[0.4vh] -translate-x-1/2 text-center">
+          <div className="a-mono flex items-center justify-center gap-[0.6vw] text-[1.05vw] font-semibold tracking-[.2em] text-[#1450E6]"><span className="mc-pulse" aria-hidden style={{ ['--tone' as string]: '#3BE38B' }} />AGENCY HQ · LIVE</div>
+          <div className="mt-[0.3vh] text-[0.85vw] text-[#33415F]">กองบัญชาการ · ถ่ายทอดสด</div>
+        </div>
+        <div className="text-right">
+          <div className="a-mono text-[3vw] font-semibold leading-none tracking-tight text-[#0A1433]">{clock}</div>
+          <div className="a-mono mt-[0.6vh] text-[0.8vw] tracking-[.14em] text-[#33415F]">{dateLine}</div>
+        </div>
       </header>
       <DataErrors className="mt-[1.5vh] text-[1.1vw]" />
       {reveal ? (
@@ -157,85 +187,77 @@ export default function Wall() {
         </section>
       ) : (
       /*
-       * An entrance screen, not a dashboard.
-       *
-       * What stood here was the operations view: three counters and all 78 booths ranked, which
-       * ran off the bottom of the screen and under the footer, and which says nothing to somebody
-       * walking through the door. A visitor needs three things — what this is, how to start, and
-       * a reason to bother. The counters stay, small, because a live number is what makes it look
-       * worth joining; the booth board is reduced to the five busiest, which is the part that
-       * reads as a hall with something happening in it.
+       * An entrance screen, not a dashboard: what this is, how to start, and the QR — over the
+       * campus at the foot of Doi Tung with the uplink rays rising out of it. Bilingual on the
+       * screen itself, because the hall is mostly Thai visitors and the screen has no toggle
+       * anybody can reach.
        */
-      <section className="mt-[1vh] grid min-h-0 flex-1 grid-cols-[1.05fr_0.95fr] items-center gap-[3vw]">
+      <section className="relative grid min-h-0 flex-1 grid-cols-[1.15fr_0.85fr] items-center gap-[4vw] pb-[1vh]">
         <div className="flex min-h-0 flex-col justify-center">
-          <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="w-[min(30vw,40vh,560px)]" />
-          <div className="mt-[2.5vh]"><span className="wall-badge a-hd inline-block px-[1.4vw] py-[0.7vh] text-[1.5vw] font-bold">{t('v.landing.badge')}</span></div>
-          <p className="mt-[2vh] max-w-[36vw] text-[1.7vw] font-medium leading-snug text-ink">{t('v.landing.pitch')}</p>
+          <div><span className="wall-badge a-hd inline-block px-[1.3vw] py-[0.7vh] text-[1.25vw] font-bold">RECOVER THE FUTURE · กู้คืนอนาคต</span></div>
+          <h1 className="a-hd m-0 mt-[2.4vh] text-[5.2vw] font-bold leading-[0.98] tracking-[-0.01em] text-[#0A1433]">
+            Scan. Collect.<br /><span className="wall-grad">Get rewards.</span>
+          </h1>
+          <p className="m-0 mt-[1.8vh] text-[1.9vw] font-semibold leading-snug text-[#0A1433] [text-shadow:0_0_0.6vw_#fff,0_0_0.3vw_#fff]">สแกน QR ที่บูธ สะสมคะแนน รับรางวัล</p>
+          <p className="m-0 mt-[0.6vh] max-w-[44vw] text-[1.15vw] font-medium leading-snug text-[#1F2C4D] [text-shadow:0_0_0.6vw_#fff,0_0_0.3vw_#fff]">Every booth is an ADT student project. Visit them, scan their QR, and unlock rewards.</p>
 
-          <ol className="mt-[3vh] flex flex-wrap gap-[1.2vw]">
-            {[t('wall.step1'), t('wall.step2'), t('wall.step3')].map((step, i) => (
-              <li key={step} className="glass flex items-center gap-[0.8vw] px-[1.2vw] py-[1.1vh]">
-                <span className="fig wall-step-n grid h-[2.4vw] w-[2.4vw] shrink-0 place-items-center text-[1.2vw] !text-white">{i + 1}</span>
-                <span className="text-[1.25vw] font-semibold">{step}</span>
+          <ol className="m-0 mt-[3.2vh] flex list-none flex-wrap gap-[1vw] p-0">
+            {STEPS.map(([en, th], i) => (
+              <li key={en} className="wall-chip flex items-center gap-[0.9vw] px-[1.1vw] py-[1.1vh]">
+                <span className="fig wall-step-n grid h-[2.6vw] w-[2.6vw] shrink-0 place-items-center text-[1.3vw] !text-white">{i + 1}</span>
+                <span className="leading-tight"><span className="block text-[1.15vw] font-semibold text-[#0A1433]">{th}</span><span className="block text-[0.85vw] text-[#33415F]">{en}</span></span>
               </li>
             ))}
           </ol>
-
-          <div className="mt-[3vh] flex gap-[1.5vw]">
-            {[[t('wall.visitors'), ev.totals.visitors], [t('wall.stamps'), ev.totals.stamps], [t('wall.prizes'), ev.totals.redeemed]].map(([l, v]) => (
-              <div key={l as string} className="glass px-[1.6vw] py-[1.2vh]">
-                <div className="fig text-[3vw] leading-none text-action">{show(v as number)}</div>
-                <div className="stamp-text mt-[0.4vh] text-[0.95vw] text-ink-soft">{l as string}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
-        <div className="flex min-h-0 flex-col items-center justify-center gap-[2vh]">
+        <div className="flex min-h-0 flex-col items-center justify-center">
           {/* The one thing a visitor at the door has to be able to act on. */}
-          <div className="glass wall-qr flex flex-col items-center gap-[1.4vh] px-[2.5vw] py-[2.5vh]">
-            <div className="a-hd text-center text-[1.6vw] font-bold text-ink">{t('wall.scanJoin')}</div>
+          <div className="wall-qrcard flex flex-col items-center px-[2.4vw] pb-[2.2vh] pt-[2.4vh]">
+            <div className="a-hd text-center text-[1.7vw] font-bold leading-tight text-[#0A1433]">สแกนเพื่อเริ่มภารกิจ</div>
+            <div className="mb-[2.2vh] text-center text-[1.05vw] font-semibold text-[#1D5BFF]">Scan to start the mission</div>
             <div className="relative">
               <span aria-hidden className="qr-brackets" style={{ inset: '-1.1vw', ['--l' as string]: '2.6vw', ['--w' as string]: '0.35vw' }} />
-              <div className="relative overflow-hidden"><QR value={APP_ORIGIN} size={qrSize} /><span aria-hidden className="qr-sweep-loop" /></div>
+              <div className="relative overflow-hidden bg-white"><QR value={APP_ORIGIN} size={qrSize} /><span aria-hidden className="qr-sweep-loop" /></div>
             </div>
-            <div className="fig text-[1.3vw] text-ink">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
+            <div className="fig mt-[2.4vh] text-[1.35vw] text-[#1450E6]">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
           </div>
+        </div>
+      </section>
+      )}
 
-          {/* Only when the hall has actually done something — five rows of zeros is not news. */}
+      {/* The live strip along the foot: three counters, then the busiest booths once there are any. */}
+      {!reveal && (
+        <footer className="relative flex shrink-0 items-stretch gap-[1vw]">
+          {([['Agents', 'ผู้เข้าร่วม', ev.totals.visitors], ['Booth scans', 'การสแกนบูธ', ev.totals.stamps], ['Rewards given', 'มอบรางวัลแล้ว', ev.totals.redeemed]] as const).map(([en, th, v]) => (
+            <div key={en} className="wall-stat px-[1.4vw] py-[1vh]">
+              <div className="fig text-[2.6vw] leading-none text-[#1D5BFF]">{show(v)}</div>
+              <div className="mt-[0.5vh] text-[0.85vw] font-semibold text-[#0A1433]">{th} <span className="font-normal text-[#33415F]">· {en}</span></div>
+            </div>
+          ))}
           {top.length > 0 && (
-            <div className="glass w-full px-[1.6vw] py-[1.2vh]">
-              <div className="stamp-text text-[0.95vw] text-ink-soft">{t('wall.busiest')}</div>
-              <ol className="mt-[0.8vh] flex flex-col gap-[0.6vh]">
+            <div className="wall-stat min-w-0 flex-1 px-[1.4vw] py-[1vh]">
+              <div className="a-mono text-[0.8vw] font-semibold tracking-[.16em] text-[#1450E6]">BUSIEST BOOTHS · บูธยอดนิยมตอนนี้</div>
+              <ol className="m-0 mt-[0.8vh] flex list-none gap-[0.8vw] overflow-hidden p-0">
                 {top.map((b, i) => (
-                  <li key={b.id} className="flex items-center gap-[0.8vw] text-[1.15vw]">
-                    <span className="w-[1.2vw] shrink-0 text-right text-ink-soft">{i + 1}</span>
-                    <span className="min-w-0 flex-1 truncate">{pick(b.nameEn, b.nameTh)}</span>
-                    <div className="h-[0.9vw] w-[7vw] shrink-0 rounded bg-ink/10">
-                      <div className="h-full rounded" style={{ width: `${(b.stamps / max) * 100}%`, background: i === 0 ? 'var(--color-orange-500)' : b.accentColor }} />
-                    </div>
-                    <span className="fig w-[2.5vw] shrink-0 text-right">{fmt(b.stamps)}</span>
+                  <li key={b.id} className="flex min-w-0 flex-1 items-center gap-[0.5vw] text-[0.95vw]">
+                    <span className={`fig shrink-0 px-[0.45vw] py-[0.2vh] text-[0.85vw] ${i === 0 ? 'bg-[#FFC93C] text-[#0A1433]' : 'bg-[#0A1433] text-white'}`}>{b.shortName || i + 1}</span>
+                    <span className="min-w-0 truncate text-[#0A1433]">{pick(b.nameEn, b.nameTh)}</span>
                   </li>
                 ))}
               </ol>
             </div>
           )}
-        </div>
-      </section>
-      )}
-      {/*
-        * Nothing under the poster in full screen.
-        *
-        * The footer carried two lines that both had to go: one repeated what the QR card already
-        * says a foot above it, and the other explained the Esc key to a hall of visitors. Both
-        * sat over the paper campus, where the artwork made them unreadable anyway. What is left
-        * is the operator's own hint, and it shows only out of full screen — the same rule the two
-        * buttons in the header follow, so the projected screen is the poster and nothing else.
-        */}
-      {!fs && (
-        <footer className="stamp-text mt-[2vh] shrink-0 text-right text-[1vw] text-ink-soft">
-          {hint ?? t('wall.pressF')}
         </footer>
+      )}
+
+      {/* Operator controls: only out of full screen, so the projected screen is the poster and nothing else. */}
+      {!fs && (
+        <div className="fixed bottom-[1.4vh] right-[1.4vw] z-10 flex items-center gap-[0.8vw] rounded-[0.4vw] bg-white/90 px-[0.8vw] py-[0.6vh] shadow-lg">
+          <span className="stamp-text text-[0.85vw] text-ink-soft">{hint ?? t('wall.pressF')}</span>
+          <Link to="/admin" className="btn-quiet inline-flex items-center gap-[0.5vw] px-[1vw] py-[0.5vh] text-[0.95vw]">{t('wall.adminConsole')}</Link>
+          <button className="btn-quiet inline-flex items-center gap-[0.5vw] px-[1vw] py-[0.5vh] text-[0.95vw]" onClick={goFull}>{Icon.fullscreen}Full screen</button>
+        </div>
       )}
     </main>
     </>

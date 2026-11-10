@@ -1690,3 +1690,19 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 .admin-console .on-stage .card.bt-card:not(:has(details[open])) { clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
 .bt-card .btn-sm { padding-inline: 10px; }
 .admin-console .on-stage .card.bt-card:has(details[open]) { z-index: 20; }
+
+/* ── Hall screen: campus ground with uplink rays (10 Nov) ── */
+.hall-campus { opacity: .82; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 28%); mask-image: linear-gradient(to bottom, transparent 0%, #000 28%); filter: saturate(1.1); }
+.hall-ray { position: absolute; bottom: 14vh; width: 0.22vw; min-width: 3px; border-radius: 999px;
+  background: linear-gradient(to top, #fff, rgba(120,235,255,.95) 18%, rgba(0,210,255,.45) 60%, transparent);
+  box-shadow: 0 0 0.9vw 0.15vw rgba(0,210,255,.75), 0 0 2.4vw rgba(0,200,255,.35); transform-origin: bottom; animation: hall-ray 4.2s ease-in-out infinite; }
+.hall-ray::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 0.7vw; height: 0.7vw; border-radius: 50%;
+  transform: translate(-50%, 50%); background: rgba(0,210,255,.9); box-shadow: 0 0 1vw 0.3vw rgba(0,210,255,.6); }
+@keyframes hall-ray { 0%, 100% { opacity: .55; transform: scaleY(.85); } 50% { opacity: 1; transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .hall-ray { animation: none; opacity: .7; } }
+.wall-grad { background: linear-gradient(90deg, #1D5BFF, #00A3D9 70%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wall-chip, .wall-stat { background: rgba(255,255,255,.86); border: 1px solid #C9D9F7; box-shadow: 0 0.3vw 1.2vw rgba(29,91,255,.10); backdrop-filter: blur(6px);
+  clip-path: polygon(0.7vw 0, 100% 0, 100% calc(100% - 0.7vw), calc(100% - 0.7vw) 100%, 0 100%, 0 0.7vw); }
+.wall-qrcard { background: linear-gradient(#fff, #fff) padding-box, linear-gradient(135deg, #1D5BFF, #00A3D9 55%, #7A5CFF) border-box; border: 0.25vw solid transparent;
+  box-shadow: 0 1.2vw 3vw rgba(29,91,255,.22), 0 0 0 0.6vw rgba(255,255,255,.5);
+  clip-path: polygon(1.2vw 0, 100% 0, 100% calc(100% - 1.2vw), calc(100% - 1.2vw) 100%, 0 100%, 0 1.2vw); }
