@@ -21,10 +21,14 @@ const STEPS: Array<[string, string]> = [
   ['Collect points, get rewards', 'สะสมคะแนน รับรางวัล'],
 ]
 
-/** Where the uplink rays rise from the campus: left edge in %, height in vh, delay in s. */
-const RAYS: Array<[number, number, number]> = [
-  [6, 34, 0], [13, 22, 1.6], [21, 40, 0.8], [29, 18, 2.4], [37, 30, 1.2], [46, 44, 0.3],
-  [54, 26, 2], [62, 38, 0.6], [70, 20, 1.8], [78, 34, 1], [86, 24, 2.6], [94, 36, 0.4],
+/**
+ * The uplink beams: tall, hair-thin columns of light standing on the campus and fading out
+ * high above it, each with a pulse of data climbing it. Left edge in %, foot above the bottom
+ * edge in vh, height in vh, pulse delay in s.
+ */
+const RAYS: Array<[number, number, number, number]> = [
+  [7, 16, 46, 0], [15.5, 9, 62, 2.2], [24, 20, 40, 1.1], [33, 12, 70, 3.1], [41.5, 24, 52, 0.5],
+  [50, 15, 76, 1.8], [58.5, 22, 48, 2.7], [67, 11, 66, 0.9], [76, 19, 44, 3.5], [84.5, 8, 60, 1.4], [93, 17, 50, 2.4],
 ]
 
 /**
@@ -36,11 +40,13 @@ function HallGround() {
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-20 overflow-hidden bg-[linear-gradient(180deg,#F8FBFF_0%,#EEF4FF_45%,#DCE8FF_100%)]">
       <div className="a-grid" />
       <div className="absolute inset-0 bg-[radial-gradient(60%_45%_at_50%_62%,rgba(0,200,255,.22),transparent_70%)]" />
-      <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute bottom-0 left-1/2 w-[112vw] max-w-none -translate-x-1/2" />
-      {RAYS.map(([x, h, d]) => (
-        <span key={x} className="hall-ray" style={{ left: `${x}%`, height: `${h}vh`, animationDelay: `${d}s` }} />
+      <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute bottom-0 left-1/2 w-[104vw] max-w-none -translate-x-1/2" />
+      {RAYS.map(([x, foot, h, d]) => (
+        <span key={x} className="hall-ray" style={{ left: `${x}%`, bottom: `${foot}vh`, height: `${h}vh`, animationDelay: `${d * 0.7}s` }}>
+          <i style={{ animationDelay: `${d}s` }} />
+        </span>
       ))}
-      <div className="absolute inset-x-0 bottom-0 h-[22vh] bg-gradient-to-t from-white/80 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-[12vh] bg-gradient-to-t from-white/70 to-transparent" />
     </div>
   )
 }
@@ -199,7 +205,6 @@ export default function Wall() {
             Scan. Collect.<br /><span className="wall-grad">Get rewards.</span>
           </h1>
           <p className="m-0 mt-[1.8vh] text-[1.9vw] font-semibold leading-snug text-[#0A1433] [text-shadow:0_0_0.6vw_#fff,0_0_0.3vw_#fff]">สแกน QR ที่บูธ สะสมคะแนน รับรางวัล</p>
-          <p className="m-0 mt-[0.6vh] max-w-[44vw] text-[1.15vw] font-medium leading-snug text-[#1F2C4D] [text-shadow:0_0_0.6vw_#fff,0_0_0.3vw_#fff]">Every booth is an ADT student project. Visit them, scan their QR, and unlock rewards.</p>
 
           <ol className="m-0 mt-[3.2vh] flex list-none flex-wrap gap-[1vw] p-0">
             {STEPS.map(([en, th], i) => (
