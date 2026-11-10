@@ -198,7 +198,7 @@ export default function Wall() {
             {STEPS.map(([en, th], i) => (
               <li key={en} className="hall-glass flex w-[23vw] items-center gap-[1vw] px-[1.2vw] py-[1.3vh] text-left">
                 <span className="hall-num a-hd grid h-[3vw] w-[3vw] shrink-0 place-items-center text-[1.5vw] font-bold text-white">{i + 1}</span>
-                <span className="leading-tight"><span className="block text-[1.3vw] font-semibold text-white">{th}</span><span className="block text-[0.9vw] text-white/85">{en}</span></span>
+                <span className="leading-tight"><span className="block text-[1.5vw] font-bold text-white">{th}</span><span className="block text-[1.02vw] font-medium text-white/95">{en}</span></span>
               </li>
             ))}
           </ol>
@@ -217,8 +217,8 @@ export default function Wall() {
           <div className="flex flex-col items-start gap-[1.5vh]">
             {([['Agents', 'ผู้เข้าร่วม', ev.totals.visitors], ['Booth scans', 'การสแกนบูธ', ev.totals.stamps], ['Rewards given', 'มอบรางวัลแล้ว', ev.totals.redeemed]] as const).map(([en, th, v]) => (
               <div key={en} className="hall-glass flex w-[23vw] items-baseline gap-[1vw] px-[1.4vw] py-[1.3vh] text-left">
-                <span className="a-mono min-w-[7.5vw] text-[2.5vw] font-semibold leading-none text-white [text-shadow:0_0_1.2vw_rgba(120,220,255,.9)]">{show(v)}</span>
-                <span className="leading-tight"><span className="block text-[1.15vw] font-semibold text-white">{th}</span><span className="block text-[0.85vw] text-white/85">{en}</span></span>
+                <span className="a-mono min-w-[8vw] text-[2.8vw] font-bold leading-none text-white [text-shadow:0_0_1.2vw_rgba(120,220,255,.9)]">{show(v)}</span>
+                <span className="leading-tight"><span className="block text-[1.4vw] font-bold text-white">{th}</span><span className="block text-[1vw] font-medium text-white/95">{en}</span></span>
               </div>
             ))}
           </div>
