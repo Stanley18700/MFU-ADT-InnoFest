@@ -146,7 +146,7 @@ const staffEn = {
   'v.landing.university': 'Mae Fah Luang University',
   'v.landing.badge': 'Recover the Future',
   'v.landing.pitch': 'Scan the QR at each project booth with your phone, collect points, and get rewards.',
-  'v.landing.start': 'Start — it’s free',
+  'v.landing.start': 'Start the mission',
   'v.landing.have': 'I already have an account',
 
   // cover
@@ -559,7 +559,7 @@ const staffTh: Record<keyof typeof staffEn, string> = {
   'v.landing.university': 'มหาวิทยาลัยแม่ฟ้าหลวง',
   'v.landing.badge': 'กู้คืนอนาคต',
   'v.landing.pitch': 'ใช้โทรศัพท์สแกน QR ที่บูธโครงงาน สะสมคะแนน แล้วรับรางวัล',
-  'v.landing.start': 'เริ่มเล่น (ฟรี)',
+  'v.landing.start': 'เริ่มภารกิจ',
   'v.landing.have': 'มีบัญชีแล้ว เข้าสู่ระบบ',
 
   'v.cover.passport': 'บัตรของฉัน',
