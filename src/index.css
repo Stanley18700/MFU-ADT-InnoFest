@@ -6,6 +6,9 @@
  * measured QR, the print button) is wrong there. Same thresholds as `isPhone` in Booth.tsx.
  */
 @custom-variant kiosk (@media (min-width: 640px) and (min-height: 500px));
+/* Short phone screens (Safari with both toolbars showing is ~550–700 CSS px tall). */
+@custom-variant short (@media (max-height: 700px));
+@custom-variant tiny (@media (max-height: 600px));
 
 /*
  * MFU International Festival 2026 — one theme for the guest app, the booth kiosk and the admin
@@ -313,6 +316,12 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; line-he
 
 @keyframes sheet-up { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
 .sheet-in { animation: sheet-up var(--dur-base) var(--ease-enter) backwards; }
+/*
+ * A bottom sheet's height cap. `svh` is the viewport with every browser toolbar showing, so the
+ * sheet never runs under Safari's bottom bar; vh/dvh are fallbacks for browsers without it. The
+ * 1.5rem is the scrim's p-3 above and below.
+ */
+.sheet-max { max-height: calc(100vh - 1.5rem); max-height: calc(100dvh - 1.5rem); max-height: calc(100svh - 1.5rem); }
 
 @keyframes drawer-in { from { transform: translateX(100%); } to { transform: none; } }
 .drawer-in { animation: drawer-in var(--dur-base) var(--ease-enter) backwards; }

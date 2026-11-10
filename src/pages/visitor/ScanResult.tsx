@@ -291,87 +291,101 @@ function RatingSheet({
   const [hover, setHover] = useState<{ k: RatingCriterion; n: number } | null>(null)
   return (
     <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-[rgb(10_19_64/.5)] p-3">
+      {/*
+        * Three parts in a capped flex column: title, the questions, Send. The sheet itself never
+        * scrolls — its edge and fill are ::before/::after layers sized to its box, so when it was
+        * the scroller they stayed put while the content (and Send) ran out past them. Only the
+        * middle scrolls, and only on a screen too short for the compact layout below.
+        */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={t('v.rate.title')}
-        className="a-cut a-cut-xl a-edge-neon sheet-in max-h-[96dvh] w-full max-w-md overflow-y-auto px-5 pt-3 text-left"
-        style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}
+        className="a-cut a-cut-xl a-edge-neon sheet-in sheet-max flex w-full max-w-md flex-col text-left"
       >
-        <h2 className="a-hd m-0 text-[25px] font-bold leading-tight">{t('v.rate.title')}</h2>
-        <p className="mb-0 mt-0.5 text-[15px] leading-snug text-[#33415F]">{t('v.rate.lead')}</p>
-
-        {/* One group per question — numbered label, its five tiles across the full width, a rule
-            between groups — so five rows of tiles read as five questions, not one grid. */}
-        <div className="mt-2 divide-y divide-[#E3E8F2]">
-          {RATING_CRITERIA.map((k, i) => {
-            const label = t(`v.rate.c.${k}` as 'v.rate.c.design')
-            const v = scores[k] ?? 0
-            const shown = hover?.k === k ? hover.n : v
-            return (
-              <div key={k} className="py-2">
-                <div className="flex items-baseline gap-2 text-[16px] font-semibold text-[#1B2748]">
-                  <span className="a-mono text-[13px] font-bold text-[#1D5BFF]">{String(i + 1).padStart(2, '0')}</span>
-                  {label}
-                </div>
-                <div className="mt-2 grid grid-cols-5 gap-2" role="radiogroup" aria-label={t('v.rate.critAria', { c: label })} onMouseLeave={() => setHover(null)}>
-                  {[1, 2, 3, 4, 5].map((n) => {
-                    const on = n <= shown
-                    return (
-                      <button
-                        key={n}
-                        type="button"
-                        role="radio"
-                        aria-checked={v === n}
-                        aria-label={n === 1 ? t('v.rate.star', { n }) : t('v.rate.stars', { n })}
-                        disabled={busy}
-                        onMouseEnter={() => setHover({ k, n })}
-                        onFocus={() => setHover({ k, n })}
-                        onBlur={() => setHover(null)}
-                        onClick={() => setScore(k, n)}
-                        // The original one-question tiles, spread across the full width: each is a
-                        // fifth of the row wide and 44px tall, so a thumb cannot miss it.
-                        className={`a-cut a-cut-s grid h-11 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform active:scale-90 disabled:opacity-50 ${on ? 'a-edge-neon' : 'a-edge-strong'}`}
-                        style={{
-                          // Always the SOLID star. Outline-against-filled is the distinction that
-                          // disappears in sunlight; a lit blue star against a flat grey one does not.
-                          color: on ? '#1D5BFF' : '#9AA6BF',
-                          ['--fill' as string]: on ? '#EEF3FF' : '#F7F9FC',
-                          filter: on ? 'drop-shadow(0 0 6px rgb(0 200 255 / .45))' : undefined,
-                        }}
-                      >
-                        {/*
-                          * The size lives on the SPAN, not the button. `input, select, textarea, button
-                          * { font: inherit }` (index.css) is unlayered, so it beats every layered
-                          * `text-*` utility and silently resets a button's font-size to 16px.
-                          */}
-                        <span aria-hidden className="text-[25px] leading-none">★</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
+        <div className="shrink-0 px-5 pt-3 short:pt-2.5">
+          <h2 className="a-hd m-0 text-[25px] font-bold leading-tight short:text-[21px] tiny:text-[19px]">{t('v.rate.title')}</h2>
+          <p className="mb-0 mt-0.5 text-[15px] leading-snug text-[#33415F] short:text-[13.5px]">{t('v.rate.lead')}</p>
         </div>
 
-        <label className="mt-1.5 block">
-          <span className="a-lbl">{t('v.rate.comment')}</span>
-          <textarea
-            className="a-field"
-            rows={1}
-            style={{ minHeight: 0 }}
-            maxLength={RATING_COMMENT_MAX}
-            value={comment}
-            disabled={busy}
-            onChange={(e) => setComment(e.target.value.slice(0, RATING_COMMENT_MAX))}
-            placeholder={t('v.rate.placeholder')}
-          />
-        </label>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5">
 
-        <PrimaryBtn className="mt-2.5" onClick={() => void send()} disabled={busy || !complete} loading={busy}>
-          {busy ? t('v.rate.sending') : !complete ? t('v.rate.pickAll') : t('v.rate.send')}
-        </PrimaryBtn>
+          {/* One group per question — numbered label, its five tiles across the full width, a rule
+              between groups — so five rows of tiles read as five questions, not one grid. */}
+          <div className="mt-2 divide-y divide-[#E3E8F2] short:mt-1">
+            {RATING_CRITERIA.map((k, i) => {
+              const label = t(`v.rate.c.${k}` as 'v.rate.c.design')
+              const v = scores[k] ?? 0
+              const shown = hover?.k === k ? hover.n : v
+              return (
+                <div key={k} className="py-2 short:py-1 tiny:py-0">
+                  <div className="flex items-baseline gap-2 text-[16px] font-semibold text-[#1B2748] short:text-[15px]">
+                    <span className="a-mono text-[13px] font-bold text-[#1D5BFF]">{String(i + 1).padStart(2, '0')}</span>
+                    {label}
+                  </div>
+                  <div className="mt-2 grid grid-cols-5 gap-2 short:mt-1" role="radiogroup" aria-label={t('v.rate.critAria', { c: label })} onMouseLeave={() => setHover(null)}>
+                    {[1, 2, 3, 4, 5].map((n) => {
+                      const on = n <= shown
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          role="radio"
+                          aria-checked={v === n}
+                          aria-label={n === 1 ? t('v.rate.star', { n }) : t('v.rate.stars', { n })}
+                          disabled={busy}
+                          onMouseEnter={() => setHover({ k, n })}
+                          onFocus={() => setHover({ k, n })}
+                          onBlur={() => setHover(null)}
+                          onClick={() => setScore(k, n)}
+                          // The original one-question tiles, spread across the full width: each is a
+                          // fifth of the row wide and 44px tall, so a thumb cannot miss it.
+                          className={`a-cut a-cut-s grid h-11 cursor-pointer short:h-[38px] tiny:h-[32px] place-items-center border-0 bg-transparent p-0 transition-transform active:scale-90 disabled:opacity-50 ${on ? 'a-edge-neon' : 'a-edge-strong'}`}
+                          style={{
+                            // Always the SOLID star. Outline-against-filled is the distinction that
+                            // disappears in sunlight; a lit blue star against a flat grey one does not.
+                            color: on ? '#1D5BFF' : '#9AA6BF',
+                            ['--fill' as string]: on ? '#EEF3FF' : '#F7F9FC',
+                            filter: on ? 'drop-shadow(0 0 6px rgb(0 200 255 / .45))' : undefined,
+                          }}
+                        >
+                          {/*
+                            * The size lives on the SPAN, not the button. `input, select, textarea, button
+                            * { font: inherit }` (index.css) is unlayered, so it beats every layered
+                            * `text-*` utility and silently resets a button's font-size to 16px.
+                            */}
+                          <span aria-hidden className="text-[25px] leading-none short:text-[22px]">★</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <label className="mt-1.5 block pb-1">
+            <span className="a-lbl">{t('v.rate.comment')}</span>
+            <textarea
+              className="a-field"
+              rows={1}
+              style={{ minHeight: 0 }}
+              maxLength={RATING_COMMENT_MAX}
+              value={comment}
+              disabled={busy}
+              onChange={(e) => setComment(e.target.value.slice(0, RATING_COMMENT_MAX))}
+              placeholder={t('v.rate.placeholder')}
+            />
+          </label>
+        </div>
+
+        {/* Pinned: always on screen, whatever the middle does. pt leaves room for the button's
+            bracket frame, which draws a few px outside it. */}
+        <div className="shrink-0 px-5 pt-2.5" style={{ paddingBottom: 'max(.75rem, env(safe-area-inset-bottom))' }}>
+          <PrimaryBtn onClick={() => void send()} disabled={busy || !complete} loading={busy}>
+            {busy ? t('v.rate.sending') : !complete ? t('v.rate.pickAll') : t('v.rate.send')}
+          </PrimaryBtn>
+        </div>
       </div>
     </div>
   )
