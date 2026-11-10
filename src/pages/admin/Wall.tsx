@@ -22,21 +22,6 @@ const STEPS: Array<[string, string]> = [
 ]
 
 /**
- * The uplink streams: dashed threads of pale cyan light climbing out of the campus, as on the
- * closing-screen mock-up. Each is placed in % of the campus PICTURE (left, foot above its bottom
- * edge, height), so it stays on its rooftop at any screen shape; then a speed and a delay so no
- * two climb in step.
- */
-const RAYS: Array<[number, number, number, number, number]> = [
-  [4.5, 30, 72, 7, 0.4], [9, 22, 106, 9, 2.1], [12, 27, 64, 6, 1.2], [17.5, 36, 90, 8, 3],
-  [22, 30, 60, 10, 0.8], [26.5, 24, 40, 6.5, 2.6], [30.5, 32, 58, 8.5, 1.7], [36, 42, 48, 7, 0.2],
-  [39.5, 38, 52, 9.5, 2.2], [44.5, 46, 44, 7.5, 1], [49.3, 50, 40, 9, 0], [54, 44, 46, 6.5, 2.8],
-  [59, 38, 52, 10, 1.4], [62.2, 46, 44, 7.5, 0.6], [67.5, 34, 46, 6, 2.4], [72, 28, 62, 8.5, 1.9],
-  [76, 20, 56, 7, 0.9], [81, 33, 95, 9.5, 3.2], [86.5, 39, 86, 8, 0.3], [91, 30, 68, 6.5, 1.5],
-  [95.5, 26, 94, 8.5, 2.5],
-]
-
-/**
  * The hall screen's ground, free of the app's design system on purpose (10 Nov): a pale sky with
  * a soft halo, the faintest grid, the campus and Doi Tung washed in light across the foot, and
  * the uplink streams rising out of it.
@@ -49,9 +34,6 @@ function HallGround() {
       {/* One box the shape of the picture: the streams are placed inside it, on the buildings. */}
       <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[108vw] -translate-x-1/2">
         <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute inset-0 h-full w-full" />
-        {RAYS.map(([x, foot, h, speed, d]) => (
-          <span key={x} className="hall-ray" style={{ left: `${x}%`, bottom: `${foot}%`, height: `${h}%`, animationDuration: `${speed}s, ${speed * 0.9}s`, animationDelay: `-${d}s, -${d * 1.3}s` }} />
-        ))}
       </div>
       <div className="hall-mist absolute inset-x-0 bottom-0 h-[30vh]" />
     </div>
@@ -216,7 +198,7 @@ export default function Wall() {
             {STEPS.map(([en, th], i) => (
               <li key={en} className="hall-glass flex w-[23vw] items-center gap-[1vw] px-[1.2vw] py-[1.3vh] text-left">
                 <span className="hall-num a-hd grid h-[3vw] w-[3vw] shrink-0 place-items-center text-[1.5vw] font-bold text-white">{i + 1}</span>
-                <span className="leading-tight"><span className="block text-[1.3vw] font-semibold text-[#0B1437]">{th}</span><span className="block text-[0.9vw] text-[#4A5A85]">{en}</span></span>
+                <span className="leading-tight"><span className="block text-[1.3vw] font-semibold text-white">{th}</span><span className="block text-[0.9vw] text-white/85">{en}</span></span>
               </li>
             ))}
           </ol>
@@ -235,8 +217,8 @@ export default function Wall() {
           <div className="flex flex-col items-start gap-[1.5vh]">
             {([['Agents', 'ผู้เข้าร่วม', ev.totals.visitors], ['Booth scans', 'การสแกนบูธ', ev.totals.stamps], ['Rewards given', 'มอบรางวัลแล้ว', ev.totals.redeemed]] as const).map(([en, th, v]) => (
               <div key={en} className="hall-glass flex w-[23vw] items-baseline gap-[1vw] px-[1.4vw] py-[1.3vh] text-left">
-                <span className="hall-grad a-mono min-w-[7.5vw] text-[2.5vw] font-semibold leading-none">{show(v)}</span>
-                <span className="leading-tight"><span className="block text-[1.15vw] font-semibold text-[#0B1437]">{th}</span><span className="block text-[0.85vw] text-[#4A5A85]">{en}</span></span>
+                <span className="a-mono min-w-[7.5vw] text-[2.5vw] font-semibold leading-none text-white [text-shadow:0_0_1.2vw_rgba(120,220,255,.9)]">{show(v)}</span>
+                <span className="leading-tight"><span className="block text-[1.15vw] font-semibold text-white">{th}</span><span className="block text-[0.85vw] text-white/85">{en}</span></span>
               </div>
             ))}
           </div>
