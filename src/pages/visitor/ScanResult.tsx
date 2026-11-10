@@ -288,6 +288,7 @@ function RatingSheet({
 }) {
   const { t } = useLocale()
   useBodyScrollLock(true)
+  const [hover, setHover] = useState<{ k: RatingCriterion; n: number } | null>(null)
   return (
     <div className="scrim-in fixed inset-0 z-40 flex items-end justify-center bg-[rgb(10_19_64/.5)] p-3">
       <div
@@ -300,21 +301,22 @@ function RatingSheet({
         <h2 className="a-hd m-0 text-[25px] font-bold leading-tight">{t('v.rate.title')}</h2>
         <p className="mb-0 mt-0.5 text-[15px] leading-snug text-[#33415F]">{t('v.rate.lead')}</p>
 
-        {/* One group per question: numbered label, then plain stars left-aligned under it. No box
-            per star — the boxes made five rows of 25 tiles read as one grid. */}
+        {/* One group per question — numbered label, its five tiles across the full width, a rule
+            between groups — so five rows of tiles read as five questions, not one grid. */}
         <div className="mt-2 divide-y divide-[#E3E8F2]">
           {RATING_CRITERIA.map((k, i) => {
             const label = t(`v.rate.c.${k}` as 'v.rate.c.design')
             const v = scores[k] ?? 0
+            const shown = hover?.k === k ? hover.n : v
             return (
-              <div key={k} className="py-1.5">
+              <div key={k} className="py-2">
                 <div className="flex items-baseline gap-2 text-[16px] font-semibold text-[#1B2748]">
                   <span className="a-mono text-[13px] font-bold text-[#1D5BFF]">{String(i + 1).padStart(2, '0')}</span>
                   {label}
                 </div>
-                <div className="-ml-1 flex gap-1.5" role="radiogroup" aria-label={t('v.rate.critAria', { c: label })}>
+                <div className="mt-2 grid grid-cols-5 gap-2" role="radiogroup" aria-label={t('v.rate.critAria', { c: label })} onMouseLeave={() => setHover(null)}>
                   {[1, 2, 3, 4, 5].map((n) => {
-                    const on = n <= v
+                    const on = n <= shown
                     return (
                       <button
                         key={n}
@@ -323,14 +325,19 @@ function RatingSheet({
                         aria-checked={v === n}
                         aria-label={n === 1 ? t('v.rate.star', { n }) : t('v.rate.stars', { n })}
                         disabled={busy}
+                        onMouseEnter={() => setHover({ k, n })}
+                        onFocus={() => setHover({ k, n })}
+                        onBlur={() => setHover(null)}
                         onClick={() => setScore(k, n)}
-                        // A 40px-wide target around a 31px glyph: easy to hit without a box drawn round it.
-                        className="grid h-10 w-10 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform active:scale-90 disabled:opacity-50"
+                        // The original one-question tiles, spread across the full width: each is a
+                        // fifth of the row wide and 44px tall, so a thumb cannot miss it.
+                        className={`a-cut a-cut-s grid h-11 cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform active:scale-90 disabled:opacity-50 ${on ? 'a-edge-neon' : 'a-edge-strong'}`}
                         style={{
                           // Always the SOLID star. Outline-against-filled is the distinction that
-                          // disappears in sunlight; a lit blue star against a pale grey one does not.
-                          color: on ? '#1D5BFF' : '#C9D1E0',
-                          filter: on ? 'drop-shadow(0 0 5px rgb(0 200 255 / .4))' : undefined,
+                          // disappears in sunlight; a lit blue star against a flat grey one does not.
+                          color: on ? '#1D5BFF' : '#9AA6BF',
+                          ['--fill' as string]: on ? '#EEF3FF' : '#F7F9FC',
+                          filter: on ? 'drop-shadow(0 0 6px rgb(0 200 255 / .45))' : undefined,
                         }}
                       >
                         {/*
@@ -338,7 +345,7 @@ function RatingSheet({
                           * { font: inherit }` (index.css) is unlayered, so it beats every layered
                           * `text-*` utility and silently resets a button's font-size to 16px.
                           */}
-                        <span aria-hidden className="text-[31px] leading-none">★</span>
+                        <span aria-hidden className="text-[25px] leading-none">★</span>
                       </button>
                     )
                   })}
