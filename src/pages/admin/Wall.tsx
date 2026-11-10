@@ -95,6 +95,22 @@ export default function Wall() {
    * viewport rather than fixed: a 320px square is a postage stamp on a 4K projector. Recomputed
    * on resize because entering full screen changes the viewport under it.
    */
+  /*
+   * The app reserves a scrollbar gutter on <html> (index.css) so other pages don't shift sideways.
+   * This screen never scrolls, and the reserved strip showed as a white bar down the right edge of
+   * the TV. Released while the hall screen is open, put back when it closes.
+   */
+  useEffect(() => {
+    const root = document.documentElement.style
+    const prev = { gutter: root.getPropertyValue('scrollbar-gutter'), overflow: root.overflow }
+    root.setProperty('scrollbar-gutter', 'auto')
+    root.overflow = 'hidden'
+    return () => {
+      if (prev.gutter) root.setProperty('scrollbar-gutter', prev.gutter); else root.removeProperty('scrollbar-gutter')
+      root.overflow = prev.overflow
+    }
+  }, [])
+
   const [qrSize, setQrSize] = useState(() => qrPx())
   useEffect(() => {
     const on = () => setQrSize(qrPx())
