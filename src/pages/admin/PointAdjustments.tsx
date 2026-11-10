@@ -11,8 +11,8 @@ import { Notice } from '../../components/ui'
  * Approving is still a person's decision.
  *
  * Boost-only: a quiet booth is offered EXTRA points for 30 minutes; nothing is ever cut. Booths
- * are compared only with others worth the same right now (27s with 28s, 15s with 16s, 12s with
- * 12s), against that group's median, and a booth with no scan in the last hour is treated as
+ * are compared only with others of the same programme (CE with CE, DTBI with DTBI) worth the same
+ * right now, against that group's median, and a booth with no scan in the last hour is treated as
  * not open rather than quiet.
  */
 
@@ -74,7 +74,7 @@ export function PointAdjustments({ booths }: { booths: Array<BoothDoc & { id: st
       <div>
         <h2 id="point-adjustments-title" className="text-lg font-bold">Balance booth visits</h2>
         <p className="mt-1 text-sm text-ink-soft">
-          Every quarter hour, booths worth the same right now are compared over the last 30 completed minutes. A booth well below its group's
+          Every quarter hour, booths of the same programme (CE, DCE, DTBI, MTA, SE, GS) worth the same right now are compared over the last 30 completed minutes. A booth well below its group's
           median can be given extra points for 30 minutes — nothing is ever cut. Approve here; stamps already collected are unchanged.
         </p>
       </div>
@@ -121,7 +121,7 @@ export function PointAdjustments({ booths }: { booths: Array<BoothDoc & { id: st
             </div>
             <div className="mt-2 overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <caption className="sr-only">Booths worth {g.label}</caption>
+                <caption className="sr-only">Booths in {g.label}</caption>
                 <thead><tr className="border-b rule">{['Booth', 'Scans', 'Worth now', 'Boost', 'If approved', 'Why'].map((h) => <th key={h} scope="col" className="p-2">{h}</th>)}</tr></thead>
                 <tbody>{rows.map((r) => <tr key={r.boothId} className={`border-b rule ${r.boostPoints > 0 ? 'bg-warn-bg/60' : ''}`}>
                   <th scope="row" className="p-2 font-medium">{r.name}</th>

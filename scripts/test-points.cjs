@@ -242,3 +242,19 @@ test('Friday: morning groups, the noon switch, food opening at 13:00, a boost ac
   assert.deepEqual(ids(r.rows), ['FD30'])
   assert.equal(r.rows.find((x) => x.boothId === 'FD30').suggestedPoints, 12 + boostFor(12, 5, 20))
 })
+
+test('booths of different programmes are judged separately (11 Nov 2026)', () => {
+  const now = Date.UTC(2026, 10, 11, 4, 0)
+  const mk = (id, short) => ({ id, eventId: 'e', nameEn: id, shortName: short, points: 5, active: true, activeDays: ['2026-11-11'], isPrizeDesk: false })
+  const booths = [
+    ...['1', '2', '3', '4', '5'].map((n) => mk(`ce${n}`, `CE-0${n}`)),
+    ...['1', '2', '3', '4', '5'].map((n) => mk(`se${n}`, `SE-0${n}`)),
+  ]
+  // CE is busy (median 20), SE is calm (median 4). se1 with 3 is fine among SE booths,
+  // though it would have been "quiet" against the whole hall.
+  const counts = { ce1: 20, ce2: 20, ce3: 20, ce4: 20, ce5: 5, se1: 3, se2: 4, se3: 4, se4: 4, se5: 4 }
+  const r = suggestBoosts(booths, counts, counts, now)
+  assert.deepEqual(r.groups.map((g) => [g.label, g.median]), [['CE · 5 points', 20], ['SE · 5 points', 4]])
+  assert.deepEqual(r.rows.filter((x) => x.reason === 'quiet').map((x) => x.boothId), ['ce5'])
+  assert.equal(r.rows.find((x) => x.boothId === 'se1').reason, 'typical')
+})

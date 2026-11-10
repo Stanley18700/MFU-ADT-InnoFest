@@ -37,7 +37,7 @@ export const POINT_CHECK_MS = 15 * 60_000
 /** No suggestions until the hall has been open this long — the first half hour is arrivals. */
 export const EVENT_WARMUP_MS = 30 * 60_000
 
-/** A group needs this many comparable booths before anyone in it can be called quiet. */
+/** A group (one booth type at one value) needs this many comparable booths before anyone in it can be called quiet. */
 export const MIN_GROUP_SIZE = 4
 /** …and its median booth must have at least this many scans in the window. */
 export const MIN_GROUP_MEDIAN = 3
@@ -106,6 +106,8 @@ export type BoostReason =
 export interface BoostSuggestion {
   boothId: string
   name: string
+  /** Programme prefix of the booth number ("CE", "DTBI"…), '' if none. */
+  type: string
   groupKey: string
   /** Scans in the compared window (one per visitor per booth). */
   scans: number
@@ -186,23 +188,39 @@ function median(values: number[]) {
 }
 
 /**
- * Cluster booths by their current scheduled value: values within GROUP_TOLERANCE of a neighbour
- * share a group, so 27 and 28 compare with each other, as do 15 and 16, while 12 stands alone.
+ * What kind of booth this is, for comparison: the programme prefix of its booth number
+ * ("CE-14" → "CE", "DTBI-03" → "DTBI", "GS-01" → "GS"). Booths without such a number share ''.
+ * A CE booth is judged against other CE booths, not against the whole hall (decision 11 Nov 2026).
  */
-function groupBooths(rows: Array<{ boothId: string; currentPoints: number }>) {
-  const values = [...new Set(rows.map((r) => r.currentPoints))].sort((a, b) => a - b)
-  const clusters: number[][] = []
-  for (const v of values) {
-    const last = clusters[clusters.length - 1]
-    if (last && v - last[last.length - 1] <= GROUP_TOLERANCE) last.push(v)
-    else clusters.push([v])
-  }
-  const keyOf = new Map<number, string>()
+export function boothType(shortName: string | undefined): string {
+  const m = /^([A-Za-z]+)\s*-\s*\d/.exec((shortName ?? '').trim())
+  return m ? m[1].toUpperCase() : ''
+}
+
+/**
+ * Cluster booths by type, then by their current scheduled value: values within GROUP_TOLERANCE
+ * of a neighbour share a group, so 27 and 28 compare with each other, as do 15 and 16, while 12
+ * stands alone.
+ */
+function groupBooths(rows: Array<{ boothId: string; type: string; currentPoints: number }>) {
+  const keyOf = new Map<string, string>()   // boothId → group key
   const labelOf = new Map<string, string>()
-  for (const c of clusters) {
-    const key = `${c[0]}-${c[c.length - 1]}`
-    labelOf.set(key, c.length === 1 ? `${c[0]} points` : `${c[0]}–${c[c.length - 1]} points`)
-    for (const v of c) keyOf.set(v, key)
+  const types = [...new Set(rows.map((r) => r.type))].sort()
+  for (const type of types) {
+    const mine = rows.filter((r) => r.type === type)
+    const values = [...new Set(mine.map((r) => r.currentPoints))].sort((a, b) => a - b)
+    const clusters: number[][] = []
+    for (const v of values) {
+      const last = clusters[clusters.length - 1]
+      if (last && v - last[last.length - 1] <= GROUP_TOLERANCE) last.push(v)
+      else clusters.push([v])
+    }
+    for (const c of clusters) {
+      const key = `${c[0]}-${c[c.length - 1]}${type ? `|${type}` : ''}`
+      const value = c.length === 1 ? `${c[0]} points` : `${c[0]}–${c[c.length - 1]} points`
+      labelOf.set(key, type ? `${type} · ${value}` : value)
+      for (const r of mine) if (c.includes(r.currentPoints)) keyOf.set(r.boothId, key)
+    }
   }
   return { keyOf, labelOf }
 }
@@ -227,7 +245,7 @@ export function suggestBoosts(
   opts: { tooEarly?: boolean } = {},
 ) {
   const base = booths.map((b) => ({
-    boothId: b.id, name: b.nameEn, scans: counts[b.id] ?? 0, recentScans: Math.max(recent[b.id] ?? 0, counts[b.id] ?? 0),
+    boothId: b.id, name: b.nameEn, type: boothType(b.shortName), scans: counts[b.id] ?? 0, recentScans: Math.max(recent[b.id] ?? 0, counts[b.id] ?? 0),
     basePoints: b.points, currentPoints: scheduledPoints(b, now), activeBoost: activeBoost(b, now),
   }))
   const { keyOf, labelOf } = groupBooths(base)
@@ -235,7 +253,7 @@ export function suggestBoosts(
   const rows: BoostSuggestion[] = []
 
   for (const [key, label] of labelOf) {
-    const members = base.filter((r) => keyOf.get(r.currentPoints) === key)
+    const members = base.filter((r) => keyOf.get(r.boothId) === key)
     const comparable = members.filter((r) => r.recentScans > 0)
     const med = median(comparable.map((r) => r.scans))
     const sufficient = !opts.tooEarly && comparable.length >= MIN_GROUP_SIZE && med >= MIN_GROUP_MEDIAN
@@ -262,8 +280,9 @@ export function suggestBoosts(
     groups.push({ key, label, size: members.length, comparable: comparable.length, median: med, sufficient, offered: offered.size, live: live.length })
   }
 
-  // Highest-value groups first, then running order inside a group — the order the admin thinks in.
-  groups.sort((a, b) => Number(b.key.split('-')[0]) - Number(a.key.split('-')[0]))
+  // Highest-value groups first, then by type, then running order inside a group.
+  const typeOfKey = (k: string) => k.split('|')[1] ?? ''
+  groups.sort((a, b) => Number(b.key.split('-')[0]) - Number(a.key.split('-')[0]) || typeOfKey(a.key).localeCompare(typeOfKey(b.key)))
   const order = new Map(booths.map((b, i) => [b.id, i]))
   rows.sort((a, b) => groups.findIndex((g) => g.key === a.groupKey) - groups.findIndex((g) => g.key === b.groupKey)
     || (order.get(a.boothId) ?? 0) - (order.get(b.boothId) ?? 0))
