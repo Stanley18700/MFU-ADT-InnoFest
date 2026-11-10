@@ -5,7 +5,7 @@
  *
  *   node scripts/cleanup-test-data.mjs             # dry run: prints what it would do, writes nothing
  *   node scripts/cleanup-test-data.mjs --commit    # apply
- *   node scripts/cleanup-test-data.mjs --keep=a@b.com,MFU-GG-0025   # spare these visitors
+ *   node scripts/cleanup-test-data.mjs --keep=a@b.com,ADT-IF-0025   # spare these visitors
  *   node scripts/cleanup-test-data.mjs --only=ratings [--commit]    # ONLY boothRatings, boothRated and
  *                                                                     stats/ratings/items; nothing else is read or written
  *
@@ -33,7 +33,7 @@
  *   stats/buckets/items                              the 5-minute timeline
  *   stats/event, stats/event/shards/*,               the live counters — recreated from zero by the triggers
  *     stats/demographics/shards/*
- *   counters/passport                                so numbering restarts at MFU-GG-0001
+ *   counters/passport                                so numbering restarts at ADT-IF-0001
  *
  * What is reset in place:
  *   stats/booths/items/*                             stamps 0, rank cleared, breakdowns emptied
@@ -76,7 +76,7 @@ if (args.includes('--emulator')) {
   process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
 }
 
-/** --keep=a@b.com,MFU-GG-0025,<uid> — matched against contact, passportNo and uid, case-insensitively. */
+/** --keep=a@b.com,ADT-IF-0025,<uid> — matched against contact, passportNo and uid, case-insensitively. */
 const KEEP = new Set(
   (args.find((a) => a.startsWith('--keep='))?.slice('--keep='.length) ?? '')
     .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
@@ -91,10 +91,10 @@ process.env.GCLOUD_PROJECT ??= projectId
 // to come after the env vars above or --emulator would point at the live project.
 const { db, auth, FieldValue } = await import('../functions/lib/lib.js')
 // The shard count is a shared constant; hard-coding 10 here would silently miss shards if it changed.
-const { STATS_SHARDS } = await import('../functions/lib/shared/model.js')
+const { STATS_SHARDS, EVENT_ID } = await import('../functions/lib/shared/model.js')
 
 /** The event that should be the only live one. Everything else marked live gets demoted. */
-const KEEP_EVENT = process.env.KEEP_EVENT ?? 'mfu-go-global-2026'
+const KEEP_EVENT = process.env.KEEP_EVENT ?? EVENT_ID
 
 const BATCH = 400
 /** How long to let the delete triggers drain before re-checking the shards. */
@@ -329,7 +329,7 @@ async function main() {
   }
 
   console.log(COMMIT
-    ? '\nDone. Open /admin — every counter should read 0 and the readiness card should still show 76 booths and 1 tier.'
+    ? '\nDone. Open /admin — every counter should read 0 and the booth and reward counts should be unchanged.'
     : '\nDry run — nothing was written. Re-run with --commit to apply.')
 }
 
