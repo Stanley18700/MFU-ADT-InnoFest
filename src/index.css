@@ -1695,11 +1695,11 @@ textarea.a-field { height: auto; min-height: 96px; padding: 12px 14px; }
 .hall-ground { background: linear-gradient(180deg, #FDFEFF 0%, #F3F6FF 38%, #E6ECFF 70%, #D9E3FF 100%); }
 .hall-grid { background-image: linear-gradient(rgba(60,100,220,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(60,100,220,.07) 1px, transparent 1px);
   background-size: 2.6vw 2.6vw; -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.35) 55%, transparent 85%); mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.35) 55%, transparent 85%); }
-.hall-halo { background: radial-gradient(42% 46% at 50% 46%, rgba(255,255,255,.95), rgba(255,255,255,0) 72%),
+.hall-halo { background: radial-gradient(60% 40% at 30% 22%, rgba(255,255,255,.95), rgba(255,255,255,0) 72%),
   radial-gradient(58% 50% at 50% 60%, rgba(150,150,255,.30), rgba(150,150,255,0) 70%),
   radial-gradient(40% 36% at 50% 78%, rgba(60,200,255,.22), rgba(60,200,255,0) 72%); }
-.hall-campus { opacity: .66; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); }
-.hall-mist { background: linear-gradient(to top, rgba(255,255,255,.92) 0%, rgba(255,255,255,.45) 45%, rgba(255,255,255,0) 100%); }
+.hall-campus { opacity: .82; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); mask-image: linear-gradient(to bottom, transparent 0%, #000 30%); }
+.hall-mist { background: linear-gradient(to top, rgba(255,255,255,.85) 0%, rgba(255,255,255,.25) 35%, rgba(255,255,255,0) 70%); }
 /* A dashed thread of light: the dashes climb, the whole thread breathes, both ends fade. */
 .hall-ray { position: absolute; width: 0.12vw; min-width: 2px; margin-left: -0.06vw;
   background-image: repeating-linear-gradient(to top, #35C4FF 0, #35C4FF 0.5vw, transparent 0.5vw, transparent 0.82vw); background-size: 100% 0.82vw;
