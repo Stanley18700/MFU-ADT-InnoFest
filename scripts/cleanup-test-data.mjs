@@ -6,6 +6,8 @@
  *   node scripts/cleanup-test-data.mjs             # dry run: prints what it would do, writes nothing
  *   node scripts/cleanup-test-data.mjs --commit    # apply
  *   node scripts/cleanup-test-data.mjs --keep=a@b.com,MFU-GG-0025   # spare these visitors
+ *   node scripts/cleanup-test-data.mjs --only=ratings [--commit]    # ONLY boothRatings, boothRated and
+ *                                                                     stats/ratings/items; nothing else is read or written
  *
  * Needs application-default credentials on the machine that runs it (SETUP.md §4) — the same as
  * `npm run seed` — and `functions/lib` built (`npm --prefix functions run build`).
@@ -67,6 +69,8 @@ import { fileURLToPath } from 'node:url'
 
 const args = process.argv.slice(2)
 const COMMIT = args.includes('--commit')
+const ONLY = args.find((a) => a.startsWith('--only='))?.slice('--only='.length) ?? null
+if (ONLY && ONLY !== 'ratings') throw new Error(`--only=${ONLY}: the only supported value is ratings`)
 if (args.includes('--emulator')) {
   process.env.FIRESTORE_EMULATOR_HOST ??= '127.0.0.1:8080'
   process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
@@ -159,7 +163,17 @@ async function clearShardsUntilStable() {
 
 async function main() {
   const live = !process.env.FIRESTORE_EMULATOR_HOST
-  console.log(`${COMMIT ? 'CLEANING' : 'DRY RUN'} — project ${projectId}${live ? ' (LIVE)' : ' (emulator)'}\n`)
+  console.log(`${COMMIT ? 'CLEANING' : 'DRY RUN'} — project ${projectId}${live ? ' (LIVE)' : ' (emulator)'}${ONLY ? ` — only ${ONLY}` : ''}\n`)
+
+  // ---- --only=ratings: the three rating collections and nothing else ----
+  if (ONLY === 'ratings') {
+    console.log('ratings:')
+    await wipe('boothRatings', 'boothRatings')
+    await wipe('boothRated', 'boothRated')
+    await wipe('stats/ratings/items', 'stats/ratings/items')
+    console.log(COMMIT ? '\nDone. /admin/ratings should read 0 ratings.' : '\nDry run — nothing was written. Re-run with --commit to apply.')
+    return
+  }
 
   // ---- 1. one live event ----
   const events = await db.collection('events').where('status', '==', 'live').get()
