@@ -9,10 +9,15 @@ import { fullscreenElement, isStandalone, onFullscreenChange, requestFullscreen 
 import { useLocale } from '../../lib/locale'
 import type { DrawName } from './Draw'
 
-/** Big enough to scan from the middle of a hall, small enough to leave the board room. */
+/**
+ * Big enough to scan from the middle of a hall, small enough to leave the board room: 17 stage
+ * units, the same unit as `--u` in index.css (1vw on a 16:9 screen, held by the height on a
+ * shorter one), so the QR scales with the rest of the composition.
+ */
 function qrPx() {
   if (typeof window === 'undefined') return 260
-  return Math.round(Math.max(180, Math.min(window.innerWidth * 0.17, window.innerHeight * 0.31)))
+  const u = Math.min(window.innerWidth / 100, window.innerHeight / 56.25)
+  return Math.round(Math.max(180, u * 17))
 }
 
 const STEPS: Array<[string, string]> = [
@@ -28,11 +33,12 @@ const STEPS: Array<[string, string]> = [
  */
 function HallGround() {
   return (
-    <div aria-hidden className="hall-ground pointer-events-none fixed inset-0 -z-20 overflow-hidden">
+    <div aria-hidden className="hall-ground hall-stage pointer-events-none fixed inset-0 -z-20 overflow-hidden">
       <div className="hall-grid absolute inset-0" />
       <div className="hall-halo absolute inset-0" />
-      {/* One box the shape of the picture: the streams are placed inside it, on the buildings. */}
-      <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[124vw] -translate-x-1/2">
+      {/* One box the shape of the picture: the streams are placed inside it, on the buildings.
+          Sized in stage units so an ultrawide screen doesn't raise Doi Tung behind the headline. */}
+      <div className="absolute bottom-0 left-1/2 aspect-[1200/394] w-[max(100vw,calc(var(--u)*124))] -translate-x-1/2">
         <img src="/brand/campus-holo.webp" alt="" className="hall-campus absolute inset-0 h-full w-full" />
       </div>
       <div className="hall-mist absolute inset-x-0 bottom-0 h-[30vh]" />
@@ -137,46 +143,46 @@ export default function Wall() {
   return (
     <>
     <HallGround />
-    <main className="on-stage relative flex h-dvh flex-col overflow-hidden px-[3.2vw] pb-[2.4vh] pt-[2.6vh] text-ink">
-      <header className="relative flex shrink-0 items-start justify-between gap-[2vw]">
-        <div className="flex items-center gap-[1vw] rounded-[0.5vw] bg-white/85 px-[1.1vw] py-[0.7vh] shadow-[0_0.3vw_1.4vw_rgba(29,91,255,.12)] backdrop-blur">
-          <img src="/brand/mfu28.png" alt="" className="h-[2.9vw] w-auto" />
-          <span className="h-[2vw] w-px bg-[#C9D4EA]" />
-          <img src="/brand/adt-mark.png" alt="" className="h-[2vw] w-auto" />
-          <span className="h-[2vw] w-px bg-[#C9D4EA]" />
-          <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="h-[3.2vw] w-auto" />
+    <main className="hall-stage on-stage relative flex h-dvh flex-col overflow-hidden px-[calc(var(--u)*3.2)] pb-[calc(var(--u)*1.35)] pt-[calc(var(--u)*1.4625)] text-ink">
+      <header className="relative flex shrink-0 items-start justify-between gap-[calc(var(--u)*2)]">
+        <div className="flex items-center gap-[calc(var(--u)*1)] rounded-[calc(var(--u)*0.5)] bg-white/85 px-[calc(var(--u)*1.1)] py-[calc(var(--u)*0.3937)] shadow-[0_calc(var(--u)*0.3)_calc(var(--u)*1.4)_rgba(29,91,255,.12)] backdrop-blur">
+          <img src="/brand/mfu28.png" alt="" className="h-[calc(var(--u)*2.9)] w-auto" />
+          <span className="h-[calc(var(--u)*2)] w-px bg-[#C9D4EA]" />
+          <img src="/brand/adt-mark.png" alt="" className="h-[calc(var(--u)*2)] w-auto" />
+          <span className="h-[calc(var(--u)*2)] w-px bg-[#C9D4EA]" />
+          <img src="/brand/logo-innofest.webp" alt={pick(event.nameEn, event.nameTh)} className="h-[calc(var(--u)*3.2)] w-auto" />
         </div>
-        <div className="absolute left-1/2 top-[0.4vh] -translate-x-1/2 text-center">
-          <div className="a-mono flex items-center justify-center gap-[0.6vw] text-[1.05vw] font-semibold tracking-[.2em] text-[#1450E6]"><span className="mc-pulse" aria-hidden style={{ ['--tone' as string]: '#3BE38B' }} />AGENCY HQ · LIVE</div>
-          <div className="mt-[0.3vh] text-[0.85vw] text-[#33415F]">กองบัญชาการ · ถ่ายทอดสด</div>
+        <div className="absolute left-1/2 top-[calc(var(--u)*0.225)] -translate-x-1/2 text-center">
+          <div className="a-mono flex items-center justify-center gap-[calc(var(--u)*0.6)] text-[length:calc(var(--u)*1.05)] font-semibold tracking-[.2em] text-[#1450E6]"><span className="mc-pulse" aria-hidden style={{ ['--tone' as string]: '#3BE38B' }} />AGENCY HQ · LIVE</div>
+          <div className="mt-[calc(var(--u)*0.1687)] text-[length:calc(var(--u)*0.85)] text-[#33415F]">กองบัญชาการ · ถ่ายทอดสด</div>
         </div>
         <div className="text-right">
-          <div className="a-mono text-[3vw] font-semibold leading-none tracking-tight text-[#0A1433]">{clock}</div>
-          <div className="a-mono mt-[0.6vh] text-[0.8vw] tracking-[.14em] text-[#33415F]">{dateLine}</div>
+          <div className="a-mono text-[length:calc(var(--u)*3)] font-semibold leading-none tracking-tight text-[#0A1433]">{clock}</div>
+          <div className="a-mono mt-[calc(var(--u)*0.3375)] text-[length:calc(var(--u)*0.8)] tracking-[.14em] text-[#33415F]">{dateLine}</div>
         </div>
       </header>
-      <DataErrors className="mt-[1.5vh] text-[1.1vw]" />
+      <DataErrors className="mt-[calc(var(--u)*0.8438)] text-[length:calc(var(--u)*1.1)]" />
       {reveal ? (
         <section className="flex flex-1 flex-col items-center justify-center text-center">
-          <div className="stamp-text text-[1.4vw] text-action">
+          <div className="stamp-text text-[length:calc(var(--u)*1.4)] text-action">
             {t(suspense ? 'wall.drawing' : reveal.names.length === 1 ? 'wall.winner' : 'wall.winners')}
           </div>
           {suspense ? (
-            <Crest className="mt-[5vh] h-[16vw] w-[16vw] animate-pulse text-action" />
+            <Crest className="mt-[calc(var(--u)*2.8125)] h-[calc(var(--u)*16)] w-[calc(var(--u)*16)] animate-pulse text-action" />
           ) : reveal.names.length === 0 ? (
-            <p className="mt-[6vh] text-[3vw] text-ink-soft">{t('wall.nobodyEligible')}</p>
+            <p className="mt-[calc(var(--u)*3.375)] text-[length:calc(var(--u)*3)] text-ink-soft">{t('wall.nobodyEligible')}</p>
           ) : (
             <>
-              <ol className="mt-[4vh] flex flex-col gap-[3vh]">
+              <ol className="mt-[calc(var(--u)*2.25)] flex flex-col gap-[calc(var(--u)*1.6875)]">
                 {reveal.names.map((n, i) => (
                   /* Staggered, so a row of five names arrives one at a time rather than as a block. */
                   <li key={n.uid} className="winner-in" style={{ animationDelay: `${i * 120}ms` }}>
-                    <div className="fig text-[6vw] leading-none">{n.displayName}</div>
-                    <div className="mt-[1vh] font-mono text-[1.8vw] tracking-[0.2em] text-action">{n.passportNo}</div>
+                    <div className="fig text-[length:calc(var(--u)*6)] leading-none">{n.displayName}</div>
+                    <div className="mt-[calc(var(--u)*0.5625)] font-mono text-[length:calc(var(--u)*1.8)] tracking-[0.2em] text-action">{n.passportNo}</div>
                   </li>
                 ))}
               </ol>
-              <div className="stamp-text mt-[6vh] text-[1.2vw] text-ink-soft">{t('wall.drawnFrom', { n: fmt(reveal.poolSize) })}</div>
+              <div className="stamp-text mt-[calc(var(--u)*3.375)] text-[length:calc(var(--u)*1.2)] text-ink-soft">{t('wall.drawnFrom', { n: fmt(reveal.poolSize) })}</div>
             </>
           )}
         </section>
@@ -187,38 +193,38 @@ export default function Wall() {
        * Bilingual on the screen itself, because the hall is mostly Thai visitors.
        */
       <section className="relative flex min-h-0 flex-1 flex-col items-center justify-center text-center">
-        <span className="hall-badge a-mono inline-block px-[1.3vw] py-[0.55vh] text-[1.05vw] font-semibold tracking-[.18em]">RECOVER THE FUTURE · กู้คืนอนาคต</span>
-        <h1 className="a-hd m-0 mt-[1.6vh] text-[4.9vw] font-bold leading-[1.02] tracking-[-0.015em] text-[#0B1437]">
+        <span className="hall-badge a-mono inline-block px-[calc(var(--u)*1.3)] py-[calc(var(--u)*0.3094)] text-[length:calc(var(--u)*1.05)] font-semibold tracking-[.18em]">RECOVER THE FUTURE · กู้คืนอนาคต</span>
+        <h1 className="a-hd m-0 mt-[calc(var(--u)*0.9)] text-[length:calc(var(--u)*4.9)] font-bold leading-[1.02] tracking-[-0.015em] text-[#0B1437]">
           Scan. Collect. <span className="hall-grad">Get rewards.</span>
         </h1>
-        <p className="m-0 mt-[1vh] text-[1.75vw] font-semibold text-[#1B2A5C]">สแกน QR ที่บูธ · สะสมคะแนน · รับรางวัล</p>
+        <p className="m-0 mt-[calc(var(--u)*0.5625)] text-[length:calc(var(--u)*1.75)] font-semibold text-[#1B2A5C]">สแกน QR ที่บูธ · สะสมคะแนน · รับรางวัล</p>
 
-        <div className="mt-[3.4vh] grid w-full grid-cols-[1fr_auto_1fr] items-center gap-[3vw]">
-          <ol className="m-0 flex list-none flex-col items-end gap-[1.5vh] p-0">
+        <div className="mt-[calc(var(--u)*1.9125)] grid w-full grid-cols-[1fr_auto_1fr] items-center gap-[calc(var(--u)*3)]">
+          <ol className="m-0 flex list-none flex-col items-end gap-[calc(var(--u)*0.8438)] p-0">
             {STEPS.map(([en, th], i) => (
-              <li key={en} className="hall-glass flex w-[23vw] items-center gap-[1vw] px-[1.2vw] py-[1.3vh] text-left">
-                <span className="hall-num a-hd grid h-[3vw] w-[3vw] shrink-0 place-items-center text-[1.5vw] font-bold text-white">{i + 1}</span>
-                <span className="leading-tight"><span className="block text-[1.5vw] font-bold text-white">{th}</span><span className="block text-[1.02vw] font-medium text-white/95">{en}</span></span>
+              <li key={en} className="hall-glass flex w-[calc(var(--u)*23)] items-center gap-[calc(var(--u)*1)] px-[calc(var(--u)*1.2)] py-[calc(var(--u)*0.7313)] text-left">
+                <span className="hall-num a-hd grid h-[calc(var(--u)*3)] w-[calc(var(--u)*3)] shrink-0 place-items-center text-[length:calc(var(--u)*1.5)] font-bold text-white">{i + 1}</span>
+                <span className="leading-tight"><span className="block text-[length:calc(var(--u)*1.5)] font-bold text-white">{th}</span><span className="block text-[length:calc(var(--u)*1.02)] font-medium text-white/95">{en}</span></span>
               </li>
             ))}
           </ol>
 
           {/* The one thing a visitor at the door has to be able to act on. */}
-          <div className="hall-qr relative flex flex-col items-center px-[2vw] pb-[1.8vh] pt-[2vh]">
-            <div className="a-hd text-[1.6vw] font-bold leading-tight text-[#0B1437]">สแกนเพื่อเริ่มภารกิจ</div>
-            <div className="mb-[1.8vh] text-[0.95vw] font-semibold tracking-[.04em] text-[#2B5BFF]">Scan to start the mission</div>
+          <div className="hall-qr relative flex flex-col items-center px-[calc(var(--u)*2)] pb-[calc(var(--u)*1.0125)] pt-[calc(var(--u)*1.125)]">
+            <div className="a-hd text-[length:calc(var(--u)*1.6)] font-bold leading-tight text-[#0B1437]">สแกนเพื่อเริ่มภารกิจ</div>
+            <div className="mb-[calc(var(--u)*1.0125)] text-[length:calc(var(--u)*0.95)] font-semibold tracking-[.04em] text-[#2B5BFF]">Scan to start the mission</div>
             <div className="relative">
-              <span aria-hidden className="qr-brackets" style={{ inset: '-0.9vw', ['--l' as string]: '2.2vw', ['--w' as string]: '0.3vw' }} />
+              <span aria-hidden className="qr-brackets" style={{ inset: 'calc(var(--u)*-0.9)', ['--l' as string]: 'calc(var(--u)*2.2)', ['--w' as string]: 'calc(var(--u)*0.3)' }} />
               <div className="relative overflow-hidden bg-white"><QR value={APP_ORIGIN} size={qrSize} /><span aria-hidden className="qr-sweep-loop" /></div>
             </div>
-            <div className="a-mono mt-[1.8vh] text-[1.2vw] font-semibold text-[#1746E0]">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
+            <div className="a-mono mt-[calc(var(--u)*1.0125)] text-[length:calc(var(--u)*1.2)] font-semibold text-[#1746E0]">{APP_ORIGIN.replace(/^https?:\/\//, '')}</div>
           </div>
 
-          <div className="flex flex-col items-start gap-[1.5vh]">
+          <div className="flex flex-col items-start gap-[calc(var(--u)*0.8438)]">
             {([['Agents', 'ผู้เข้าร่วม', ev.totals.visitors], ['Booth scans', 'การสแกนบูธ', ev.totals.stamps], ['Rewards given', 'มอบรางวัลแล้ว', ev.totals.redeemed]] as const).map(([en, th, v]) => (
-              <div key={en} className="hall-glass flex w-[23vw] items-baseline gap-[1vw] px-[1.4vw] py-[1.3vh] text-left">
-                <span className="a-mono min-w-[8vw] text-[2.8vw] font-bold leading-none text-white [text-shadow:0_0_1.2vw_rgba(120,220,255,.9)]">{show(v)}</span>
-                <span className="leading-tight"><span className="block text-[1.4vw] font-bold text-white">{th}</span><span className="block text-[1vw] font-medium text-white/95">{en}</span></span>
+              <div key={en} className="hall-glass flex w-[calc(var(--u)*23)] items-baseline gap-[calc(var(--u)*1)] px-[calc(var(--u)*1.4)] py-[calc(var(--u)*0.7313)] text-left">
+                <span className="a-mono min-w-[calc(var(--u)*8)] text-[length:calc(var(--u)*2.8)] font-bold leading-none text-white [text-shadow:0_0_calc(var(--u)*1.2)_rgba(120,220,255,.9)]">{show(v)}</span>
+                <span className="leading-tight"><span className="block text-[length:calc(var(--u)*1.4)] font-bold text-white">{th}</span><span className="block text-[length:calc(var(--u)*1)] font-medium text-white/95">{en}</span></span>
               </div>
             ))}
           </div>
@@ -228,7 +234,7 @@ export default function Wall() {
 
       {/* One quiet line over the campus: the busiest booths once there are any, else the day. */}
       {!reveal && (
-        <footer className="a-mono relative shrink-0 truncate pb-[0.4vh] text-center text-[0.95vw] font-medium tracking-[.2em] text-[#1B2A5C]">
+        <footer className="a-mono relative shrink-0 truncate pb-[calc(var(--u)*0.225)] text-center text-[length:calc(var(--u)*0.95)] font-medium tracking-[.2em] text-[#1B2A5C]">
           {top.length > 0
             ? <>BUSIEST NOW · {top.map((b) => b.shortName || pick(b.nameEn, b.nameTh)).join(' · ')}</>
             : <>ADT INNOFEST 2026 · IDEAS → SOLUTIONS → A BETTER TOMORROW</>}
@@ -237,10 +243,10 @@ export default function Wall() {
 
       {/* Operator controls: only out of full screen, so the projected screen is the poster and nothing else. */}
       {!fs && (
-        <div className="fixed bottom-[1.4vh] right-[1.4vw] z-10 flex items-center gap-[0.8vw] rounded-[0.4vw] bg-white/90 px-[0.8vw] py-[0.6vh] shadow-lg">
-          <span className="stamp-text text-[0.85vw] text-ink-soft">{hint ?? t('wall.pressF')}</span>
-          <Link to="/admin" className="btn-quiet inline-flex items-center gap-[0.5vw] px-[1vw] py-[0.5vh] text-[0.95vw]">{t('wall.adminConsole')}</Link>
-          <button className="btn-quiet inline-flex items-center gap-[0.5vw] px-[1vw] py-[0.5vh] text-[0.95vw]" onClick={goFull}>{Icon.fullscreen}Full screen</button>
+        <div className="fixed bottom-[calc(var(--u)*0.7875)] right-[calc(var(--u)*1.4)] z-10 flex items-center gap-[calc(var(--u)*0.8)] rounded-[calc(var(--u)*0.4)] bg-white/90 px-[calc(var(--u)*0.8)] py-[calc(var(--u)*0.3375)] shadow-lg">
+          <span className="stamp-text text-[length:calc(var(--u)*0.85)] text-ink-soft">{hint ?? t('wall.pressF')}</span>
+          <Link to="/admin" className="btn-quiet inline-flex items-center gap-[calc(var(--u)*0.5)] px-[calc(var(--u)*1)] py-[calc(var(--u)*0.2813)] text-[length:calc(var(--u)*0.95)]">{t('wall.adminConsole')}</Link>
+          <button className="btn-quiet inline-flex items-center gap-[calc(var(--u)*0.5)] px-[calc(var(--u)*1)] py-[calc(var(--u)*0.2813)] text-[length:calc(var(--u)*0.95)]" onClick={goFull}>{Icon.fullscreen}Full screen</button>
         </div>
       )}
     </main>
