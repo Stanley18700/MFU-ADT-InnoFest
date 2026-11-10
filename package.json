@@ -20,6 +20,7 @@
     "e2e:survey": "npm run reset:emulator && npm run seed:emulator && node scripts/e2e-survey.mjs",
     "e2e:festival": "npm --prefix functions run build && npm run reset:emulator && npm run seed:emulator && node scripts/e2e-festival.mjs",
     "e2e:rating": "npm --prefix functions run build && firebase emulators:exec --only auth,firestore,functions --project demo-rating \"GCLOUD_PROJECT=demo-rating node functions/lib/seed.js --emulator && GCLOUD_PROJECT=demo-rating node scripts/e2e-rating.mjs\"",
+    "e2e:reset": "npm --prefix functions run build && firebase emulators:exec --only auth,firestore,functions --project demo-reset \"GCLOUD_PROJECT=demo-reset node functions/lib/seed.js --emulator && GCLOUD_PROJECT=demo-reset node scripts/e2e-reset-visitor.mjs\"",
     "test:points": "npm --prefix functions run build && node --test scripts/test-points.cjs",
     "test:sessions": "npm --prefix functions run build && node --test scripts/test-sessions.cjs",
     "demo:points": "npm --prefix functions run build && firebase emulators:exec --only firestore --project demo-point-demo \"node scripts/demo-points.cjs\"",
