@@ -374,6 +374,9 @@ const staffEn = {
   'v.prize.deskClosed': 'The reward desk is not open yet',
   'v.prize.pointsStay': 'Your points are safe. You can collect from {time}.',
   'v.prize.codeLater': 'Your reward QR appears here as soon as a reward unlocks. Show it at the Information Desk.',
+  'v.prize.auto': 'RECORDED',
+  'v.prize.autoNote': 'Added to the activity-points list automatically. No need to come to the desk.',
+  'v.prize.autoNeedId': 'Add your 10-digit student ID above to receive it.',
 
   // festival survey chrome
   'v.survey.title': 'Satisfaction survey',
@@ -769,6 +772,9 @@ const staffTh: Record<keyof typeof staffEn, string> = {
   'v.prize.deskClosed': 'จุดรับรางวัลยังไม่เปิด',
   'v.prize.pointsStay': 'คะแนนของคุณไม่หาย รับรางวัลได้ตั้งแต่ {time} น.',
   'v.prize.codeLater': 'QR รับรางวัลจะแสดงที่นี่เมื่อปลดล็อกรางวัล แล้วนำไปแสดงที่กองอำนวยการ',
+  'v.prize.auto': 'บันทึกแล้ว',
+  'v.prize.autoNote': 'ระบบบันทึกชั่วโมงกิจกรรมให้อัตโนมัติแล้ว ไม่ต้องไปที่กองอำนวยการ',
+  'v.prize.autoNeedId': 'กรอกรหัสนักศึกษา 10 หลักด้านบนเพื่อรับชั่วโมงกิจกรรม',
 
   'v.survey.title': 'แบบประเมินความพึงพอใจ',
   'v.survey.booth': 'บูธ',

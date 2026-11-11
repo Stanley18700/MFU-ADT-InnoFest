@@ -4,7 +4,7 @@ import { AgentPhotoCard } from '../../components/AgentPhoto'
 import { Transmission } from '../../components/handler'
 import { useAuth } from '../../lib/auth'
 import { ms, useMyUnlocks, useTiers } from '../../lib/data'
-import { EVENT_SURVEY_ID, isMfuStudent, isStudentIdValid, minuteToHHMM, tierEligible, tierShownTo } from '../../../shared/model'
+import { EVENT_SURVEY_ID, isMfuOnlyTier, isMfuStudent, isStudentIdValid, minuteToHHMM, tierEligible, tierShownTo } from '../../../shared/model'
 import { prizeStock, usePrizeSession } from '../../lib/prizeSession'
 import { useFestivalSurvey } from '../../lib/festivalSurvey'
 import { api, errorMessage } from '../../lib/api'
@@ -60,7 +60,13 @@ export default function Prize() {
   const claimable = (tierId: string) => { const tr = allTiers.find((x) => x.id === tierId); return !tr || tierEligible(tr, tierId, profile ?? {}) }
   const unlocks = useMyUnlocks(profile?.id)
   const { active: activeSession, next: nextSession } = usePrizeSession()
-  const anyUnlockedUnredeemed = unlocks.some((u) => claimable(u.tierId) && ((!u.redeemedAt && !u.voidedAt) || !!u.voidedAt))
+  /*
+   * MFU activity points are recorded automatically once the threshold is reached (11 Nov 10:23):
+   * nobody has to bring a QR to the desk for them, so they never bring up the QR card.
+   */
+  const isAuto = (tierId: string) => { const tr = allTiers.find((x) => x.id === tierId); return !!tr && isMfuOnlyTier(tr, tierId) }
+  const anyUnlockedUnredeemed = unlocks.some((u) => !isAuto(u.tierId) && claimable(u.tierId) && ((!u.redeemedAt && !u.voidedAt) || !!u.voidedAt))
+  const hasDeskReward = tiers.some((x) => !isAuto(x.id))
   /*
    * The festival survey comes before every reward (organisers' decision, 7 Nov): while it is
    * published (see `surveyGates`) and this visitor has not answered, the QR (prize and MFU333) and
@@ -83,6 +89,7 @@ export default function Prize() {
   const rankName = t(rank.key === 'senior' ? 'a.rank.senior' : rank.key === 'field' ? 'a.rank.field' : 'a.rank.recruit')
   const frame = { name: profile.displayName, agentId: profile.passportNo ?? '', points, rank: rankName, place: '11 NOV 2026 · INDOOR STADIUM · MFU', tag: '#ADTInnoFest2026 · RECOVER THE FUTURE' }
   const top = allTiers[allTiers.length - 1]?.thresholdPoints ?? 0
+  const feedbackGate = (anyUnlockedUnredeemed || points >= (allTiers[0]?.thresholdPoints ?? Infinity)) && fs.owed
 
   return (
     <main className="flex flex-col gap-3 px-4 pt-1">
@@ -94,10 +101,8 @@ export default function Prize() {
       {anyUnlockedUnredeemed
         ? <Transmission text={fs.owed ? t('h.rewards.sealed') : t('h.rewards.ready')} />
         : allTiers.length > 0 && points < (allTiers[0]?.thresholdPoints ?? 0) && <Transmission text={t('h.rewards.locked', { n: allTiers[0].thresholdPoints })} />}
-      {/* The 50-point reward for everyone: an agent photo in the InnoFest frame. */}
-      <AgentPhotoCard points={points} at={allTiers[0]?.thresholdPoints ?? 50} autoOpen={wantPhoto && !fs.owed} frame={frame} sealed={fs.loading || fs.owed} />
-      {mfu && (idOk ? <StudentIdLine id={profile.studentId ?? ''} /> : <StudentIdCard />)}
-      <FeedbackCard gate={(anyUnlockedUnredeemed || points >= (allTiers[0]?.thresholdPoints ?? Infinity)) && fs.owed} />
+      {/* What the visitor came here to do comes first: the survey if it stands in the way, else the QR. */}
+      {feedbackGate && <FeedbackCard gate />}
       {anyUnlockedUnredeemed && !gated && (
         /* One code for every unlocked reward: the desk sees which tiers are waiting when it scans. */
         <section className="a-cut a-edge-neon a-fill-foil a-glow-soft px-4 pb-4 pt-3.5">
@@ -120,12 +125,15 @@ export default function Prize() {
         </section>
       )}
 
+      {mfu && (idOk ? <StudentIdLine id={profile.studentId ?? ''} /> : <StudentIdCard />)}
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {/* `tier`, not `t` — `t` is the translator now, and the old name shadowed it. */}
         {tiers.map((tier) => {
           const u = unlocks.find((x) => x.tierId === tier.id)
           const unlocked = points >= tier.thresholdPoints || (!!u && !u.voidedAt)
-          const redeemed = !!u?.redeemedAt && !u?.voidedAt
+          const auto = isAuto(tier.id)
+          // An automatic reward counts as received the moment it unlocks, with a valid student ID.
+          const redeemed = (!!u?.redeemedAt && !u?.voidedAt) || (auto && unlocked && idOk)
           const isNext = tier.id === nextId
           // Per-session stock where the tier has it, the single event pool where it does not.
           // `closed` is not `gone` — the desk being shut says nothing about whether there are
@@ -146,7 +154,8 @@ export default function Prize() {
           return (
             <li key={tier.id} className={isNext ? 'a-brk' : ''}><div className={`a-cut ${shell} px-4 py-3.5`}>
               <div className="flex items-center justify-between gap-3">
-                {redeemed ? <InkTag>{AIcon.check}{t('v.prize.collected')}</InkTag>
+                {redeemed && auto ? <GoldTag>{AIcon.check}{t('v.prize.auto')}</GoldTag>
+                  : redeemed ? <InkTag>{AIcon.check}{t('v.prize.collected')}</InkTag>
                   : unlocked ? <GoldTag>{AIcon.check}{t('a.rewards.ready')}</GoldTag>
                   : <LockedTag><span className="scale-75">{AIcon.lock}</span>{t('a.rewards.locked')}</LockedTag>}
                 <span className="a-mono text-xs font-semibold text-[#33415F]">{t('v.stamps.pts', { n: tier.thresholdPoints })}</span>
@@ -155,9 +164,10 @@ export default function Prize() {
                 <div className="min-w-0">
                   <h2 className="a-hd m-0 text-[19px] font-bold leading-tight text-ink">{tier.name}</h2>
                   <p className="mb-0 mt-0.5 text-sm text-[#33415F]">{tier.reward}</p>
+                  {auto && unlocked && <p className="mb-0 mt-1 text-xs font-semibold text-[#1450E6]">{idOk ? t('v.prize.autoNote') : t('v.prize.autoNeedId')}</p>}
                   {tier.grantsDrawEntry && <p className="mb-0 mt-1 text-xs font-semibold text-[#1450E6]">{t('v.prize.drawEntry')}</p>}
                 </div>
-                {redeemed && redeemedAt && (
+                {redeemed && !auto && redeemedAt && (
                   <div className="shrink-0 text-right">
                     <div className="a-label text-[var(--a-muted)]">{t('a.rewards.time')}</div>
                     <div className="a-mono text-[22px] font-semibold">{new Date(redeemedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' })}</div>
@@ -227,7 +237,10 @@ export default function Prize() {
         })}
       </ul>
 
-      {!anyUnlockedUnredeemed && <div className="a-cut a-solid a-fill-tint px-4 py-3 text-sm text-ink">{t('v.prize.codeLater')}</div>}
+      {!anyUnlockedUnredeemed && hasDeskReward && <div className="a-cut a-solid a-fill-tint px-4 py-3 text-sm text-ink">{t('v.prize.codeLater')}</div>}
+      {/* The 50-point reward for everyone: an agent photo in the InnoFest frame. */}
+      <AgentPhotoCard points={points} at={allTiers[0]?.thresholdPoints ?? 50} autoOpen={wantPhoto && !fs.owed} frame={frame} sealed={fs.loading || fs.owed} />
+      {!feedbackGate && <FeedbackCard gate={false} />}
     </main>
   )
 }

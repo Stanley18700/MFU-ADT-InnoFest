@@ -33,24 +33,35 @@ export default function Mfu333() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
 
-  const schoolOf = useMemo(() => new Map(students.map((u) => [u.id, u.school ?? ''])), [students])
+  const studentOf = useMemo(() => new Map(students.map((u) => [u.id, u])), [students])
+  /*
+   * Automatic since 11 Nov 10:23 (Stanley): an MFU student is on this list the moment they reach
+   * the threshold, whether or not they ever came to the desk. Desk hand-overs keep their snapshot;
+   * everyone else is read from their profile as it is now.
+   */
   const rows = useMemo(() => {
     if (!mfuTier) return []
     const list = unlocks
-      .filter((u) => u.tierId === mfuTier.id && u.redeemedAt && !u.voidedAt)
-      .map((u) => ({
-        uid: u.visitorId, at: ms(u.redeemedAt),
-        studentId: u.studentIdAtRedeem ?? '', name: u.nameAtRedeem ?? '', passportNo: u.passportNoAtRedeem ?? '', points: u.pointsAtRedeem ?? null,
-        // ADT InnoFest: ADT students' points go on the School activity list, everyone else's on
-        // the Extracurricular one. The school as it was at hand-over, else the profile's now.
-        school: u.schoolAtRedeem ?? schoolOf.get(u.visitorId) ?? '',
-      }))
+      .filter((u) => u.tierId === mfuTier.id && !u.voidedAt)
+      .map((u) => {
+        const p = studentOf.get(u.visitorId)
+        const atDesk = !!u.redeemedAt
+        return {
+          uid: u.visitorId, at: ms(u.unlockedAt) || ms(u.redeemedAt), atDesk,
+          studentId: (atDesk ? u.studentIdAtRedeem : null) ?? p?.studentId ?? '',
+          name: (atDesk ? u.nameAtRedeem : null) ?? p?.displayName ?? '',
+          passportNo: (atDesk ? u.passportNoAtRedeem : null) ?? p?.passportNo ?? '',
+          points: p?.points ?? u.pointsAtRedeem ?? u.pointsAtUnlock ?? null,
+          // ADT students' points go on the School activity list, everyone else's on the Extracurricular one.
+          school: (atDesk ? u.schoolAtRedeem : null) ?? p?.school ?? '',
+        }
+      })
       .map((r) => ({ ...r, credit: isAdtSchool(r.school) ? 'School activity (ADT)' : 'Extracurricular' }))
       .sort((a, b) => a.at - b.at)
     const count = new Map<string, number>()
     for (const r of list) if (r.studentId) count.set(r.studentId, (count.get(r.studentId) ?? 0) + 1)
     return list.map((r, i) => ({ ...r, no: i + 1, dup: !!r.studentId && (count.get(r.studentId) ?? 0) > 1, bad: !isStudentIdValid(r.studentId) }))
-  }, [unlocks, mfuTier, schoolOf])
+  }, [unlocks, mfuTier, studentOf])
 
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase()
@@ -65,32 +76,31 @@ export default function Mfu333() {
     })
   }, [rows, q, from, to])
 
-  const redeemedMfu = rows.length
+  const earned = rows.filter((r) => !r.bad).length
   const prizesRedeemed = unlocks.filter((u) => prizeTierIds.includes(u.tierId) && u.redeemedAt && !u.voidedAt).length
-  const collected = new Set(rows.map((r) => r.uid))
-  const waiting = mfuTier ? students.filter((u) => (u.points ?? 0) >= mfuTier.thresholdPoints && isStudentIdValid(u.studentId) && !collected.has(u.id)).length : 0
+  const noId = rows.filter((r) => r.bad).length
   const dupCount = rows.filter((r) => r.dup).length
 
   function exportCsv() {
     downloadCsv(shown.map((r) => ({
       no: r.no, student_id: r.studentId, name: r.name, school: r.school, credit_type: r.credit, passport_no: r.passportNo,
-      points_at_redeem: r.points ?? '', redeemed_at: bkkIso(r.at), duplicate_student_id: r.dup ? 'yes' : '',
+      points: r.points ?? '', reached_at: bkkIso(r.at), collected_at_desk: r.atDesk ? 'yes' : '', student_id_missing: r.bad ? 'yes' : '', duplicate_student_id: r.dup ? 'yes' : '',
     })), `activity-points-${new Date().toISOString().slice(0, 10)}.csv`,
-    ['no', 'student_id', 'name', 'school', 'credit_type', 'passport_no', 'points_at_redeem', 'redeemed_at', 'duplicate_student_id'])
+    ['no', 'student_id', 'name', 'school', 'credit_type', 'passport_no', 'points', 'reached_at', 'collected_at_desk', 'student_id_missing', 'duplicate_student_id'])
   }
 
   return (
     <div className="page-in">
       <header>
         <h1 className="text-2xl font-bold">Activity points (MFU students)</h1>
-        <p className="mt-1 max-w-3xl text-sm text-ink-soft">Everyone who collected activity points at the desk. ADT students go on the School activity list, students of other schools on the Extracurricular list — the Credit column and the CSV say which. The CSV contains student IDs: keep it in an access-restricted place and delete it once the credit is recorded.</p>
+        <p className="mt-1 max-w-3xl text-sm text-ink-soft">Every MFU student who has reached {mfuTier?.thresholdPoints ?? 50} points, added automatically — they don't need to come to the desk. ADT students go on the School activity list, students of other schools on the Extracurricular list — the Credit column and the CSV say which. The CSV contains student IDs: keep it in an access-restricted place and delete it once the credit is recorded.</p>
       </header>
 
       <section className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          ['Activity points collected', redeemedMfu],
+          ['Students earning activity points', earned],
+          ['Reached it but no valid student ID', noId],
           ['Lucky-draw tries given', prizesRedeemed],
-          [`Reached ${mfuTier?.thresholdPoints ?? 50}, not collected`, waiting],
           ['Agents registered', stats.totals.visitors],
         ].map(([label, n]) => (
           <div key={label as string} className="card !p-4">
@@ -117,15 +127,15 @@ export default function Mfu333() {
             <thead className="text-xs uppercase tracking-wide text-ink-soft">
               <tr className="border-b border-[var(--a-line)]">
                 <th className="py-2 pr-3">No</th><th className="py-2 pr-3">Student ID</th><th className="py-2 pr-3">Name</th>
-                <th className="py-2 pr-3">Credit</th><th className="py-2 pr-3">Agent ID</th><th className="py-2 pr-3">Points</th><th className="py-2">Redeemed at</th>
+                <th className="py-2 pr-3">Credit</th><th className="py-2 pr-3">Agent ID</th><th className="py-2 pr-3">Points</th><th className="py-2">Reached at</th>
               </tr>
             </thead>
             <tbody>
-              {shown.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-ink-soft">{rows.length ? 'Nothing matches the search.' : 'No activity points collected yet.'}</td></tr>}
+              {shown.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-ink-soft">{rows.length ? 'Nothing matches the search.' : 'No MFU student has reached the threshold yet.'}</td></tr>}
               {shown.map((r) => (
                 <tr key={r.uid} className={`border-b border-[var(--a-line)] ${r.dup || r.bad ? 'bg-warn-bg/60' : ''}`}>
                   <td className="py-2 pr-3 text-ink-soft">{r.no}</td>
-                  <td className="py-2 pr-3 font-mono">{r.studentId || '—'}{r.dup && <span className="ml-2 rounded bg-warn-text/15 px-1.5 py-0.5 text-[11px] font-semibold text-warn-text">duplicate</span>}</td>
+                  <td className="py-2 pr-3 font-mono">{r.studentId || '—'}{r.bad && <span className="ml-2 rounded bg-warn-text/15 px-1.5 py-0.5 text-[11px] font-semibold text-warn-text">no valid ID</span>}{r.dup && <span className="ml-2 rounded bg-warn-text/15 px-1.5 py-0.5 text-[11px] font-semibold text-warn-text">duplicate</span>}</td>
                   <td className="py-2 pr-3">{r.name}</td>
                   <td className="py-2 pr-3 text-xs"><div>{r.credit}</div><div className="max-w-[14rem] truncate text-ink-soft">{r.school}</div></td>
                   <td className="py-2 pr-3 font-mono">{r.passportNo}</td>
