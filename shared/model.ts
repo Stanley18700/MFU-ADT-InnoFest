@@ -784,6 +784,14 @@ export function criterionAverage(s: Pick<BoothRatingStatsDoc, 'count' | 'crit'> 
   return c.sum / s.count
 }
 
+/**
+ * A booth's average pulled towards the hall-wide `mean` as if it had `m` extra votes there
+ * (a Bayesian average). Few votes land near the mean; many keep the booth's own average.
+ */
+export function weightedScore(avg: number | null, votes: number, mean: number, m = RATING_MIN_VOTES): number | null {
+  return avg == null || !votes ? null : (votes * avg + m * mean) / (votes + m)
+}
+
 /** The mean of the five criterion averages, or null when any is missing. */
 export function overallAverage(s: Pick<BoothRatingStatsDoc, 'count' | 'crit'> | null | undefined): number | null {
   const avgs = RATING_CRITERIA.map((k) => criterionAverage(s, k))

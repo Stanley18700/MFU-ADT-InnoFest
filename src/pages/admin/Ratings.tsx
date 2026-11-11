@@ -6,7 +6,7 @@ import { CsvButton, DataError, fmt } from '../../components/ui'
 import { Select } from '../../components/Select'
 import { ts } from '../../lib/eventText'
 import { useLocale } from '../../lib/locale'
-import { RATING_CRITERIA, RATING_MIN_VOTES, criterionAverage, ratingClosesAtMs, ratingOpen, overallAverage, ratingAverage, type BoothRatingDoc, type BoothRatingStatsDoc, type RatingCriterion } from '../../../shared/model'
+import { RATING_CRITERIA, RATING_MIN_VOTES, criterionAverage, weightedScore, ratingClosesAtMs, ratingOpen, overallAverage, ratingAverage, type BoothRatingDoc, type BoothRatingStatsDoc, type RatingCriterion } from '../../../shared/model'
 
 /** Newest first, and capped: a comment feed is for reading, and nobody reads past a few hundred. */
 const COMMENT_PAGE = 300
@@ -68,25 +68,43 @@ export default function Ratings() {
         dist: s?.dist ?? {},
       }
     })
-    const rankOf = (get: (r: typeof base[number]) => number | null) => {
-      const vals = base.map(get).filter((v): v is number => v != null)
-      return (r: typeof base[number]) => { const v = get(r); return v == null ? null : 1 + vals.filter((x) => x > v).length }
+    /**
+     * Ranked by a weighted score, not the plain average: each booth counts as if it also had
+     * RATING_MIN_VOTES votes at the hall-wide average, so 2 votes of 5★ no longer beat 80 votes
+     * of 4.97★. Many votes keep a booth's own average; few votes pull it towards everyone's.
+     */
+    const weigh = (get: (r: typeof base[number]) => number | null) => {
+      const rated = base.filter((r) => get(r) != null)
+      const n = rated.reduce((a, r) => a + r.count, 0)
+      const mean = n ? rated.reduce((a, r) => a + get(r)! * r.count, 0) / n : 0
+      return (r: typeof base[number]) => weightedScore(get(r), r.count, mean)
     }
-    const overallRank = rankOf((r) => r.avg)
-    const critRank = Object.fromEntries(RATING_CRITERIA.map((k) => [k, rankOf((r) => r.crit[k])])) as Record<RatingCriterion, ReturnType<typeof rankOf>>
-    const out = base.map((r) => ({
+    const overallW = weigh((r) => r.avg)
+    const critW = Object.fromEntries(RATING_CRITERIA.map((k) => [k, weigh((r) => r.crit[k])])) as Record<RatingCriterion, ReturnType<typeof weigh>>
+    const scored = base.map((r) => ({
+      ...r,
+      score: overallW(r),
+      critScore: Object.fromEntries(RATING_CRITERIA.map((k) => [k, critW[k](r)])) as Record<RatingCriterion, number | null>,
+    }))
+    const rankOf = (get: (r: typeof scored[number]) => number | null) => {
+      const vals = scored.map(get).filter((v): v is number => v != null)
+      return (r: typeof scored[number]) => { const v = get(r); return v == null ? null : 1 + vals.filter((x) => x > v).length }
+    }
+    const overallRank = rankOf((r) => r.score)
+    const critRank = Object.fromEntries(RATING_CRITERIA.map((k) => [k, rankOf((r) => r.critScore[k])])) as Record<RatingCriterion, ReturnType<typeof rankOf>>
+    const out = scored.map((r) => ({
       ...r,
       rank: overallRank(r),
       critRank: Object.fromEntries(RATING_CRITERIA.map((k) => [k, critRank[k](r)])) as Record<RatingCriterion, number | null>,
     }))
     const byName = (a: typeof out[number], b: typeof out[number]) => a.name.localeCompare(b.name)
     // Unrated booths sink in every score sort — an average of nothing is not a bad average.
-    if (sort === 'overall') out.sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1) || byName(a, b))
+    if (sort === 'overall') out.sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || byName(a, b))
     else if ((RATING_CRITERIA as readonly string[]).includes(sort)) {
       const k = sort as RatingCriterion
-      out.sort((a, b) => (b.crit[k] ?? -1) - (a.crit[k] ?? -1) || byName(a, b))
+      out.sort((a, b) => (b.critScore[k] ?? -1) - (a.critScore[k] ?? -1) || byName(a, b))
     }
-    if (sort === 'worst') out.sort((a, b) => (a.avg ?? 99) - (b.avg ?? 99) || byName(a, b))
+    if (sort === 'worst') out.sort((a, b) => (a.score ?? 99) - (b.score ?? 99) || byName(a, b))
     if (sort === 'most') out.sort((a, b) => b.count - a.count || byName(a, b))
     if (sort === 'name') out.sort(byName)
     return out
@@ -94,7 +112,7 @@ export default function Ratings() {
 
   const top5 = useMemo(() => RATING_CRITERIA.map((k) => ({
     k,
-    list: rows.filter((r) => r.crit[k] != null).sort((a, b) => (b.crit[k]! - a.crit[k]!) || a.name.localeCompare(b.name)).slice(0, 5),
+    list: rows.filter((r) => r.critScore[k] != null).sort((a, b) => (b.critScore[k]! - a.critScore[k]!) || a.name.localeCompare(b.name)).slice(0, 5),
   })), [rows])
 
   const total = rows.reduce((n, r) => n + r.count, 0)
@@ -108,8 +126,9 @@ export default function Ratings() {
     no: i + 1,
     booth: r.name, boothId: r.boothId,
     votes: r.count,
-    ...Object.fromEntries(RATING_CRITERIA.flatMap((k) => [[`${k}_avg`, f2(r.crit[k])], [`${k}_rank`, r.critRank[k] ?? '']])),
+    ...Object.fromEntries(RATING_CRITERIA.flatMap((k) => [[`${k}_avg`, f2(r.crit[k])], [`${k}_weighted`, f2(r.critScore[k])], [`${k}_rank`, r.critRank[k] ?? '']])),
     overall_avg: f2(r.avg),
+    overall_weighted: f2(r.score),
     overall_rank: r.rank ?? '',
     few_votes: r.thin ? 'yes' : '',
     '1': r.dist['1'] ?? 0, '2': r.dist['2'] ?? 0, '3': r.dist['3'] ?? 0, '4': r.dist['4'] ?? 0, '5': r.dist['5'] ?? 0,
@@ -187,8 +206,8 @@ export default function Ratings() {
                     {r.thin && r.count > 0 && <span className="ml-2 text-xs text-ink-soft">({t('admin.ratings.thin')})</span>}
                   </td>
                   <td className="fig py-2 pr-3 text-right text-ink-soft">{fmt(r.count)}</td>
-                  {RATING_CRITERIA.map((k) => <AvgRank key={k} avg={r.crit[k]} rank={r.critRank[k]} />)}
-                  <AvgRank avg={r.avg} rank={r.rank} strong />
+                  {RATING_CRITERIA.map((k) => <AvgRank key={k} score={r.critScore[k]} avg={r.crit[k]} rank={r.critRank[k]} />)}
+                  <AvgRank score={r.score} avg={r.avg} rank={r.rank} strong />
                   <td className="py-2"><Spread dist={r.dist} count={r.count} /></td>
                 </tr>
               ))}
@@ -211,7 +230,7 @@ export default function Ratings() {
                     {list.map((r, i) => (
                       <li key={r.boothId} className={`flex justify-between gap-2 ${r.thin ? 'opacity-50' : ''}`}>
                         <span className="min-w-0 truncate" title={r.name}><span className="fig text-ink-soft">{i + 1}.</span> {r.name}</span>
-                        <span className="fig shrink-0">{r.crit[k]!.toFixed(2)}</span>
+                        <span className="fig shrink-0" title={`${t('admin.ratings.plainAvg')} ${r.crit[k]!.toFixed(2)} · ${r.count}`}>{r.critScore[k]!.toFixed(2)}</span>
                       </li>
                     ))}
                   </ol>
@@ -271,14 +290,14 @@ export default function Ratings() {
 
 type ResultRow = {
   boothId: string; name: string; team: string; count: number; thin: boolean
-  avg: number | null; rank: number | null; dist: Record<string, number>
-  crit: Record<RatingCriterion, number | null>; critRank: Record<RatingCriterion, number | null>
+  avg: number | null; score: number | null; rank: number | null; dist: Record<string, number>
+  crit: Record<RatingCriterion, number | null>; critScore: Record<RatingCriterion, number | null>; critRank: Record<RatingCriterion, number | null>
   critDist: Record<RatingCriterion, Record<string, number>>
 }
 
 /**
  * The award-results workbook: an "Overall" tab, then one per criterion, each ranked best first
- * by that tab's average. Unrated booths go last, unranked. The library is loaded on click, so
+ * by that tab's weighted score (see `weigh` above). Unrated booths go last, unranked. The library is loaded on click, so
  * it never reaches the visitor screens.
  */
 /** Tab and column names stay in English whatever language the admin page is in. */
@@ -294,14 +313,14 @@ async function downloadResultsXlsx(rows: ResultRow[]) {
   const bold = (value: string) => ({ value, fontWeight: 'bold' as const })
   const num = (v: number | null, format?: string) => (v == null ? null : { value: format ? Math.round(v * 100) / 100 : v, type: Number, ...(format ? { format } : {}) })
 
-  const tab = (name: string, avgOf: (r: ResultRow) => number | null, rankOf: (r: ResultRow) => number | null, distOf: (r: ResultRow) => Record<string, number>, withCriteria: boolean) => {
-    const sorted = [...rows].sort((a, b) => (avgOf(b) ?? -1) - (avgOf(a) ?? -1) || b.count - a.count || a.name.localeCompare(b.name))
-    const head = ['Rank', 'Booth ID', 'Booth / project', 'Team', 'Votes', 'Average',
+  const tab = (name: string, avgOf: (r: ResultRow) => number | null, scoreOf: (r: ResultRow) => number | null, rankOf: (r: ResultRow) => number | null, distOf: (r: ResultRow) => Record<string, number>, withCriteria: boolean) => {
+    const sorted = [...rows].sort((a, b) => (scoreOf(b) ?? -1) - (scoreOf(a) ?? -1) || b.count - a.count || a.name.localeCompare(b.name))
+    const head = ['Rank', 'Booth ID', 'Booth / project', 'Team', 'Votes', 'Weighted score', 'Average',
       ...(withCriteria ? RATING_CRITERIA.map(cname) : []), '1★', '2★', '3★', '4★', '5★', `Few votes (<${RATING_MIN_VOTES})`]
     return {
       sheet: name.slice(0, 31),
       stickyRowsCount: 2,
-      columns: [{ width: 6 }, { width: 12 }, { width: 40 }, { width: 36 }, { width: 7 }, { width: 9 }, ...(withCriteria ? RATING_CRITERIA.map(() => ({ width: 13 })) : []), ...[1, 2, 3, 4, 5].map(() => ({ width: 6 })), { width: 15 }],
+      columns: [{ width: 6 }, { width: 12 }, { width: 40 }, { width: 36 }, { width: 7 }, { width: 10 }, { width: 9 }, ...(withCriteria ? RATING_CRITERIA.map(() => ({ width: 13 })) : []), ...[1, 2, 3, 4, 5].map(() => ({ width: 6 })), { width: 15 }],
       data: [
         [bold(`ADT InnoFest 2026 — ${name} — exported ${stamp} (Asia/Bangkok)`)],
         head.map(bold),
@@ -310,7 +329,7 @@ async function downloadResultsXlsx(rows: ResultRow[]) {
           const d = distOf(r)
           return [
             rated ? num(rankOf(r)) : null, { value: r.boothId }, { value: r.name }, { value: r.team },
-            num(r.count), rated ? num(avgOf(r), '0.00') : null,
+            num(r.count), rated ? num(scoreOf(r), '0.00') : null, rated ? num(avgOf(r), '0.00') : null,
             ...(withCriteria ? RATING_CRITERIA.map((k) => num(r.crit[k], '0.00')) : []),
             ...[1, 2, 3, 4, 5].map((n) => num(d[String(n)] ?? 0)),
             { value: r.thin ? 'yes' : 'no' },
@@ -321,17 +340,19 @@ async function downloadResultsXlsx(rows: ResultRow[]) {
   }
 
   const sheets = [
-    tab('Overall', (r) => r.avg, (r) => r.rank, (r) => r.dist, true),
-    ...RATING_CRITERIA.map((k) => tab(cname(k), (r) => r.crit[k], (r) => r.critRank[k], (r) => r.critDist[k], false)),
+    tab('Overall', (r) => r.avg, (r) => r.score, (r) => r.rank, (r) => r.dist, true),
+    ...RATING_CRITERIA.map((k) => tab(cname(k), (r) => r.crit[k], (r) => r.critScore[k], (r) => r.critRank[k], (r) => r.critDist[k], false)),
   ]
   await writeXlsxFile(sheets as never).toFile(`innofest-ratings-${stamp.replace(' ', '-').replace(':', '')}.xlsx`)
 }
 
-function AvgRank({ avg, rank, strong }: { avg: number | null; rank: number | null; strong?: boolean }) {
+/** The weighted score and its rank, with the plain average under it. */
+function AvgRank({ score, avg, rank, strong }: { score: number | null; avg: number | null; rank: number | null; strong?: boolean }) {
   return (
     <td className={`fig py-2 pr-3 text-right ${strong ? 'font-semibold' : ''}`}>
-      {avg == null ? '–' : avg.toFixed(2)}
+      {score == null ? '–' : score.toFixed(2)}
       {rank != null && <span className="ml-1 text-xs font-normal text-ink-soft">#{rank}</span>}
+      {avg != null && <div className="text-[11px] font-normal text-ink-soft">avg {avg.toFixed(2)}</div>}
     </td>
   )
 }
