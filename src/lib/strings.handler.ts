@@ -18,7 +18,7 @@ export const handlerEn = {
   'h.b3': 'Every booth here is a senior project. In my time those files were lost, and the future we built on them is fading.',
   'h.b4': 'Find a booth. Tap Scan and point your camera at the QR on its screen, or type its 6-character code. Each booth counts once.',
   'h.b5': 'Give each project stars. Then answer one satisfaction survey — you need it before any reward.',
-  'h.b6': 'Reach {n} points and your first reward unlocks. Show your reward QR at the Information Desk.',
+  'h.b6': 'Reach {n} points and your first reward unlocks. MFU students get activity points automatically. Visitors from outside MFU show their reward QR at the Information Desk for the lucky draw.',
   'h.b7': 'This link won’t hold forever. Move fast, agent.',
 
   // On the screens
@@ -46,7 +46,7 @@ export const handlerEn = {
   'hx.tag.field': 'FIELD NOTE',
   'hx.u.open': 'Well done, agent: you have reached {n} points. Your first reward is unlocked.',
   'hx.u.tier': 'Well done, agent. You have unlocked {tier}.',
-  'hx.u.mfu': 'You are an MFU student, so you get activity points: School activity points for ADT students, Extracurricular points for other schools. Show your reward QR at the Information Desk; they are recorded with your student ID.',
+  'hx.u.mfu': 'You are an MFU student, so you get activity points: School activity points for ADT students, Extracurricular points for other schools. They are recorded automatically with your student ID. No QR, no need to come to the desk.',
   'hx.u.photo': 'You also get your Agent Photo: a selfie in the official InnoFest frame with the ADT and MFU logos.',
   'hx.u.prize': 'Show your reward QR at the Information Desk to collect {tier}.',
   'hx.u.prizeIt': 'Go to the Information Desk and show your reward QR to collect it.',
@@ -91,7 +91,7 @@ export const handlerTh: Record<keyof typeof handlerEn, string> = {
   'h.b3': 'ทุกบูธที่นี่คือโครงงานของนักศึกษาปีสุดท้าย ในยุคของฉัน ไฟล์เหล่านั้นสูญหายไป และอนาคตที่เราสร้างขึ้นจากมันกำลังเลือนหาย',
   'h.b4': 'ไปที่บูธ กดปุ่มสแกนแล้วส่องกล้องไปที่ QR บนหน้าจอของบูธ หรือพิมพ์รหัส 6 ตัว แต่ละบูธนับได้ครั้งเดียว',
   'h.b5': 'ให้ดาวโครงงานที่สแกน แล้วตอบแบบประเมินความพึงพอใจ 1 ครั้ง ต้องตอบก่อนจึงจะรับรางวัลได้',
-  'h.b6': 'สะสมให้ครบ {n} คะแนน รางวัลแรกจะปลดล็อก แล้วแสดง QR รับรางวัลที่กองอำนวยการ',
+  'h.b6': 'สะสมให้ครบ {n} คะแนน รางวัลแรกจะปลดล็อก นักศึกษา มฟล. ได้คะแนนกิจกรรมอัตโนมัติ ผู้เข้าชมจากภายนอกแสดง QR รับรางวัลที่กองอำนวยการเพื่อจับฉลาก',
   'h.b7': 'สัญญาณนี้อยู่ได้ไม่นาน รีบลงมือเถอะ เอเจนต์',
 
   'h.cover.start': 'บูธแรกรอคุณอยู่ เอเจนต์ เริ่มจากบูธด้านล่างได้เลย',
@@ -117,7 +117,7 @@ export const handlerTh: Record<keyof typeof handlerEn, string> = {
   'hx.tag.field': 'บันทึกภาคสนาม',
   'hx.u.open': 'เยี่ยมมาก เอเจนต์ คุณสะสมครบ {n} คะแนนแล้ว รางวัลแรกปลดล็อกแล้ว',
   'hx.u.tier': 'เยี่ยมมาก เอเจนต์ คุณปลดล็อก {tier} แล้ว',
-  'hx.u.mfu': 'คุณเป็นนักศึกษา มฟล. จึงได้รับคะแนนกิจกรรม นักศึกษา ADT ได้คะแนนกิจกรรมสำนักวิชา นักศึกษาสำนักวิชาอื่นได้คะแนนกิจกรรมเสริม แสดง QR รับรางวัลที่กองอำนวยการ ระบบจะบันทึกตามรหัสนักศึกษาของคุณ',
+  'hx.u.mfu': 'คุณเป็นนักศึกษา มฟล. จึงได้รับคะแนนกิจกรรม นักศึกษา ADT ได้คะแนนกิจกรรมสำนักวิชา นักศึกษาสำนักวิชาอื่นได้คะแนนกิจกรรมเสริม ระบบบันทึกให้อัตโนมัติตามรหัสนักศึกษาของคุณ ไม่ต้องใช้ QR และไม่ต้องไปที่กองอำนวยการ',
   'hx.u.photo': 'คุณยังได้รูปเอเจนต์ด้วย เป็นเซลฟีในกรอบ InnoFest พร้อมโลโก้ ADT และ มฟล.',
   'hx.u.prize': 'แสดง QR รับรางวัลที่กองอำนวยการเพื่อรับ {tier}',
   'hx.u.prizeIt': 'ไปที่กองอำนวยการแล้วแสดง QR รับรางวัลได้เลย',
