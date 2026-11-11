@@ -43,6 +43,8 @@ export default function Mfu333() {
     if (!mfuTier) return []
     const list = unlocks
       .filter((u) => u.tierId === mfuTier.id && !u.voidedAt)
+      // The server records the threshold for every visitor; only MFU students earn the credit.
+      .filter((u) => !!u.redeemedAt || studentOf.has(u.visitorId))
       .map((u) => {
         const p = studentOf.get(u.visitorId)
         const atDesk = !!u.redeemedAt
